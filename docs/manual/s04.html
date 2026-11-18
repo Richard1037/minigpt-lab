@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 4 · 因果自注意力：整个 transformer 里唯一的新数学</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s04">
+<article class="chapter" id="ch-s04">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-12" href="#sec-4" title="attention.py TODO-12 forward"><i></i><code>TODO-12</code></a><a class="mm" data-todo="TODO-13" href="#sec-6" title="TODO-13 backward"><i></i><code>TODO-13</code></a><a class="mm" data-todo="TODO-14" href="#sec-5" title="TODO-14 softmax 反向"><i></i><code>TODO-14</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s04">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s04</div>
+  <h1>阶段 4 · 因果自注意力：整个 transformer 里唯一的新数学</h1>
+  <div class="meta"><span>判据 <code>tests/test_attention.py</code></span>
+    <span>预计 2~4 小时</span>
+    <span>要交 minigpt/attention.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>tests/test_attention.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/attention.py</code>。预计 2~4 小时。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-12"><td><code>TODO-12</code></td><td>attention.py TODO-12 forward</td><td><code class="path">minigpt/attention.py</code> : <b class="ln">80</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-12">去写</button></td></tr><tr data-todo="TODO-13"><td><code>TODO-13</code></td><td>TODO-13 backward</td><td><code class="path">minigpt/attention.py</code> : <b class="ln">102</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-13">去写</button></td></tr><tr data-todo="TODO-14"><td><code>TODO-14</code></td><td>TODO-14 softmax 反向</td><td><code class="path">minigpt/attention.py</code> : <b class="ln">130</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-14">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. 五条决定（写之前扫一眼，写完回来对）</a><a href="#sec-3"><span>3</span>3. 已给你的代码</a><a href="#sec-4"><span>4</span>4. TODO-12：<code>forward</code></a><a href="#sec-5"><span>5</span>5. TODO-14：<code>softmax_backward</code></a><a href="#sec-6"><span>6</span>6. TODO-13：<code>backward</code></a><a href="#sec-7"><span>7</span>7. 这一卷的判据</a><a href="#sec-8"><span>8</span>8. 常见失败模式对照表</a><a href="#sec-9"><span>9</span>9. 自查题</a><a href="#sec-10"><span>10</span>10. 下一步</a><a href="#sec-11"><span>11</span>11. 进阶推导（现在可以跳过）</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s04"><p>预计：约 35 行，2~4 小时。 验收命令：<code>python tests/test_attention.py</code>（只查这一卷；Block/GPT 整机在阶段 5 的 <code>test_model.py</code>） 要写的地方：<code>src/minigpt/attention.py</code> 的 TODO-12 / TODO-13 / TODO-14。 网站：选「阶段 4 · 因果自注意力」，提交 <code>minigpt/attention.py</code>。</p></section><section class="sec" id="sec-1" data-stage="s04"><h2>1. 这一步在干什么</h2><p>前面的层都是<b>逐位置</b>的：第 $t$ 个 token 的输出只看它自己。注意力让 token 之间互相看一眼： <b>每个 token 提出一个查询，和所有（允许的）token 的键比相似度，按相似度加权收集它们的值。</b></p>
+<p>$$s_{ij}=\frac{q_i\cdot k_j}{\sqrt{d_h}} \;\longrightarrow\; a_{ij}=\mathrm{softmax}_j(s_{ij}) \;\longrightarrow\; \mathrm{out}_i=\sum_j a_{ij}\,v_j$$</p>
+<p>"因果"= 位置 $i$ 只允许看 $j\le i$。这一条是自回归生成的根本原因：训练时若允许看后面， 模型直接抄答案，loss 低得离谱、生成时一塌糊涂。</p>
+<p>按这个顺序写，每一步都能停下来跑判据：</p>
+<div class="flow"><div class="fs"><i class="n">1</i><span><b>① 扫一眼 §2 的五条决定</b></span></div><div class="fs" style="margin-left:20px"><i class="mk">↓</i><span>写的时候回来查表</span></div><div class="fs"><i class="n">2</i><span><b>② TODO-12 <code>forward</code></b></span></div><div class="fs" style="margin-left:20px"><i class="mk">↓</i><span>停点：<code>python webapp/checks.py TODO-12</code> 绿</span></div><div class="fs"><i class="n">3</i><span><b>③ TODO-14 <code>softmax_backward</code></b></span></div><div class="fs" style="margin-left:20px"><i class="mk">↓</i><span>停点：<code>python webapp/checks.py TODO-14</code> 绿</span></div><div class="fs"><i class="n">4</i><span><b>④ TODO-13 <code>backward</code></b></span></div><div class="fs" style="margin-left:20px"><i class="mk">↓</i><span>停点：<code>python tests/test_attention.py</code> 11 条全绿</span></div></div></section><section class="sec" id="sec-2" data-stage="s04"><h2>2. 五条决定（写之前扫一眼，写完回来对）</h2><table><thead><tr><th>决定</th><th>值</th><th>写错会怎样</th></tr></thead><tbody><tr><td>几个投影</td><td>q/k/v/proj 四个 <code>Linear(C, C)</code>；q/v/proj 有 bias，k <b>没有</b></td><td>参数量判据红（按 $4d^{2}+3d$ 算）；k 的 bias 是死参数</td></tr><tr><td>缩放</td><td>$\text{scale}=1/\sqrt{d_h}$，$d_h=C/H$</td><td>写成 $1/\sqrt{C}$：$H=1$ 时全对，多头时分数系统性偏小</td></tr><tr><td>掩码位置</td><td>加在 <b>softmax 之前</b></td><td>加在之后：分母被污染，因果性判据红</td></tr><tr><td>掩码值</td><td><code>NEG_INF = -1e18</code></td><td>用 <code>-inf</code>：反向 $0\cdot\infty=\mathrm{nan}$</td></tr><tr><td>合头之后</td><td>必须再过 <code>proj</code></td><td>多头之间不交换信息，"多头"只多了参数</td></tr></tbody></table>
+<p>每条为什么是这个数、这个顺序，见 §11。</p><div class="fig" data-fig="mask" role="img" aria-label="可视化：mask"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-3" data-stage="s04"><h2>3. 已给你的代码</h2><table><thead><tr><th>给你的</th><th>它唯一的用途</th><th>读的时候看什么</th></tr></thead><tbody><tr><td><code>_split_heads</code></td><td><code>(B,T,C) → (B,H,T,hd)</code></td><td>先 <code>reshape(B,T,H,hd)</code> 再 <code>transpose(0,2,1,3)</code></td></tr><tr><td><code>_causal_mask</code></td><td>返回 <code>(1,1,T,T)</code>，上三角 <code>-1e18</code></td><td><code>np.triu(..., k=1)</code> 保留对角线</td></tr><tr><td><code>_softmax_rows</code></td><td>每行减最大值再归一化</td><td>和阶段 3 <code>CrossEntropy</code> 那三行同构</td></tr><tr><td><code>self.k</code> 的 <code>use_bias=False</code></td><td>k 没有 bias</td><td>参数量按 $4d^{2}+3d$ 算，不是 $4d^{2}+4d$</td></tr></tbody></table>
+<p>拆头/合头为什么必须先 <code>reshape</code> 再 <code>transpose</code>、<code>triu</code> 的 <code>k=1</code> 是什么、 $b_q$ 为什么活着而 $b_k$ 死了、<code>proj</code> 到底在混什么 —— 见 §11.4。</p><div class="fig" data-fig="heads" role="img" aria-label="可视化：heads"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-4" data-stage="s04"><h2>4. TODO-12：<code>forward</code></h2><div class="sec-act"><button data-check="TODO-12">跑 TODO-12 的单项检查</button><button data-edit="TODO-12">跳到编辑器</button><a class="sec-jump" href="/?stage=s04">在测评台里打开 →</a></div><p><b>契约</b>：<code>(B,T,C) → (B,T,C)</code>。中间量缓存：<code>self._q/_k/_v/_probs/_merged_shape</code>。</p>
+<p>六步（<code>attention.py</code> 的 TODO 注释里逐步写了形状，照着对）：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>q,k,v: _split_heads(Linear(x))                    (B,H,T,hd)
+att  : (q @ k.transpose(0,1,3,2)) * scale         (B,H,T,T)
+att  : att + _causal_mask(T, x.dtype)             ← 加在 softmax 之前
+probs: _softmax_rows(att)                         每行和 = 1
+y    : probs @ v                                  (B,H,T,hd)
+out  : proj( y.transpose(0,2,1,3).reshape(B,T,C) )</code></pre></figure>
+<p>写的时候三个自查点：</p>
+<li><b><code>assert</code> 保留</b>：<code>C == self.C</code> 那句能帮你及早发现配置串错。</li><li><code>transpose</code> 的轴序：<code>(B,T,H,hd) ↔ (B,H,T,hd)</code> 只交换第 1、2 轴（即 <code>0,2,1,3</code>）；</li></ol>
+<p>算分数时转置的是最后两轴（<code>0,1,3,2</code>）。这两个是<b>不同的</b>转置，别混。</p>
+<li>缓存必须在 forward 里做。<code>backward</code> 不许重新算一遍 q/k/v（重算会用当时的参数，</li></ol>
+<p>而参数在梯度累积里可能已经变了；而且浪费一倍时间）。</p>
+<p><b>写完先自查形状</b>（比跑整卷快得多，在项目根目录跑）：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-12</code></pre></figure>
+<p>它会打印 <code>输入 x=shape(2,5,8) …</code>、<code>输出 y=shape(2,5,8)</code>、<code>_probs=shape(2,2,5,5)</code>， 最后一行结论期望是 <code>PASS 形状 (2,5,8)/(2,2,5,5)；行和偏差 …；上三角概率全为 0：True</code>。 如果 <code>_probs[0,0]</code> 的第 i 行前缀和不是 1，说明掩码没生效（第 i 行只允许 i+1 个格子）。</p>
+<p>点某一行 query 看它把 1.0 分给了哪些 key；拖 $d_h$ 看 $\div\sqrt{d_h}$ 把分数方差压回 1 附近。</p>
+<div class="fig" data-fig="attnflow" role="img" aria-label="可视化：attnflow"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-12 <code>forward</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        B, T, C = x.shape
+        <span class="kw">assert</span> C == self.C, <span class="str">f"输入通道 {C} 与配置 d_model={self.C} 不符"</span>
+        q = self._split_heads(self.q(x), B, T)
+        k = self._split_heads(self.k(x), B, T)
+        v = self._split_heads(self.v(x), B, T)
+        self._q, self._k, self._v = q, k, v          <span class="com"># 反向要用，必须缓存拆好头的版本</span>
+
+        att = (q @ k.transpose(<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>)) * self.scale        <span class="com"># (B,H,T,T)</span>
+        att = att + self._causal_mask(T, x.dtype)               <span class="com"># 掩码加在 softmax 之前</span>
+        self._probs = _softmax_rows(att)
+        y = self._probs @ v                                     <span class="com"># (B,H,T,hd)</span>
+        merged = y.transpose(<span class="num">0</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">3</span>).reshape(B, T, C)        <span class="com"># 合头：拆头的逆操作</span>
+        self._merged_shape = (B, T, C)
+        <span class="kw">return</span> self.proj(merged)</code></pre></figure>
+<p><code>self._q/_k/_v</code> 存的是<b>拆头之后</b>的 $(B,H,T,hd)$，不是原始 $(B,T,C)$ —— 反向里 $g_q = g_{att}k\cdot\text{scale}$ 用的就是这个形状，存错了就得再拆一次（还容易拆错轴）。 合头那行是"先转置再摊平"，和 §11.4 里拆头的顺序正好相反。</p></div></details></section><section class="sec" id="sec-5" data-stage="s04"><h2>5. TODO-14：<code>softmax_backward</code></h2><div class="sec-act"><button data-check="TODO-14">跑 TODO-14 的单项检查</button><button data-edit="TODO-14">跳到编辑器</button><a class="sec-jump" href="/?stage=s04">在测评台里打开 →</a></div><p>已知每行 <code>p</code>（和为 1）和对它的梯度 <code>gp</code>，求对分数 <code>z</code> 的梯度：</p>
+<p>$$\boxed{\;g \;=\; p \odot \bigl(\mathrm{gp} - \sum_{\text{last}}(\mathrm{gp}\odot p)\bigr)\;}$$</p>
+<p>求和沿最后一维，<code>keepdims=True</code> 才能广播回去。写完用两条性质自查，不用等 gradcheck：</p>
+<li>给整行 <code>gp</code> 同一个常数 → 结果必须精确为 0。softmax 对整行加常数不变，梯度就必须是 0，</li></ul>
+<p>这和 k-bias 是死参数是同一个性质。</p>
+<li>正向是均匀分布时 $g=\frac1n(\mathrm{gp}-\overline{\mathrm{gp}})$，就是"每行减均值"。</li></ul>
+<p>那个减项的推导、以及它和阶段 3 RMSNorm 里 <code>s</code> 的同源关系，见 §11.5。</p>
+<p>拖「锐度」换一组 p、拖四根 <code>gp</code> 滑杆，<code>s = Σ p·gp</code> 与 <code>ds = p ⊙ (gp − s)</code> 当场算； 正确实现下常驻的 <code>Σ ds</code> 读数是 1e-17 量级，打开错法开关就变非零。</p>
+<div class="fig" data-fig="softmaxbwd" role="img" aria-label="可视化：softmaxbwd"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-14 <code>softmax_backward</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code><span class="kw">def</span> <span class="fn">softmax_backward</span>(probs: np.ndarray, g_probs: np.ndarray) -&gt; np.ndarray:
+    s = np.<span class="bi">sum</span>(g_probs * probs, axis=-<span class="num">1</span>, keepdims=<span class="kw">True</span>)
+    <span class="kw">return</span> probs * (g_probs - s)</code></pre></figure>
+<p>少了 <code>s</code> 那一项 = 直接 <code>return g_probs * probs</code>：loss 照样降，gradcheck 挂在 q/k 上、 相对误差 $10^{-1}$ 量级。</p></div></details></section><section class="sec" id="sec-6" data-stage="s04"><h2>6. TODO-13：<code>backward</code></h2><div class="sec-act"><button data-check="TODO-13">跑 TODO-13 的单项检查</button><button data-edit="TODO-13">跳到编辑器</button><a class="sec-jump" href="/?stage=s04">在测评台里打开 →</a></div><p>结构上是 §4 的镜像。四组乘法，注意每一组的轴序：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>g_merged = proj.backward(g)                                   (B,T,C)
+gy       = g_merged.reshape(B,T,H,hd).transpose(0,2,1,3)      (B,H,T,hd)
+
+g_probs  = gy @ v.transpose(0,1,3,2)                          (B,H,T,T)   ← y=probs@v 对 probs
+g_v      = probs.transpose(0,1,3,2) @ gy                      (B,H,T,hd)  ← 对 v
+g_att    = softmax_backward(probs, g_probs)                   (B,H,T,T)
+g_q      = (g_att @ k) * scale                                (B,H,T,hd)
+g_k      = g_att.transpose(0,1,3,2) @ q * scale               (B,H,T,hd)
+
+返回 q.backward(g_q合头) + k.backward(g_k合头) + v.backward(g_v合头)      (B,T,C)</code></pre></figure>
+<p>三个必须想清楚的点：</p>
+<li><b>为什么 <code>g_att</code> 不用清掉禁止位置</b>：那里 <code>probs</code> 精确为 0，所以</li></ol>
+<p><code>probs * (g_probs − s)</code> 就是 0。加 <code>np.where(mask==0, 0, g_att)</code> 不但多余， 而且<b>条件极容易写反</b>（<code>mask==0</code> 是<b>允许</b>的位置！）。写反的症状：loss 照降、 但降得很慢、gradcheck 挂在 q/k 上 —— 本项目真踩过这一条。</p>
+<li><b><code>scale</code> 出现两次</b>：正向 <code>att = (q@kᵀ)*scale</code>，反向时 q 支路和 k 支路各要乘一次。</li><li><b>返回值相加</b>：<code>q/k/v</code> 三个 Linear 都以同一个 <code>x</code> 为输入，三条支路的 <code>dx</code> 要相加。</li></ol>
+<p>参数梯度已经在各自 <code>backward</code> 里累加完成，这里只处理输入梯度。</p>
+<details class="answer"><summary>参考答案 · TODO-13 <code>backward</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        g_merged = self.proj.backward(g)                         <span class="com"># (B,T,C)</span>
+        B, T, C = self._merged_shape
+        gy = g_merged.reshape(B, T, self.H, self.hd).transpose(<span class="num">0</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">3</span>)   <span class="com"># (B,H,T,hd)</span>
+
+        probs, v = self._probs, self._v
+        g_probs = gy @ v.transpose(<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>)                   <span class="com"># y = probs @ v</span>
+        g_v = probs.transpose(<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>) @ gy
+
+        <span class="com"># 被掩掉的格子正向已经是 exp(-1e18)=0，梯度天然为 0，这里不要再 where。</span>
+        g_att = softmax_backward(probs, g_probs)
+
+        g_q = (g_att @ self._k) * self.scale
+        g_k = g_att.transpose(<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>) @ self._q * self.scale
+
+        g_q_flat = g_q.transpose(<span class="num">0</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">3</span>).reshape(B, T, C)
+        g_k_flat = g_k.transpose(<span class="num">0</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">3</span>).reshape(B, T, C)
+        g_v_flat = g_v.transpose(<span class="num">0</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">3</span>).reshape(B, T, C)
+        <span class="kw">return</span> (self.q.backward(g_q_flat)
+                + self.k.backward(g_k_flat)
+                + self.v.backward(g_v_flat))</code></pre></figure>
+<p>三条最容易漏的：<code>scale</code> 在 q 支路和 k 支路<b>各乘一次</b>（正向只有一个 <code>*scale</code>， 但它同时作用于 $qk^{\top}$，两条支路各自求导都要带上）；三个子模块的返回值要<b>相加</b> （它们吃的是同一个 <code>x</code>，参数梯度已经在各自 <code>backward</code> 里累加完了）； <code>g_k</code> 用的是 <code>g_att</code> <b>转置</b>后 @ <code>q</code> —— 形状对不上时先别改括号，回去对 §4 那六行的轴序。</p></div></details></section><section class="sec" id="sec-7" data-stage="s04"><h2>7. 这一卷的判据</h2><div class="checkstable"><div class="cfhead"><span class="cftag">判据逐条 · 本表现取：跑一遍 solutions/ 那份答案，把 tests/test_attention.py 的 Report 每行原样搬来</span></div><table><thead><tr><th>组</th><th>判据</th><th>这条在判什么、写错了会是什么症状</th></tr></thead><tbody><tr><td class="cgrp">softmax 反向 · 两个守恒性质</td><td>每行梯度之和为 0</td><td>max|Σg|=1.61e-16 · softmax 每行和恒为 1，动一格整行都要修正</td></tr><tr><td class="cgrp"></td><td>常数余向量下梯度为 0</td><td>max|g|=0.00e+00 · softmax(z+c)=softmax(z)，整行加常数不该产生梯度</td></tr><tr><td class="cgrp">注意力 · 梯度（单头 / 多头）</td><td>注意力(单头)</td><td>最大相对误差 5.97e-06 · H=1 时拆头/合头退化成恒等，先排除多头的轴序干扰</td></tr><tr><td class="cgrp"></td><td>注意力(多头)</td><td>最大相对误差 4.48e-08 · H=4 才真正走拆头→算→合头，轴序错在这里现形</td></tr><tr><td class="cgrp">注意力 · 形状、因果性与参数量</td><td>形状 (2,5,8)/(2,2,5,5) 与行和</td><td>y (2, 5, 8) / probs (2, 2, 5, 5)；行和偏差 1.11e-16 · 拆头→算→合头→proj 一整圈</td></tr><tr><td class="cgrp"></td><td>上三角概率精确为 0</td><td>max|上三角|=0.00e+00 · 掩码必须在 softmax 之前</td></tr><tr><td class="cgrp"></td><td>改未来 token 不影响过去</td><td>前 4 个位置逐位相同；末位差异 0.000</td></tr><tr><td class="cgrp"></td><td>改当前 token 确实改变当前输出</td><td>反面对照：模型不是常数，上一条才有意义</td></tr><tr><td class="cgrp"></td><td>影响只向后传播</td><td>位置 0-1 不变，位置 3 之后变了</td></tr><tr><td class="cgrp"></td><td>参数量 4d²+3d（k 没有 bias）</td><td>期望 280 实测 280 误差 0 ≤ 0 · q/v/proj 各有 bias，k 没有 —— b_k 对整行只贡献一个常数，梯度恒为 0</td></tr><tr><td class="cgrp"></td><td>无死参数</td><td>7 个参数全部收到梯度</td></tr></tbody></table><p class="cfnote">跑法：<code>python tests/test_attention.py</code>。<b>表里的数字是答案跑出来的</b>，不是你的 —— 你的那一行在中栏「跑整卷」的结果里，长得很像但数值不会一样。</p></div>
+<p>红了的去向：softmax 两条 → §5 的公式；单头/多头 gradcheck → §4、§6 的轴序； 因果三条 → §2 「掩码位置」那一行；参数量 → §2 「几个投影」那一行。 Block/GPT 整机在阶段 5 的 <code>tests/test_model.py</code>，不归这一卷。</p>
+<p>改掉一个未来 token，逐位比较过去位置的输出：掩码对时一个比特都不变，写成"允许看未来"立刻渗回过去。</p>
+<div class="fig" data-fig="causalfix" role="img" aria-label="可视化：causalfix"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-8" data-stage="s04"><h2>8. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>病因</th><th>修法</th></tr></thead><tbody><tr><td>gradcheck 挂在 q/k，v/proj 全对</td><td>少了 <code>softmax_backward</code> 的减项</td><td>§5 公式重抄，推导在 §11.5</td></tr><tr><td>所有梯度偏小、loss 降得慢</td><td><code>np.where</code> 条件写反，清掉了允许位置的梯度</td><td>删掉 where（本来就不需要）</td></tr><tr><td><code>nan</code> 一路传染</td><td>掩码用了 <code>-inf</code></td><td>用 <code>NEG_INF=-1e18</code></td></tr><tr><td>因果性判据挂（前缀变了）</td><td>掩码加在 softmax 之后，或根本忘了加</td><td>加在 softmax <b>之前</b></td></tr><tr><td><code>cannot reshape array of size ...</code></td><td>合头时 transpose 轴序错</td><td><code>(B,H,T,hd) → (B,T,H,hd)</code> 用 <code>0,2,1,3</code></td></tr><tr><td>gradcheck 挂在 proj 之后的某个参数</td><td>forward 缓存没存（backward 里重算 q/k/v）</td><td>缓存 <code>self._q/_k/_v/_probs</code></td></tr><tr><td>无死参数挂：<code>attn.k.b</code></td><td>给 k 加了 bias</td><td>用 <code>use_bias=False</code>（判据的期望参数量按 10d 算）</td></tr><tr><td>单头对、多头错</td><td>拆头/合头顺序反了（<code>reshape</code> 与 <code>transpose</code> 换了次序）</td><td>用 §4 的自查命令看 <code>_probs</code> 每行和</td></tr><tr><td><code>参数量与手算一致</code> 差 C</td><td>上面那个 bias，或某个 Linear 忘了关 bias</td><td>数一遍：q/v/proj 有 bias，k 没有</td></tr></tbody></table></section><section class="sec" id="sec-9" data-stage="s04"><h2>9. 自查题</h2><p>先把答案写进输入框再点"判一下"；卡住按提示 1→2→3，还不行点"回讲义读这一节"。</p>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">为什么 <code>att</code> 必须是 $(B,H,T,T)$ 而不是 $(B,T,T,H)$？两种写法都能算，差别在哪儿？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-4">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>哪一种排法能让每个头自己是一张 $T\times T$，批量矩阵乘直接可用？</div><div class="qzh" hidden><code>probs @ v</code> 那一步沿最后一维加权，key 维必须在最后。</div><div class="qzh" hidden>$(B,H,T,T)$ 的最后一维是 key，<code>probs @ v</code> 一行搞定；头在中间则每次都要 transpose。合头 $(B,H,T,hd)\to(B,T,C)$ 恰好也是"先转置再摊平"。</div><div class="qzres" hidden></div><div class="qza" hidden>最后一维要是 key，<code>probs @ v</code> 才能直接沿它加权并批量广播；头放最后则每步都要转置，合头时还要把两个维度换回来。$(B,H,T,T)$ 让拆头/算/合头三处轴序统一。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>批量矩阵乘/一次算/每个头一张; 最后一维/沿key/加权; 合头/先转置再摊平</div><div class="qzlinkv" hidden>sec-4</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">一句话说清 $b_k$ 为什么是死参数，它和 <code>softmax_backward</code> 里那个减项是同一个性质的两种表现 —— 这个性质是什么？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-11-5">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>给一个位置的分数整体加常数，softmax 输出变吗？</div><div class="qzh" hidden>k 的所有维同时加 $b$，等价于每个分数都加同一个数。</div><div class="qzh" hidden>性质是"softmax 对整行平移不变"，等价说法是"每行和恒为 1"；所以 $b_k$ 的梯度恒为 0，减项做的就是减掉那份不改变输出的方向。</div><div class="qzres" hidden></div><div class="qza" hidden>性质是 softmax 对整行加常数不变（每行和恒为 1）。$b_k$ 的所有维加上去等于给每个分数加同一个数，输出不变 → 梯度恒为 0；softmax 反向里减掉 $p\odot\sum(\mathrm{gp}\odot p)$ 正是减掉这份"不改变输出"的方向。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>整行加常数/平移不变/加同一个数; 每行和恒为1/守恒; 梯度为0/不影响输出</div><div class="qzlinkv" hidden>sec-11-5</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">因果掩码加在 softmax 之后会怎样？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-11-3">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>softmax 的分母是哪些格子的指数和？</div><div class="qzh" hidden>先归一化再置零，剩下的格子之和不再是 1，得重新分配。</div><div class="qzh" hidden>分数不变，但分母含被掩位置；置零后要重新归一化，未来位置的权重被摊到过去格子上 —— 因果性失效。</div><div class="qzres" hidden></div><div class="qza" hidden>分数不变、分母被污染：把上三角置零后每行和不再为 1，得重新归一化，未来 token 的权重被摊回过去格子，因果性失效。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>分母/归一化被污染; 未来位置概率非零/不由0; 因果性失效/偷看</div><div class="qzlinkv" hidden>sec-11-3</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">多头数 $H$ 变大、<code>d_model</code> 不变，每个头的 $hd$ 会怎样？影响哪一步的耗时和梯度尺度？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-11-2">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>$d_h=C/H$。</div><div class="qzh" hidden>缩放因子 $\sqrt{d_h}$ 跟着变小，分数的方差会怎样？</div><div class="qzh" hidden>$d_h$ 变小 → 缩放 $1/\sqrt{d_h}$ 变大、分数更容易饱和；参数量只由 $C$ 决定，与 $H$ 无关。</div><div class="qzres" hidden></div><div class="qza" hidden>$d_h=C/H$ 变小：$\div\sqrt{d_h}$ 变小（缩放变强），每头分数方差被压得更平，softmax 更接近均匀 —— 该头的表达能力下降、梯度尺度变小。参数量只随 $C$ 变，与 $H$ 无关。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>变小/C/H; 缩放1/sqrt(hd)变大; 分数方差/更尖; 参数量不变</div><div class="qzlinkv" hidden>sec-11-2</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">把 $\sqrt{d_h}$ 换成 $d_h$ 会发生什么？从方差角度说。</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-11-2">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>先算 $\mathrm{Var}(q\cdot k)$。</div><div class="qzh" hidden>除 $\sqrt{d_h}$ 后方差是 1；除 $d_h$ 呢？</div><div class="qzh" hidden>$q\cdot k$ 的方差是 $d_h$，除 $\sqrt{d_h}$ 归一为 1；除 $d_h$ 后降到 $1/d_h$，softmax 过度平坦，梯度信号被摊薄。</div><div class="qzres" hidden></div><div class="qza" hidden>$q\cdot k$ 的方差约 $d_h$。除 $\sqrt{d_h}$ 把方差压到 1；除 $d_h$ 后方差只剩 $1/d_h$，softmax 过度平坦，权重几乎均分、梯度被摊薄，模型学不动。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>方差被压到1/d_h / 过度缩小; softmax变尖/饱和/梯度消失</div><div class="qzlinkv" hidden>sec-11-2</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">自己推一遍 $\mathrm{Var}(q\cdot k)=d_h$（假设每维独立、零均值、方差 1）。</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-11-2">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>内积是 $d_h$ 项的求和。</div><div class="qzh" hidden>独立随机变量之和的方差等于方差之和。</div><div class="qzh" hidden>每项 $q_i k_i$ 方差为 1，共 $d_h$ 项且两两独立 → 总和方差 $d_h$。</div><div class="qzres" hidden></div><div class="qza" hidden>$q\cdot k=\sum_{i=1}^{d_h}q_ik_i$；每项因独立零均值方差为 $\mathrm{Var}(q_i)\mathrm{Var}(k_i)=1$，各维独立故方差可加 → 总和方差 $d_h$，标准差 $\sqrt{d_h}$。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>求和/内积; 方差可加/独立; d_h项/每项1</div><div class="qzlinkv" hidden>sec-11-2</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">判据"改当前 token 确实改变当前输出"如果失败，说明模型出了什么问题？此时"改未来 token 不影响过去"那条的通过还有意义吗？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-7">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>输出一个 bit 都不变，说明 forward 和输入无关。</div><div class="qzh" hidden>一个常数函数"当然"不会把未来泄漏到过去。</div><div class="qzh" hidden>模型退化成常数映射；一个常数函数天然满足因果性，所以那条判据白绿。</div><div class="qzres" hidden></div><div class="qza" hidden>说明 forward 退化成常数（不看输入），此时"不影响过去"必然成立但毫无意义 —— 这正是要配一条正面对照判据的原因。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>常数/不依赖输入/输出不变; 没有意义/毫无意义/无效</div><div class="qzlinkv" hidden>sec-7</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>forward</code> 里不缓存 <code>probs</code> 而是 <code>backward</code> 时重算，为什么错？两个理由。</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-4">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>梯度累积时参数会动吗？</div><div class="qzh" hidden>重算时用的是哪一份参数？</div><div class="qzh" hidden>① 用当时的参数重算，和正向不是同一份数，梯度对不上；② 白算一遍，速度减半。</div><div class="qzres" hidden></div><div class="qza" hidden>① 重算用的是当前参数，参数在梯度累积里可能已变，<code>probs</code> 和正向不一致，梯度就错了；② 白白多算一遍前向，时间翻倍。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>参数可能已变/不一致; 浪费/两倍时间/多算一遍</div><div class="qzlinkv" hidden>sec-4</div></div></section><section class="sec" id="sec-10" data-stage="s04"><h2>10. 下一步</h2><p>阶段 5：<code>gpt.py</code>（Block + 权重共享输出头 + 标签移位）、<code>optim.py</code>、<code>tokenizer.py</code>、<code>dataset.py</code>。 那时你写的 Block 会把注意力接进残差结构，<code>loss_backward</code> 里的移位会成为新的判据主角 （<code>tests/test_model.py</code> 的"正确移位：新数据上学不动"一条，等你写完 <code>gpt.py</code> 才真正测到你）。</p></section><section class="sec" id="sec-11" data-stage="s04"><h2>11. 进阶推导（现在可以跳过）</h2><p>草稿先把这一卷写绿，再回来读"为什么是这个数、这个顺序"。</p>
+<h4 id="sec-11-1">11.1 为什么是 q/k/v/proj 四个矩阵</h4>
+<table><thead><tr><th>投影</th><th>角色</th><th>拿掉会怎样</th></tr></thead><tbody><tr><td>$W_q$</td><td>提出查询</td><td>没有"问什么"，注意力退化成固定的键匹配</td></tr><tr><td>$W_k$</td><td>生成索引</td><td>与 $W_q$ 必须分开，否则相似度只剩一个投影在决定</td></tr><tr><td>$W_v$</td><td>携带内容</td><td>只能按相似度搬运原向量，"关注谁"和"取走什么"绑死</td></tr><tr><td>$W_{proj}$</td><td>混合各头输出</td><td>各头并列而不交流，"多头"只多参数、不多能力</td></tr></tbody></table>
+<p>索引和内容必须是两种东西：若 <code>k</code> 与 <code>v</code> 共用一个投影，模型只能表达"和我相似的词"， 表达不了"我该关注的那个词携带什么"。</p>
+<p>四个都是 <code>Linear(C, C)</code>，切头不改变计算，只是把 $H$ 个独立的低维注意力并排放进一个张量。 <code>k</code> 不要 bias，所以参数量是 $4C^{2}+3C$ —— 理由见 §11.4 ④。</p>
+<h4 id="sec-11-2">11.2 除 $\sqrt{d_h}$ 是方差算术，不是玄学系数</h4>
+<p>$q\cdot k=\sum_{i=1}^{d_h}q_ik_i$，各维独立、零均值、方差 1：</p>
+<p>$$\operatorname{Var}(q\cdot k)=\sum_{i=1}^{d_h}\operatorname{Var}(q_ik_i)=d_h \quad\Longrightarrow\quad \operatorname{std}(q\cdot k)=\sqrt{d_h}$$</p>
+<table><thead><tr><th>写法</th><th>分数方差</th><th>后果</th></tr></thead><tbody><tr><td>除 $\sqrt{d_h}$</td><td>$1$</td><td>分数落在 $\pm 3$ 量级，softmax 有梯度</td></tr><tr><td>不除</td><td>$d_h$</td><td>$d_h=64$ 时分数动不动 $\pm 16$，softmax 近似 one-hot，反向梯度 $\approx 0$</td></tr><tr><td>除 $\sqrt C$</td><td>$d_h/C=1/H$</td><td>$H=1$ 时全对，$H&gt;1$ 时分数被系统性压平</td></tr></tbody></table>
+<p>最后一行是最难自查的错：单头判据全绿、多头才露馅。项数是每个头自己的 $d_h$（$C=H\,d_h$），不是 $C$。</p>
+<h4 id="sec-11-3">11.3 掩码：为什么必须在 softmax 之前，为什么是 $-10^{18}$</h4>
+<p>因果 softmax 的分母只该含 $j\le i$：</p>
+<p>$$a_{ij}=\frac{\exp(s_{ij})}{\sum_{j'\le i}\exp(s_{ij'})}$$</p>
+<p>掩码就是把 $j&gt;i$ 从分母里踢出去，所以只能在 softmax <b>之前</b>动手。</p>
+<li>加在之后（先归一化再乘 0）：每行和不再是 1，得重新归一化，等价于把未来格子的权重摊回</li></ul>
+<p>过去格子上 —— 因果性失效。</p>
+<li>用 <code>-inf</code>：至少有一处 $0\cdot\infty$ 就出 $\mathrm{nan}$，反向一路传染。</li><li>用 <code>-1e18</code>：$\exp(-10^{18}-\max)$ 在 float64 里精确为 0 → 概率精确 0 → 梯度精确 0，</li></ul>
+<p>不需要任何清理。</p>
+<li>清理反而是坑：<code>np.where(mask==0, 0, g)</code> 里 <code>mask==0</code> 是<b>允许</b>的位置，条件写反就把</li></ul>
+<p>该留的梯度清掉了。</p>
+<p><code>(1,1,T,T)</code> 的两个 1 是 batch 和 head 维，让同一张掩码广播到所有样本、所有头。</p>
+<h4 id="sec-11-4">11.4 已给代码里的六件事</h4>
+<p><b>① <code>_split_heads</code>：先 <code>reshape</code> 再 <code>transpose</code>。</b></p>
+<figure class="code"><figcaption>python</figcaption><pre><code>y.reshape(B, T, self.H, self.hd).transpose(<span class="num">0</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">3</span>)     <span class="com"># (B,T,C) → (B,H,T,hd)</span></code></pre></figure>
+<p><code>reshape</code> 不搬数据，只是把 <code>C</code> 重新解释成 <code>H</code> 段；<code>transpose</code> 只改轴的记账。反过来先 <code>transpose</code> 再 <code>reshape</code>：转置后的数组不连续，<code>reshape</code> 会<b>复制并按新顺序重排</b> —— 形状照样对、 数值是乱的。前向看着"也是个合理的向量"，只有 gradcheck 抓得住。合头是严格逆操作，backward 里对 $g_q/g_k/g_v$ 走同样两步。</p>
+<p><b>② <code>_causal_mask</code>：<code>np.triu(..., k=1)</code> 与 <code>(1,1,T,T)</code>。</b></p>
+<figure class="code"><figcaption>python</figcaption><pre><code>m = np.triu(np.ones((T, T), dtype=dtype), k=<span class="num">1</span>) * NEG_INF
+<span class="kw">return</span> m.reshape(<span class="num">1</span>, <span class="num">1</span>, T, T)</code></pre></figure>
+<p><code>k=1</code> 取严格上三角，对角线保留 —— 位置 $i$ 必须能看自己；写成 <code>k=0</code> 就变成"不许看自己"， 模型学成"预测前一个 token 的前一个 token"。乘 <code>NEG_INF</code> 后允许处仍是 0，加到分数上无影响。 <code>dtype</code> 跟着分数走：$-10^{18}$ 在 float32 上限（$3.4\times10^{38}$）之内，换精度不用改这一行。</p>
+<p><b>③ <code>_softmax_rows</code> 和阶段 3 的 <code>CrossEntropy</code> 是同一招。</b></p>
+<p>减最大值、取指数、除行和，三行完全同构；区别只在返回什么 —— 这里返回概率（要拿它加权求和）， CrossEntropy 返回 loss 并缓存概率。两处都靠 $\exp(-10^{18}-m)=0$ 把禁止位置干净地抹掉。</p>
+<p><b>④ $b_q$ 活着而 $b_k$ 死了：行与列的不对称。</b></p>
+<p>$$\frac{\partial L}{\partial b_q}=\sum_{i}\Bigl(\sum_j g_{ij}\,k_j\Bigr),\qquad \frac{\partial L}{\partial b_k}=\sum_{j}\Bigl(\sum_i g_{ij}\Bigr)q_i$$</p>
+<p>softmax 的守恒性质给出每行 $\sum_j g_{ij}=0$，于是 $b_k$ 那条整个消失；$b_q$ 那条是不同 $k_j$ 的加权和，抵消不掉。一句话：$b_k$ 给整行加同一个常数（softmax 不变），$b_q$ 改变行内各列的 相对分数（真变）。$b_v$ 也活着 —— 它作用在加权和的结果上。</p>
+<p><b>⑤ <code>proj</code> 是 $H$ 个头唯一的交流点。</b></p>
+<p><code>reshape</code> 只把各头并排放好，没有任何信息交换。没有 <code>proj</code>，多头就等价于 $H$ 个互不相干的 低维网络；它同时把结果混回主干需要的 $C$ 维表示，所以也是残差出口缩放的对象。</p>
+<p><b>⑥ 合头必须过 <code>proj</code>，<code>scale</code> 用 $d_h$ 不用 $C$。</b></p>
+<p>两处都在 §2 的五条决定里，数字的来历见 §11.2；判据盯的是参数量与多头 gradcheck。</p>
+<h4 id="sec-11-5">11.5 <code>softmax_backward</code>：那个减项从哪来</h4>
+<p>从定义出发：</p>
+<p>$$p_i=\frac{e^{z_i}}{\sum_j e^{z_j}} \;\Longrightarrow\; \frac{\partial p_i}{\partial z_k}=p_i\bigl(\delta_{ik}-p_k\bigr)$$</p>
+<p>链式法则（记 $\mathrm{gp}_i=\partial L/\partial p_i$）：</p>
+<p>$$\frac{\partial L}{\partial z_k}=\sum_i \mathrm{gp}_i\,p_i(\delta_{ik}-p_k) =p_k\Bigl(\mathrm{gp}_k-\sum_i \mathrm{gp}_i p_i\Bigr)$$</p>
+<p>两个自查事实都不用等 gradcheck：</p>
+<li>$\mathrm{gp}$ 整行等于同一个常数 $c$：$g=p(c-c\sum p)=0$。给一行所有分数加常数不改变</li></ul>
+<p>softmax，梯度就必须是 0 —— 和 $b_k$ 死参数同一个性质。</p>
+<li>正向均匀 $p_i=1/n$：$g=\frac1n(\mathrm{gp}-\overline{\mathrm{gp}})$，就是"每行减均值"。</li></ul>
+<p>为什么漏减项难发现：<code>return g_probs * probs</code> 仍是一个"看起来对"的局部梯度，loss 照样降； 只有和有限差分逐格比，才在 q/k 上暴露 $10^{-1}$ 量级的相对误差。</p>
+<p>它和 RMSNorm 里那个 $s$ 同源：两者都在减掉"被约束钉住"的方向。softmax 钉住每行和 $=1$， RMSNorm 钉住每行长度 $=\sqrt C$，所以反向里都出现一个"减去本行加权均值"的项 （<a href="s03b.html#sec-11-2">阶段 3b §11.2</a>）。</p></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>

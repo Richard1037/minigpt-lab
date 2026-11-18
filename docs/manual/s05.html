@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 5 · 完整 GPT + 训练循环：把零件开成一台机器</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s05">
+<article class="chapter" id="ch-s05">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-15" href="#sec-4" title="gpt.py TODO-15 Block.forward"><i></i><code>TODO-15</code></a><a class="mm" data-todo="TODO-16" href="#sec-5" title="gpt.py TODO-16 Block.backward"><i></i><code>TODO-16</code></a><a class="mm" data-todo="TODO-17" href="#sec-6" title="gpt.py TODO-17 TiedHead 的两路梯度"><i></i><code>TODO-17</code></a><a class="mm" data-todo="TODO-18" href="#sec-7" title="gpt.py TODO-18 GPT.forward"><i></i><code>TODO-18</code></a><a class="mm" data-todo="TODO-19" href="#sec-8" title="gpt.py TODO-19 loss_backward 的移位"><i></i><code>TODO-19</code></a><a class="mm" data-todo="TODO-20" href="#sec-9" title="tokenizer.py TODO-20 encode/decode"><i></i><code>TODO-20</code></a><a class="mm" data-todo="TODO-21" href="#sec-10" title="dataset.py TODO-21 Batcher 的随机窗口"><i></i><code>TODO-21</code></a><a class="mm" data-todo="TODO-22" href="#sec-11" title="optim.py TODO-22 AdamW.step"><i></i><code>TODO-22</code></a><a class="mm" data-todo="TODO-23" href="#sec-12" title="optim.py TODO-23 clip_grad_norm"><i></i><code>TODO-23</code></a><a class="mm" data-todo="TODO-24" href="#sec-13" title="optim.py TODO-24 lr_at"><i></i><code>TODO-24</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s05">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s05</div>
+  <h1>阶段 5 · 完整 GPT + 训练循环：把零件开成一台机器</h1>
+  <div class="meta"><span>判据 <code>stages/s05_char_lm.py</code></span>
+    <span>预计 4~8 小时（本手册代码量最大的一章）</span>
+    <span>要交 minigpt/gpt.py、minigpt/optim.py、minigpt/tokenizer.py、minigpt/dataset.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>stages/s05_char_lm.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/gpt.py</code>、<code>minigpt/optim.py</code>、<code>minigpt/tokenizer.py</code>、<code>minigpt/dataset.py</code>。预计 4~8 小时（本手册代码量最大的一章）。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-15"><td><code>TODO-15</code></td><td>gpt.py TODO-15 Block.forward</td><td><code class="path">minigpt/gpt.py</code> : <b class="ln">68</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-15">去写</button></td></tr><tr data-todo="TODO-16"><td><code>TODO-16</code></td><td>gpt.py TODO-16 Block.backward</td><td><code class="path">minigpt/gpt.py</code> : <b class="ln">86</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-16">去写</button></td></tr><tr data-todo="TODO-17"><td><code>TODO-17</code></td><td>gpt.py TODO-17 TiedHead 的两路梯度</td><td><code class="path">minigpt/gpt.py</code> : <b class="ln">111</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-17">去写</button></td></tr><tr data-todo="TODO-18"><td><code>TODO-18</code></td><td>gpt.py TODO-18 GPT.forward</td><td><code class="path">minigpt/gpt.py</code> : <b class="ln">163</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-18">去写</button></td></tr><tr data-todo="TODO-19"><td><code>TODO-19</code></td><td>gpt.py TODO-19 loss_backward 的移位</td><td><code class="path">minigpt/gpt.py</code> : <b class="ln">203</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-19">去写</button></td></tr><tr data-todo="TODO-20"><td><code>TODO-20</code></td><td>tokenizer.py TODO-20 encode/decode</td><td><code class="path">minigpt/tokenizer.py</code> : <b class="ln">78</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-20">去写</button></td></tr><tr data-todo="TODO-21"><td><code>TODO-21</code></td><td>dataset.py TODO-21 Batcher 的随机窗口</td><td><code class="path">minigpt/dataset.py</code> : <b class="ln">107</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-21">去写</button></td></tr><tr data-todo="TODO-22"><td><code>TODO-22</code></td><td>optim.py TODO-22 AdamW.step</td><td><code class="path">minigpt/optim.py</code> : <b class="ln">130</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-22">去写</button></td></tr><tr data-todo="TODO-23"><td><code>TODO-23</code></td><td>optim.py TODO-23 clip_grad_norm</td><td><code class="path">minigpt/optim.py</code> : <b class="ln">150</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-23">去写</button></td></tr><tr data-todo="TODO-24"><td><code>TODO-24</code></td><td>optim.py TODO-24 lr_at</td><td><code class="path">minigpt/optim.py</code> : <b class="ln">172</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-24">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. 必要理论</a><a href="#sec-3"><span>3</span>3. 已给你的代码：装配图纸与三个决定</a><a href="#sec-4"><span>4</span>4. TODO-15：<code>Block.forward</code></a><a href="#sec-5"><span>5</span>5. TODO-16：<code>Block.backward</code></a><a href="#sec-6"><span>6</span>6. TODO-17：<code>TiedHead.forward / backward</code></a><a href="#sec-7"><span>7</span>7. TODO-18：<code>GPT.forward</code></a><a href="#sec-8"><span>8</span>8. TODO-19：<code>GPT.loss_backward</code>（本阶段最贵的一条）</a><a href="#sec-9"><span>9</span>9. TODO-20：<code>CharTokenizer.encode / decode</code></a><a href="#sec-10"><span>10</span>10. TODO-21：<code>Batcher.__call__</code></a><a href="#sec-11"><span>11</span>11. TODO-22：<code>AdamW.step</code></a><a href="#sec-12"><span>12</span>12. TODO-23：<code>clip_grad_norm</code></a><a href="#sec-13"><span>13</span>13. TODO-24：<code>lr_at</code></a><a href="#sec-14"><span>14</span>14. 训练循环：把这些串起来（已给你，写在判据脚本里）</a><a href="#sec-15"><span>15</span>15. 验收判据逐条解读</a><a href="#sec-16"><span>16</span>16. 常见失败模式对照表</a><a href="#sec-17"><span>17</span>17. 自查题</a><a href="#sec-18"><span>18</span>18. 下一步</a><a href="#sec-19"><span>19</span>19. 进阶推导（现在可以跳过）</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s05"><p>预计：约 120 行，4~8 小时（本手册代码量最大的一章）。 验收命令：<code>python stages/s05_char_lm.py</code>（36 条判据，CPU 上约 7 秒） 要写的地方：<code>src/minigpt/gpt.py</code>（TODO-15~19）、<code>tokenizer.py</code>（TODO-20）、<code>dataset.py</code>（TODO-21）、<code>optim.py</code>（TODO-22~24）。 网站：选「阶段 5 · 完整 GPT + 训练循环」，提交这四个文件。</p></section><section class="sec" id="sec-1" data-stage="s05"><h2>1. 这一步在干什么</h2><p>前四个阶段你写的是零件：<code>Value</code>、numpy 版网络层、因果自注意力。这一阶段把它们接成一台<b>能训练的机器</b>，然后当场开起来：</p>
+<div class="flow"><div class="fs"><i class="n">1</i><span><b>文本</b> → <code>TODO-20</code> → <b>id 序列</b></span></div><div class="fs"><i class="n">2</i><span><b>id 序列</b> → <code>TODO-21</code> → <code>(B, ctx)</code> 批次</span></div><div class="fs"><i class="n">3</i><span><b>批次</b> → <code>TODO-18</code> → <code>logits (B, T, V)</code></span></div><div class="fs"><i class="n">4</i><span><b>logits</b> → <code>TODO-19</code> → loss 标量 + 梯度</span></div><div class="fs"><i class="n">5</i><span><b>loss</b> → <code>TODO-15/16/17</code> → 每一层把梯度交回去</span></div><div class="fs"><i class="n">6</i><span><b>梯度</b> → <code>TODO-22/23/24</code> → 参数往前走一小步</span></div><div class="fs"><i class="n">7</i><span><b>重复 400 次</b> → loss 从 ln V 掉到 0.1</span></div></div>
+<p>一句话：<b>语言模型的全部秘密就是"预测下一个 token"这七个字</b>，其余都是工程。</p>
+<p>这一章有三条判据是"其它阶段看不见的"，因为它们测的是<b>装配</b>而不是零件：</p>
+<li><code>残差出口置零后 Block 是恒等映射</code> —— 查你两条残差加没加、梯度有没有原样透传；</li><li><code>tied 的两路梯度是累加不是覆盖</code> —— 查输出头和词嵌入共用那块内存时你写的是 <code>+=</code> 还是 <code>=</code>；</li><li><code>随机数据学不动（反作弊判据）</code> —— 查移位方向。<b>这条最重要</b>，§8 会解释为什么。</li></ol>
+<p>阶段 4 的考卷 <code>tests/test_model.py</code> 有 9 条要等你写完 <code>gpt.py</code> 才真的跑到（Block、整机梯度、因果性那几组）。在那之前它们靠的是答案版 <code>gpt.py</code> —— 也就是说：<b>阶段 4 那天你看到的 17/17 里，有 9 条其实不是你自己写的东西过了</b>。现在轮到你了。</p></section><section class="sec" id="sec-2" data-stage="s05"><h2>2. 必要理论</h2><h4 id="sec-2-1">2.1 残差流：为什么主干是"高速公路"</h4>
+<p>一个 block 干的事是</p>
+<p>$$x_{1}=x+\mathrm{attn}\bigl(n_1(x)\bigr),\qquad x_{2}=x_{1}+\mathrm{mlp}\bigl(n_2(x_{1})\bigr)$$</p>
+<p>主干 $x$ 从头到尾没有被<b>覆写</b>过，只被<b>加过</b>。把 $L$ 层展开：</p>
+<p>$$x_{\text{出}}=x_{\text{入}}+\sum_{\ell=1}^{L}\Bigl[\mathrm{attn}_\ell(n_1^{(\ell)}(\cdot))+\mathrm{mlp}_\ell(n_2^{(\ell)}(\cdot))\Bigr]$$</p>
+<p>三个推论，全都是这一章判据的依据：</p>
+<li><b>梯度有直达通道。</b> $\partial x_{\text{出}}/\partial x_{\text{入}} = I + \sum_\ell \partial(\cdot)$，那个 $I$ 就是"原样透传"那一路。深层网络不怕梯度消失，怕的是相反的方向（见 §3.4 的 <code>resid_scale</code>）。</li><li><b>子层输出为零时，这一层必须等于恒等映射。</b> 这就是判据 <code>残差出口置零后 Block 是恒等映射</code> 的数学依据 —— 它是一条<b>不依赖有限差分</b>的强检验，forward 和 backward 各查一半。</li><li><b>信息不会丢。</b> 第 3 层想引用第 0 层的 token 内容，不需要经过任何非线性变换 —— 加法和恒等通路一直在。</li></ul>
+<h4 id="sec-2-2">2.2 pre-norm 而不是 post-norm</h4>
+<p>你写的顺序是 <code>x + attn(norm(x))</code>（<b>pre</b>-norm），不是 <code>norm(x + attn(x))</code>（<b>post</b>-norm，2017 年原论文那种）。差别在层数上去以后才露出来：post-norm 每个 block 出口都有一次归一化，梯度反传时要连乘 $L$ 个"把长度除回去"的因子，24 层以上就训不动了。pre-norm 的主干是纯加法，所以今天的 LLM 全部用 pre-norm。</p>
+<p>代价：最后一层出来以后主干的长度已经不是初始量级了，所以<b>末端还要再 norm 一次</b>（<code>norm_f</code>），否则 tied 输出头的 logit 尺度会随深度漂 —— 这是 TODO-18 里那次 <code>self.norm_f(x)</code> 的存在理由。</p>
+<h4 id="sec-2-3">2.3 权重共享（weight tying）：一行减法省下的东西</h4>
+<p>输出层不做成独立的 <code>Linear(C, V)</code>，而是直接用词嵌入矩阵的转置：</p>
+<p>$$\mathrm{logits}=x\,E^{\mathsf T},\qquad E\in\mathbb R^{V\times C}\ \text{就是输入侧那张嵌入表}$$</p>
+<p>省下 $V\cdot C$ 个参数。本项目 $V=25,C=48$ 省 1200 个；真实模型 $V=8192,C=512$ 省 400 万个 —— 在小模型上这是 10%~20% 的参数。</p>
+<p>第二个理由是概念的绑定：输入侧 $E$ 的第 $i$ 行回答"字符 $i$ 长什么样"，输出侧同一行回答"要输出字符 $i$，我该往哪个方向走"。这两个问题高度相关，绑在一起等于<b>共享一份先验</b>，小数据上明显更稳。</p>
+<p>代价是数学上的：<code>tok.weight</code> 现在有<b>两条</b>梯度来源 ——</p>
+<p>$$\frac{\partial L}{\partial E}=\underbrace{\frac{\partial L}{\partial E}\Big|_{\text{查表}}}_{\text{Embedding.backward 散射回行}}+\underbrace{g_{\text{logits}}^{\mathsf T}x_{\text{flat}}}_{\text{TiedHead.backward}}$$</p>
+<p>两条必须<b>相加</b>。写成赋值 <code>=</code>，谁后跑谁赢 —— 这就是判据 <code>tied 的两路梯度是累加不是覆盖</code> 存在的全部理由。</p>
+<h4 id="sec-2-4">2.4 下一 token 预测与 $\ln V$ 基准</h4>
+<p>训练目标是"看到前缀，猜下一个字符"：</p>
+<p>$$L=-\frac{1}{BT}\sum_{b,t}\log p_\theta\bigl(x_{b,t+1}\mid x_{b,\le t}\bigr)$$</p>
+<p>两个必须刻在脑子里的数字：</p>
+<li><b>随机初始化的模型 loss 应该等于 $\ln V$。</b> 权重是随机的小数，softmax 出来接近均匀，$-\frac1V\sum_i\ln\frac1V=\ln V$。本项目 $V=25$，所以 $\ln V=3.219$。这就是判据 <code>初始 loss ≈ ln V</code>。差得远 → 移位、归一化或者 CrossEntropy 有问题。</li><li><b>不可预测的数据，loss 只能降到 $\ln V$，降不下去是</b>对的<b>。</b> 随机字符序列没有任何规律，模型再强也猜不到下一个字符。所以"随机数据上学不动"是<b>正确答案的标志</b>。反过来，如果你的模型在随机数据上把 loss 打到了 0.001，它一定在作弊 —— 而作弊唯一的可能就是"预测自己"：答案就在输入里，抄一下就行。</li></ul>
+<p>这条反直觉的判据（学不动 = 通过）是整份手册里唯一"结果和你期望相反"的检验，所以 §8 还会再讲一次。</p>
+<p>下面这张图把 $V$ 从 2 拖到 8192，多批采样真算随机初始化时的交叉熵，和 $\ln V$ 那条线叠在一起；再给一个"目标不错位（等于看答案）"的开关 —— 一打开，loss 立刻塌到 $10^{-4}$ 量级，假得一目了然。</p>
+<div class="fig" data-fig="lnv" role="img" aria-label="可视化：lnv"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<h4 id="sec-2-5">2.5 Adam 的偏差修正为什么不是可有可无</h4>
+<p>一二阶矩的滑动平均都从 0 开始：</p>
+<p>$$m_t=\beta_1m_{t-1}+(1-\beta_1)g_t,\qquad v_t=\beta_2v_{t-1}+(1-\beta_2)g_t^2$$</p>
+<p>在 $m_0=v_0=0$ 的前提下，$E[m_t]=(1-\beta_1)\sum_{k}\beta_1^{k}g_{t-k}\ne E[g]$ —— 前几十步系统性偏小。除以 $1-\beta^t$ 把它拉回无偏：</p>
+<p>$$\hat m_t=\frac{m_t}{1-\beta_1^{t}},\qquad \hat v_t=\frac{v_t}{1-\beta_2^{t}},\qquad \theta_t=\theta_{t-1}-\mathrm{lr}\cdot\frac{\hat m_t}{\sqrt{\hat v_t}+\epsilon}$$</p>
+<p><b>忘了会怎样（可以手算）</b>：$t=1$、$g$ 恒定时 $\hat m/\sqrt{\hat v}=1$，一步正好走 lr；不修正的话 $m/( \sqrt v)=\frac{0.1g}{\sqrt{0.05g^2}}=0.447$，第一步只走了 $0.447\,\mathrm{lr}$，第二步 0.608、第三步 0.725……曲线前 200 步整体偏慢，症状是"warmup 之后还在爬"。判据 <code>AdamW 单步幅度 = lr</code> 用<b>恒梯度</b>构造了一个可解析验证的场景：正确实现两步都恰好走 lr，误差 3e-11 量级。</p></section><section class="sec" id="sec-3" data-stage="s05"><h2>3. 已给你的代码：装配图纸与三个决定</h2><p>这一节讲<b>不是我让你写</b>的那些行。它们每个都有一个"删了会怎样"，你以后排错要靠这些。</p>
+<h4 id="sec-3-1">3.1 <code>Block.__init__</code>：四个子模块，顺序就是数据流</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code>self.norm1 = RMSNorm(cfg.d_model, cfg.eps)
+self.attn  = CausalSelfAttention(cfg, rng=rng)
+self.norm2 = RMSNorm(cfg.d_model, cfg.eps)
+self.mlp   = MLP(cfg.d_model, hidden, rng=rng)</code></pre></figure>
+<p><code>hidden</code> 那行有个分支：<code>cfg.use_swiglu</code> 为真时用 <code>cfg.swiglu_hidden()</code>（≈ $\frac{8}{3}d$ 取 64 的倍数），否则用经典的 $4d$。基础阶段 <code>use_swiglu=False</code>，所以你现在的 FFN 是 <code>Linear(C→4C) → GELU → Linear(4C→C)</code>。<b>为什么留这个钩子</b>：SwiGLU 把激活函数和门控合在一起，同参数量下更强，但要三层 Linear —— 结构改动会影响检查点格式，所以钩子留在这里，改动留到阶段 8。</p>
+<p><code>Module._collect</code> 按属性名递归收集参数，<b>下划线开头的属性被跳过</b>（<code>self._cache</code> 之类不算子模块）。这就是"缓存必须以下划线开头"这条约定的由来：写成 <code>self.probs = ...</code> 的话，参数收集器会去里面找参数，浪费一次递归，而且把 <code>(B,H,T,T)</code> 的大数组当成结构的一部分。</p>
+<h4 id="sec-3-2">3.2 <code>GPT.__init__</code>：五件东西，两件有讲究</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code>self.tok = Embedding(cfg.vocab, cfg.d_model, cfg.init_std, rng=rng)
+self.pos = Embedding(cfg.ctx,   cfg.d_model, cfg.init_std, rng=rng)   <span class="com"># 行数 = ctx，不是 vocab</span>
+self.blocks = [Block(cfg, rng=rng) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(cfg.n_layer)]
+self.norm_f = RMSNorm(cfg.d_model, cfg.eps)
+self.head = TiedHead(self.tok.weight)      <span class="com"># ← 传的是对象，不是数据</span></code></pre></figure>
+<li><code>pos</code> 的<b>行数</b>是 <code>ctx</code> 而不是 <code>vocab</code>：它按"第几个位置"取行，所以只需要 <code>ctx</code> 行。删掉 <code>pos</code> 的话模型变成一个"字符袋"—— 每个位置的输出只取决于<b>当前字符</b>和它前面的<b>多重集合</b>，学不会"动词跟着主语"这类位置敏感的结构。判据 <code>打乱顺序输出会变</code> 就是查它在不在。</li><li><code>TiedHead(self.tok.weight)</code> 传的是<b>Parameter 对象</b>。如果写成 <code>TiedHead(self.tok.weight.data)</code>，你复制的就是一份脱离关系的数值：梯度永远回不到嵌入表，而且 <code>参数量与手算一致</code> 那条会多算一份（因为不再共享）。</li></ul>
+<h4 id="sec-3-3">3.3 <code>init_resid_scale</code>：那个 <code>1/√(2L)</code></h4>
+<p><code>cfg.resid_scale</code> 为真时，构造的最后一步调用 <code>init_resid_scale(self, cfg.n_layer)</code>，它把每层<b>残差出口</b>的两个矩阵（<code>attn.proj.W</code>、<code>mlp.fc2.W</code>）乘上 $1/\sqrt{2L}$。就这两处，别的张量一位不动。</p>
+<p>判据 <code>GIV-3</code> 数的是出口矩阵的范数比值：$L=3$ 时应当正好是 $\sqrt 6=2.4495$。</p>
+<p>删掉它：形状、loss、判据的梯度检查全部照常，只是层数一深就开始不稳 —— 这类"现在没症状"的决定最难查，所以判据把它钉死了。为什么正好是 $1/\sqrt{2L}$，见 §19 进阶推导 A（pre/post-norm 的完整对比推在 <a href="s03a.html#sec-11">阶段 3a §11</a>）。</p>
+<p>两根滑块 + 一个 pre/post-norm 开关：红柱是不缩放、绿柱是乘了 $1/\sqrt{2L}$。 注意纵轴是 $\log_{10}$ 的方差比 —— pre-norm 下不缩放是<b>线性</b>起飞（每层加的是常数份）， 不是指数爆炸；那个指数版本只在 post-norm 成立，切过去看一眼你就知道两种假设差多远。</p>
+<div class="fig" data-fig="resid" role="img" aria-label="可视化：resid"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<h4 id="sec-3-4">3.4 <code>GPT.backward</code>：为什么这段给你写</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code>g = self.head.backward(grad_logits)
+g = self.norm_f.backward(g)
+<span class="kw">for</span> blk <span class="kw">in</span> <span class="bi">reversed</span>(self.blocks):
+    g = blk.backward(g)
+self.pos.backward(g)
+self.tok.backward(g)</code></pre></figure>
+<p>它没有任何新数学，只是"正向的镜像"。之所以给你：这一层出错时症状是"某个参数梯度恒为 0"，判据直接抓得住。<b>两个细节值得注意</b>：</p>
+<li><code>reversed(self.blocks)</code>：反传顺序必须严格倒过来，跳着走的话形状一般还能对上（都是 <code>(B,T,C)</code>），数值是错的。</li><li><code>pos</code> 和 <code>tok</code> <b>都要</b>走。只走 <code>tok</code> 是最常见的写法（"位置嵌入又不是内容"），结果 <code>pos.weight</code> 永远是死参数 —— <code>无死参数</code> 那条判据就是为它准备的。</li><li>传进来的 <code>grad_logits</code> 是<b>完整</b>的 <code>(B,T,V)</code>：最后一位是 0。§8 会讲为什么不能省。</li></ul>
+<h4 id="sec-3-5">3.5 <code>GPT.generate</code>：一个刻意很笨的实现</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code><span class="kw">if</span> ids.shape[<span class="num">1</span>] &gt;= self.cfg.ctx:
+    ids = ids[:, -self.cfg.ctx + <span class="num">1</span>:]        <span class="com"># 滑窗：丢最老的一个</span>
+logits = self.forward(ids)                  <span class="com"># 整段重算！</span>
+nxt = sample_next(logits[<span class="num">0</span>, -<span class="num">1</span>], rng, ...)  <span class="com"># ← 阶段 7 的 TODO 挂在这一行</span></code></pre></figure>
+<p><b>完全没有 KV cache</b>：每生成一个 token 都把整段重跑一遍，复杂度 $O(n^2)$。这是故意的 —— cache 是阶段 8 的性能主题，而"每次重算"的正确性一眼可查（它和训练用的是同一个 <code>forward</code>）。<code>sample_next</code> 属于阶段 7，所以现在这个函数在你写完整机的梯度之后还会<b>卡住一次</b>（<code>TODO-28~31</code>），这是正常的，不是坏掉。</p></section><section class="sec" id="sec-4" data-stage="s05"><h2>4. TODO-15：<code>Block.forward</code></h2><div class="sec-act"><button data-check="TODO-15">跑 TODO-15 的单项检查</button><button data-edit="TODO-15">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>(B,T,C) → (B,T,C)</code>。不需要缓存任何新东西（每个子层已经自己存了）。</p>
+<p>五行，顺序就是 §2.2 那张图：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>h1 = norm1(x)      # 归一化只在进子层之前做，主干 x 一个字都不改
+a  = attn(h1)
+x1 = x + a         # 第一次加回主干
+h2 = norm2(x1)     # ← 注意吃的是 x1，不是 x
+return x1 + mlp(h2)</code></pre></figure>
+<p><b>三个必须想清楚的地方</b>：</p>
+<li><code>norm2</code> 的输入是 $x_1$ 还是 $x$？写成 <code>norm2(x)</code> 时形状全对、loss 照样降、<code>Block 反向正确</code> 会挂（梯度链路和正向不一致），但 <code>残差出口置零</code> 那条<b>也会挂</b> —— 后者更便宜，先跑它。</li><li>不要在这里加"再 norm 一次"的额外步骤。pre-norm 的末端 norm 只在 <code>GPT.forward</code> 最后做一次（§3.4）。</li><li><code>Block</code> 是纯函数式的组合：<code>forward</code> 里不许出现随机数、不许读 <code>self.cfg</code>。整个项目"层内不藏随机性"的约定（<code>nn.py</code> 头部第 5 条）是靠得上的。</li></ol>
+<p>写完先跑单项：<code>python webapp/checks.py TODO-15</code>（会打印输入形状、输出形状，还有那条"残差出口置零 = 恒等映射"）。</p>
+<details class="answer"><summary>参考答案 · TODO-15 <code>Block.forward</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        h1 = self.norm1(x)
+        a = self.attn(h1)
+        x1 = x + a
+        h2 = self.norm2(x1)
+        m = self.mlp(h2)
+        <span class="kw">return</span> x1 + m</code></pre></figure>
+<p>五行里没有一处可以"顺手改改"：<code>h2</code> 必须是 <code>norm2(x1)</code>（第二个残差流从 $x_1$ 出发），<code>return</code> 必须是 <code>x1 + m</code> 而不是 <code>x + m</code>。 <code>self.attn(h1)</code> / <code>self.mlp(h2)</code> 走的是 <code>Module.__call__</code>，它只是 <code>forward</code> 的别名 —— 但<b>一定要用调用而不是直接写 <code>self.attn.forward(h1)</code></b>，两者等价，写 <code>__call__</code> 是为了以后给子层加钩子时不用改这里。</p></div></details></section><section class="sec" id="sec-5" data-stage="s05"><h2>5. TODO-16：<code>Block.backward</code></h2><div class="sec-act"><button data-check="TODO-16">跑 TODO-16 的单项检查</button><button data-edit="TODO-16">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：收到 <code>dL/d(out)</code>（形状 <code>(B,T,C)</code>），返回 <code>dL/dx</code>（同形状），并把梯度<b>累加</b>进 13 个参数张量（每个 block：norm1.w、attn 的 8 个、norm2.w、mlp 的 4 个）。</p>
+<p>核心是 §2.1 那个 $I$。收到的 <code>g</code> 同时是<b>两个变量的输出</b>（<code>x1</code> 和 <code>mlp</code> 的输出），所以它要抄两份：</p>
+<p>$$g_{x_1}=g+\frac{\partial n_2}{\partial x_1}\bigl(g^{\text{mlp}}\bigr),\qquad g_x=g_{x_1}+\frac{\partial n_1}{\partial x}\bigl(g^{\text{attn}}\bigr)$$</p>
+<p>其中 $g^{\text{mlp}}=$ <code>mlp.backward(g)</code>，$g^{\text{attn}}=$ <code>attn.backward(g_x1)</code>。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>g_h2 = mlp.backward(g)              # 支路
+g_x1 = g + norm2.backward(g_h2)     # 直通 + 绕道
+g_h1 = attn.backward(g_x1)
+return g_x1 + norm1.backward(g_h1)  # 再抄一次</code></pre></figure>
+<p><b>三个坑</b>：</p>
+<li><b>忘了 <code>+ g</code></b>：只交支路那半。症状：loss 降得慢、<code>Block 反向正确</code> 挂在 norm 的 <code>w</code> 和更靠前的层上，而 <code>残差出口置零时梯度原样透传</code> 这条会直接挂（支路是 0，你交出的是 0 而不是 <code>g</code>）。</li><li><b>顺序倒过来</b>（先算 <code>norm2.backward</code> 再 <code>mlp.backward</code>）：<code>mlp.backward</code> 要用它 forward 时缓存的中间量，先消费后产生 → 拿到的是上一次的缓存，形状常常还兼容，于是<b>悄悄错</b>。判据抓得住，但你得花一小时定位，所以按"倒着走 §4"的节奏写。</li><li><b><code>return</code> 之前又加了一次 <code>g</code></b>：把残差抄成两遍（<code>g + g + ...</code>）。这个 bug 会让所有靠前的梯度翻倍，而 <code>gradcheck</code> 一定挂 —— 有限差分是最诚实的裁判。</li></ul>
+<details class="answer"><summary>参考答案 · TODO-16 <code>Block.backward</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        g_h2 = self.mlp.backward(g)              <span class="com"># 支路：穿过 mlp</span>
+        g_x1 = g + self.norm2.backward(g_h2)     <span class="com"># 直通 + 绕道 norm2</span>
+        g_h1 = self.attn.backward(g_x1)          <span class="com"># 第二层残差同理</span>
+        <span class="kw">return</span> g_x1 + self.norm1.backward(g_h1)</code></pre></figure>
+<p>两处 <code>+ g</code>（第二个是 <code>+ g_x1</code>）就是 §2.1 展开式里那个恒等项 $I$。 <code>mlp.backward</code> / <code>attn.backward</code> 内部已经把参数梯度累加完了，这里<b>只</b>处理输入梯度，不要再去碰任何 <code>p.grad</code>。</p></div></details></section><section class="sec" id="sec-6" data-stage="s05"><h2>6. TODO-17：<code>TiedHead.forward / backward</code></h2><div class="sec-act"><button data-check="TODO-17">跑 TODO-17 的单项检查</button><button data-edit="TODO-17">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>forward(x)</code>：<code>(B,T,C) → (B,T,V)</code>，<code>V</code> 从借来的 <code>self.weight.data.shape[0]</code> 读（<b>不许</b>再从 cfg 拿一遍，那样两处口径会漂）。 <code>backward(g)</code>：返回 <code>dL/dx</code>，并把 <code>dL/dW</code> <b>累加</b>进 <code>self.weight.grad</code>。</p>
+<p>正向就是 <code>Linear</code> 的那一行，只是没有 bias、而且 <code>W</code> 是别人的：</p>
+<p>$$\text{logits} = x_{\text{flat}}\,W^{\mathsf T},\qquad x_{\text{flat}}\in\mathbb R^{BT\times C},\ W\in\mathbb R^{V\times C}$$</p>
+<p>反向三条（形状自己推：想让 $(V,C)$ 出现，只能是 $g^{\mathsf T}x$ 这个次序）：</p>
+<p>$$\frac{\partial L}{\partial W}=g_{\text{flat}}^{\mathsf T}x_{\text{flat}}\ \ (V,C),\qquad \frac{\partial L}{\partial x_{\text{flat}}}=g_{\text{flat}}W\ \ (BT,C),\qquad W.\text{grad}\ \textbf{+}= \frac{\partial L}{\partial W}$$</p>
+<p><b>为什么这个 <code>+=</code> 是本阶段最重要的一行</b>：<code>tok.weight</code> 有两个用户（查表的 <code>Embedding.backward</code> 散射回行 + 这里）。写成 <code>=</code> 时"谁后跑谁赢"：<code>GPT.backward</code> 的顺序是 head → blocks → pos → tok，<b>tok 在最后</b>，所以覆盖的方向恰好是"查表那半把输出头那半抹掉了"。整机 loss 仍然会降（因为查表那半才是主体），但 <code>tok.weight</code> 的输出头梯度永远缺席 —— 单测 <code>TiedHead</code> 时看不出问题，只有"跑两次 backward 看梯度翻不翻倍"能抓住它，所以判据里有这一条。</p>
+<p><b>缓存</b>：<code>_x_shape</code>（还原返回值形状用）和 <code>_x_flat</code>（算 <code>dL/dW</code> 用）。<code>_probs</code> 之类的东西不需要 —— 这里没有归一化。</p>
+<details class="answer"><summary>参考答案 · TODO-17 <code>TiedHead</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        self._x_shape = x.shape
+        self._x_flat = x.reshape(-<span class="num">1</span>, x.shape[-<span class="num">1</span>])
+        V = self.weight.data.shape[<span class="num">0</span>]
+        <span class="kw">return</span> (self._x_flat @ self.weight.data.T).reshape(x.shape[:-<span class="num">1</span>] + (V,))
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        <span class="com"># 关键：这个梯度要**累加**进词嵌入的 grad，和查表层回传的梯度叠在一起</span>
+        V = self.weight.data.shape[<span class="num">0</span>]
+        g2 = g.reshape(-<span class="num">1</span>, V)
+        self.weight.grad += g2.T @ self._x_flat
+        <span class="kw">return</span> (g2 @ self.weight.data).reshape(self._x_shape)</code></pre></figure>
+<p><code>x.shape[:-1] + (V,)</code> 这个写法让 <code>B</code>、<code>T</code> 随便变化：阶段 7 生成时 <code>B=1</code>、阶段 5 训练时 <code>B=4</code>，同一个头都用得上。 <code>self.weight.grad +=</code> 而不是 <code>self.weight.grad =</code> —— 这一行就是 §6 整段话的全部内容。</p></div></details>
+<p>为什么必须是 <code>+=</code>：tied 头这一块内存同时被"查表"和"输出投影"两条反向路径写入。下面这张时间线把两路梯度先后落进去，对照 <code>+=</code> 与 <code>=</code> 两种写法的最终结果 —— 用 <code>=</code> 会把先到的那路直接抹掉。</p>
+<div class="fig" data-fig="tiedgrad" role="img" aria-label="可视化：tiedgrad"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-7" data-stage="s05"><h2>7. TODO-18：<code>GPT.forward</code></h2><div class="sec-act"><button data-check="TODO-18">跑 TODO-18 的单项检查</button><button data-edit="TODO-18">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>ids</code> 是 <code>(B,T)</code> 整数数组，返回 <code>(B,T,vocab)</code>。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>positions = np.arange(T)[None, :].repeat(B, 0)      # (B,T)，每一行都是 0..T-1
+x = tok(ids) + pos(positions)                       # 内容 + 位置
+for blk in self.blocks: x = blk(x)
+return head(norm_f(x))</code></pre></figure>
+<p><b>四个点</b>：</p>
+<li><code>positions</code> 为什么不是 <code>ids</code>：位置嵌入按<b>下标</b>取行，和这个位置是什么字符无关。这是"学习式位置嵌入"的全部实现（<code>use_rope</code> 那条路把这两项相加换成对 $q,k$ 做旋转，见 <code>docs/advanced-cpp-roadmap.md §6.2</code>）。</li><li><code>assert T &lt;= ctx</code>：<code>pos</code> 只有 <code>ctx</code> 行。越界时 numpy 会给 IndexError，看不出是自己搞错了长度；assert 的消息直接说"去改 <code>Config.ctx</code>"。</li><li><code>np.asarray(ids)</code>：判据和训练循环传的可能是 list（分词器返回 list）。<b>在这一层入口统一一次</b>，后面所有层就不必各自防御 —— 这是"边界处规范化类型"的通用做法。</li><li><code>head(norm_f(x))</code>：末端 norm 的必要性见 §2.2。删掉它 <code>GPT 整机反向正确</code> 不会挂（数学上仍然是个合法网络），但 logit 尺度随深度漂，<code>初始 loss ≈ ln V</code> 那条就会偏出容差 —— 一个"结构决定"被一条数值判据钉住，这个模式你以后会常见。</li></ol>
+<p>单项快测 <code>python webapp/checks.py TODO-18</code> 查四件事：形状、位置嵌入清零后输出会变、打乱顺序输出会变、<code>T &gt; ctx</code> 被拦住。</p>
+<details class="answer"><summary>参考答案 · TODO-18 <code>GPT.forward</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, ids):
+        ids = np.asarray(ids)
+        B, T = ids.shape
+        <span class="kw">assert</span> T &lt;= self.cfg.ctx, <span class="str">f"序列长度 {T} 超过配置 ctx={self.cfg.ctx}"</span>
+        positions = np.arange(T)[<span class="kw">None</span>, :].repeat(B, <span class="num">0</span>)
+        x = self.tok(ids) + self.pos(positions)
+        <span class="kw">for</span> blk <span class="kw">in</span> self.blocks:
+            x = blk(x)
+        <span class="kw">return</span> self.head(self.norm_f(x))</code></pre></figure>
+<p><code>np.arange(T)[None, :]</code> 是 <code>(1,T)</code>，<code>.repeat(B, 0)</code> 变 <code>(B,T)</code> —— 每个 batch 的位置都一样，所以不用真的复制数据也能算（<code>np.broadcast_to</code> 也行，但那会是个只读视图，<code>Embedding.forward</code> 要拿它当索引，复制更省事）。</p></div></details></section><section class="sec" id="sec-8" data-stage="s05"><h2>8. TODO-19：<code>GPT.loss_backward</code>（本阶段最贵的一条）</h2><div class="sec-act"><button data-check="TODO-19">跑 TODO-19 的单项检查</button><button data-edit="TODO-19">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：给 <code>(B,T)</code> 的 id，返回<b>标量</b> loss，并把梯度累加进所有参数。它是训练循环唯一需要调的接口。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>logits = forward(ids)                                    # (B,T,V)
+loss   = CrossEntropy(logits[:, :-1, :], ids[:, 1:])     # ← 移一位
+grad   = ce.backward(1.0)                                # (B,T-1,V)
+full   = zeros(logits.shape); full[:, :-1, :] = grad     # 补回最后一位
+backward(full)</code></pre></figure>
+<h4 id="sec-8-1">8.1 为什么是 <code>logits[:, :-1]</code> 配 <code>ids[:, 1:]</code></h4>
+<p>位置 $t$ 的输出<b>只能看到</b> $x_{\le t}$（因果掩码保证），所以它唯一合法的用途是预测 $x_{t+1}$。把 $t$ 的输出配 $t$ 的字符当目标，就是"预测自己"。</p>
+<p>下面这张图把"错位量"做成滑杆（$-1/0/+1$），真算每种配法的交叉熵：配对了 loss 老实地停在 $\ln V$ 附近，配错（等于看答案）立刻掉到接近 0 —— 假得一眼能认。</p>
+<div class="fig" data-fig="shiftdir" role="img" aria-label="可视化：shiftdir"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<h4 id="sec-8-2">8.2 预测自己的伪装有多好</h4>
+<p>代码里有个对照实验（<code>tests/test_model.py</code> 的 <code>check_label_shift</code>）：在一份<b>完全随机</b>的 token 序列上训 150 步。</p>
+<table><thead><tr><th>移位</th><th>训练 loss</th><th>新数据上的 loss</th><th>判据怎么读</th></tr></thead><tbody><tr><td>正确（配 <code>ids[:, 1:]</code>）</td><td>会降一点</td><td>$\approx \ln V$（学不动）</td><td>学不动 = 通过</td></tr><tr><td>错误（配 <code>ids[:, :-1]</code>）</td><td>掉到 0.001</td><td>同样掉到 0.001</td><td>秒收敛 = 有 bug</td></tr></tbody></table>
+<p>"预测自己"之所以在任何数据上都收敛，是因为任务本身是平凡的：答案就在输入里。<code>stages/s05_char_lm.py</code> 用两个方向各堵一次：</p>
+<li><code>训练 loss 掉到 ln V 的零头</code> + <code>贪心下一字符准确率 ≥ 0.85</code>（模式数据上<b>必须</b>学得动）；</li><li><code>随机数据学不动（反作弊判据）</code>：末段 loss 必须 $\ge 0.9\ln V$（<b>不许</b>学得动）。</li></ul>
+<p>只写第一条的话，"预测自己"的实现在模式语料上照样满分 —— 它是靠输入抄答案，不需要学到任何规律。</p>
+<h4 id="sec-8-3">8.3 那个补零的 <code>full</code></h4>
+<p><code>CrossEntropy.backward</code> 给的是 <code>(B, T-1, V)</code>：$T-1$ 个参与 loss 的位置。而 <code>GPT.backward</code> 的入口约定是<b>完整形状</b>（§3.4）：</p>
+<li>形状对不上就当场 <code>ValueError</code>（最好的情况）；</li><li>更糟的是"顺手 <code>reshape</code> 一下"或者把末位当成第一个位置 —— 错位一格，<code>head</code> 的 $g^{\mathsf T}x$ 会把<b>下一个位置的输入</b>乘到<b>这个位置的梯度</b>上，<code>参数量</code>、<code>形状</code>全对，只有 <code>GPT 整机反向正确</code> 抓得住。</li></ul>
+<p>末位没有被任何 loss 项用到，所以它的梯度<b>必须是 0</b>，而不是"不存在"。补零就是把这件事写清楚。</p>
+<h4 id="sec-8-4">8.4 <code>backward(1.0)</code> 里那个 1.0</h4>
+<p>链式法则的最上游：$\partial L/\partial L = 1$。传别的数（比如 <code>batch</code>）就等于偷偷把整个梯度放大 —— 症状和 lr 调错一模一样，但根因完全不同。<code>CrossEntropy.backward</code> 内部会除以样本数 $BT$（阶段 3 讲过），所以这里真的只需要传 1.0。</p>
+<details class="answer"><summary>参考答案 · TODO-19 <code>loss_backward</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">loss_backward</span>(self, ids) -&gt; <span class="bi">float</span>:
+        ids = np.asarray(ids)
+        logits = self.forward(ids)
+        loss = self._loss_fn(logits[:, :-<span class="num">1</span>, :], ids[:, <span class="num">1</span>:])
+        grad = self._loss_fn.backward(<span class="num">1.0</span>)              <span class="com"># (B, T-1, V)</span>
+        full = np.zeros(logits.shape, dtype=np.float64)  <span class="com"># 补回最后一位：它的梯度是 0</span>
+        full[:, :-<span class="num">1</span>, :] = grad
+        self.backward(full)
+        <span class="kw">return</span> loss</code></pre></figure>
+<p><code>self._loss_fn</code> 是构造时建的<b>一个</b> CrossEntropy 实例（<code>_</code> 开头 → 不被当成子模块）。复用同一个实例的意义：<code>forward</code> 缓存的概率正好被 <code>backward</code> 消费，中间没有任何重新计算。如果你在这里每次新建 <code>CrossEntropy()</code>，也能跑，但缓存会跟着实例一起新，等于强迫你 <code>forward</code>/<code>backward</code> 紧挨着写 —— 现在这样更宽容。</p></div></details></section><section class="sec" id="sec-9" data-stage="s05"><h2>9. TODO-20：<code>CharTokenizer.encode / decode</code></h2><div class="sec-act"><button data-check="TODO-20">跑 TODO-20 的单项检查</button><button data-edit="TODO-20">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>encode(text, drop_unknown=True) -&gt; list[int]</code>；<code>decode(ids) -&gt; str</code>；构造时词表已经是 <code>sorted(set(语料))</code>，你的任务只是查表/反查表。</p>
+<p>这一条只有十几行，但它有<b>三条独立判据</b>，因为分词错了的代价是"三天后在 loss 曲线里找原因"：</p>
+<li><code>往返一致 decode(encode(x)) == x</code> —— 唯一的、不依赖模型的正确性检验；</li><li><code>词表口径 vocab == 去重字符数</code>，且所有 id 落在 <code>[0, V)</code>；</li><li><code>语料外的字符按契约处理</code>：默认丢掉、<code>drop_unknown=False</code> 时抛 <code>KeyError</code>。</li></ol>
+<p><b>最容易中的那个 bug 是"用假值判断有没有找到"</b>：<code>i = self._index.get(ch)</code> 之后写 <code>if not i:</code> —— id <b>0 是合法值</b>（本项目里 0 是换行符 <code>\n</code>），于是第一个字符永远编不进去。症状是 loss 莫名高 0.05、生成里从不出现换行。所以必须写 <code>if i is None:</code>。判据里 <code>id 0 是 '\n'（不是假值陷阱）</code> 就是在数这件事。</p>
+<p>为什么 <code>encode</code> 返回 <code>list</code> 而不是 numpy 数组：将来换 BPE 时"一段文本对应几个 token"是不定的，<code>list</code> 才是对的抽象；<code>dataset.py</code> 需要数组时自己 <code>encode_array</code>。</p>
+<details class="answer"><summary>参考答案 · TODO-20 <code>encode / decode</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">encode</span>(self, text: <span class="bi">str</span>, drop_unknown: <span class="bi">bool</span> = <span class="kw">True</span>) -&gt; <span class="bi">list</span>[<span class="bi">int</span>]:
+        out: <span class="bi">list</span>[<span class="bi">int</span>] = []
+        <span class="kw">for</span> pos, ch <span class="kw">in</span> <span class="bi">enumerate</span>(text):
+            i = self._index.get(ch)
+            <span class="kw">if</span> i <span class="kw">is</span> <span class="kw">None</span>:
+                <span class="kw">if</span> drop_unknown:
+                    <span class="kw">continue</span>
+                <span class="kw">raise</span> KeyError(<span class="str">f"字符 {ch!r}（第 {pos} 个）不在词表里；要么 drop_unknown=True，要么换 tokenizer"</span>)
+            out.append(i)
+        <span class="kw">return</span> out
+
+    <span class="kw">def</span> <span class="fn">decode</span>(self, ids) -&gt; <span class="bi">str</span>:
+        <span class="kw">return</span> <span class="str">""</span>.join(self._chars[<span class="bi">int</span>(i)] <span class="kw">for</span> i <span class="kw">in</span> ids)</code></pre></figure>
+<p><code>decode</code> 里越界<b>不要</b>取模、不要 clamp：让 <code>IndexError</code> 炸出来。生成时模型吐出一个越界 id 是"训练崩了"的现场证据，悄悄折回词表就把线索抹掉了。</p></div></details></section><section class="sec" id="sec-10" data-stage="s05"><h2>10. TODO-21：<code>Batcher.__call__</code></h2><div class="sec-act"><button data-check="TODO-21">跑 TODO-21 的单项检查</button><button data-edit="TODO-21">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：给 <code>(B, ctx)</code> 的输入和 <code>(B, ctx)</code> 的目标，满足 <code>y[:, :-1] == x[:, 1:]</code>。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>起点：batch 个随机整数 ∈ [0, max_start]      # 有放回，所以 batch 可以大于窗口总数
+窗口：ids[s : s+ctx+1]                        # 长度 ctx+1
+返回：win[:, :-1], win[:, 1:]                 # 各 (B, ctx)</code></pre></figure>
+<p><b>三件事要说清楚</b>：</p>
+<li><b>为什么窗口是 <code>ctx+1</code> 而不是 <code>ctx</code></b>：<code>x</code> 要 <code>ctx</code> 个输入位置，而答案 <code>y</code> 需要第 <code>ctx+1</code> 个字符（最后一个位置的目标）。<code>__init__</code> 里那句 <code>max_start = ids.size - ctx - 1</code> 就是这个 <code>-1</code>：写成 <code>ids.size - ctx</code> 时最后一个窗口只有 <code>ctx</code> 个 token，切片出来形状对、内容缺一格（<code>IndexError</code> 或者静默错值）。</li><li><b><code>rng</code> 从外面传</b>：不传就每次新建同一颗种子 → 每一步吃同一批数据。判据 <code>换 rng 换窗口、同 rng 可复现</code> 两头都查。日志和网页结果之所以能对上，靠的就是"第二头"。</li><li><b><code>y</code> 训练时用不到</b>（<code>loss_backward</code> 自己会移一位，TODO-19），为什么还要返回它：① <code>evaluate()</code> 拿它算验证 loss，必须和训练同一种移位，否则 train/val 两个数不可比；② 它把"谁是答案"写成数据，能被 <code>y[:, :-1] == x[:, 1:]</code> 直接检查。</li></ul>
+<p><b>为什么用随机窗口而不是顺序 epoch</b>：语言模型的 batch 是"从语料里随手抓一段"。所以下游没有 epoch 概念，只有 step 数 —— 阶段 6 的学习率调度按 step 算就是因为这个。</p>
+<p>错位一格这件事，盯着代码是看不出来的。下面这张图用 <code>data/corpus.txt</code> 开头的真字符当字节流： 拖 T 和 batch 看窗口怎么切，x 与 y 两排格子并排，箭头把「x 的第 k 格 → y 的第 k 格」连起来， y 最后那一格单独描边 —— 它不在 x 里，来自流的下一个字符，这就是窗口要取 <code>ctx+1</code> 的全部理由。 ▶ 播放让窗口沿语料一格一格滑（每一帧的状态都由纯函数从头重算，所以单步和播放看到的是同一帧）。 两个错法开关：<code>y = x</code> 不错位，会让「复读机命中率」变成 100%；先摊平再错位，则会画出串到隔壁 样本的格子数 —— 后者形状全对、判据还不红，是真正阴险的那一种。</p>
+<div class="fig" data-fig="batcher" role="img" aria-label="可视化：batcher"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-21 <code>Batcher.__call__</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>        rng = rng <span class="kw">if</span> rng <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">else</span> np.random.default_rng(<span class="num">0</span>)
+        starts = rng.integers(<span class="num">0</span>, self.max_start + <span class="num">1</span>, size=<span class="bi">int</span>(batch))
+        win = np.stack([self.ids[s:s + self.ctx + <span class="num">1</span>] <span class="kw">for</span> s <span class="kw">in</span> starts])   <span class="com"># (B, ctx+1)</span>
+        <span class="kw">return</span> win[:, :-<span class="num">1</span>], win[:, <span class="num">1</span>:]</code></pre></figure>
+<p>用列表推导 + <code>np.stack</code> 而不是高级索引：一次性取 <code>ids[starts[:, None] + np.arange(ctx+1)]</code> 也能算对，但形状是 <code>(B, ctx+1)</code> 需要自己想清楚广播，出错时症状是"每行都是同一个窗口"或"行列转置了"，比逐行切片难查十倍。</p></div></details></section><section class="sec" id="sec-11" data-stage="s05"><h2>11. TODO-22：<code>AdamW.step</code></h2><div class="sec-act"><button data-check="TODO-22">跑 TODO-22 的单项检查</button><button data-edit="TODO-22">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>step(lr=None) -&gt; float</code>，返回这一步<b>真正用到的</b> lr（判据和日志都要它）。<code>lr=None</code> 时用构造时的 <code>self.lr</code>；训练循环传 <code>lr_at(...)</code> 的结果，调度才生效。</p>
+<p>$$\begin{aligned} m_t&amp;=\beta_1m_{t-1}+(1-\beta_1)g_t &amp; v_t&amp;=\beta_2v_{t-1}+(1-\beta_2)g_t^2\\ c_1&amp;=1-\beta_1^{t} &amp; c_2&amp;=1-\beta_2^{t}\\ \theta_t&amp;=\theta_{t-1}-\mathrm{lr}\cdot\frac{m_t/c_1}{\sqrt{v_t/c_2}+\epsilon}, &amp;\theta_{t-1}&amp;\leftarrow\theta_{t-1}\,(1-\mathrm{lr}\cdot\lambda)\ \text{（仅未豁免参数）} \end{aligned}$$</p>
+<p><b>四个必须写对的地方</b>：</p>
+<li><code>self.step_count += 1</code> 要在算 <code>c1/c2</code> <b>之前</b>：$t$ 从 1 开始。放在后面的话第一步用 $t=0$ → $c_1=0$ → 除零 → <code>inf</code> 传染。</li><li><b><code>mi[...] =</code> 而不是 <code>mi =</code></b>。<code>Optimizer.__init__</code> 把数组引用存进 <code>self.m</code> 列表；重新绑定名字等于丢掉缓存（下一步又从零开始）。症状：训不动，loss 抖成一个平台。这条和 <code>p.data[...] =</code> 一样是"原地写"约定，<code>GIV-1</code> 已经查过 <code>zero_grad</code> 的原地性。</li><li><code>eps</code> 在根号<b>外面</b>：$\sqrt{\hat v}+\epsilon$。放到根号里面（$\sqrt{\hat v+\epsilon}$）数值不一样：对小梯度更宽容，会把稀疏方向的更新压小。项目按外面的约定，判据的容差也照它设 —— 换写法不会崩，只是单步幅度对不上 $\mathrm{lr}$ 那个精确等式。</li><li>梯度为 0 时必须<b>不动</b>（$m=v=0\Rightarrow 0/(0+\epsilon)=0$）。如果你为了"防除零"在分子也加了个 eps，参数会自己漂移 —— 判据 <code>梯度为 0 时参数一动不动</code> 就是数这个。</li></ol>
+<p><b>为什么 <code>beta2=0.95</code> 而不是默认 0.999</b>（<code>__init__</code> 里已经给你写了）：本项目只有几百步，0.999 的二阶矩记忆太长，前期估计不准；0.9~0.95 收敛更快。真实训练（几万步）才反过来用 0.95/0.98 之类。</p>
+<details class="answer"><summary>参考答案 · TODO-22 <code>AdamW.step</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">step</span>(self, lr: <span class="bi">float</span> | <span class="kw">None</span> = <span class="kw">None</span>) -&gt; <span class="bi">float</span>:
+        lr = self.lr <span class="kw">if</span> lr <span class="kw">is</span> <span class="kw">None</span> <span class="kw">else</span> <span class="bi">float</span>(lr)
+        self.step_count += <span class="num">1</span>
+        t = self.step_count
+        <span class="com"># 偏差修正：初始 m、v 都是 0，前几步的均值被严重低估，要除以 (1-β^t)</span>
+        c1 = <span class="num">1.0</span> - self.b1 ** t
+        c2 = <span class="num">1.0</span> - self.b2 ** t
+        <span class="kw">for</span> p, mi, vi <span class="kw">in</span> <span class="bi">zip</span>(self.params, self.m, self.v):
+            self._decay(p, lr)
+            g = p.grad
+            mi[...] = self.b1 * mi + (<span class="num">1.0</span> - self.b1) * g
+            vi[...] = self.b2 * vi + (<span class="num">1.0</span> - self.b2) * g * g
+            p.data -= lr * (mi / c1) / (np.sqrt(vi / c2) + self.eps)
+        <span class="kw">return</span> lr</code></pre></figure>
+<p><code>self._decay(p, lr)</code> 是基类给的解耦衰减：<code>if self.weight_decay and not p.wd_exempt: p.data <i>= (1 - lr</i>self.weight_decay)</code>。<b>先衰减再走 Adam 那一步</b>是 AdamW 原论文的次序（两者相差一个 $O(\mathrm{lr}^2\lambda)$ 项，无关紧要，但次序要固定）。判据 <code>weight decay 只作用于非豁免参数</code> 用 $w=0.5$ 手算了这个和：$0.01+0.5\times0.01\times0.1=0.0105$，正好是实测值。</p></div></details>
+<p>下面这张图把 SGD / Momentum / AdamW 三条轨迹放在同一个二次目标上真算迭代，滑杆拖 <code>lr</code>、<code>β₁</code>、<code>β₂</code>、<code>wd</code>；三个叠画开关分别看"漏掉偏差修正""把 wd 加进梯度里""bias/norm 不豁免"各自会怎样。</p>
+<div class="fig" data-fig="adamw" role="img" aria-label="可视化：adamw"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>再把视角拉远一点：优化器不是在抽象地"更新参数"，它是在一张真的 loss 曲面上下山。 下面这张 3D 曲面当场算出来（41×41 网格），小球按你选的优化器和 <code>lr</code> 一步步滚； 把 <code>lr</code> 拖大看它在谷里来回跳，拖小看它走得慢 —— 等高线插图是同一张曲面的俯视图。</p>
+<div class="fig" data-fig="losssurf" role="img" aria-label="可视化：losssurf"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-12" data-stage="s05"><h2>12. TODO-23：<code>clip_grad_norm</code></h2><div class="sec-act"><button data-check="TODO-23">跑 TODO-23 的单项检查</button><button data-edit="TODO-23">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>clip_grad_norm(target, max_norm) -&gt; float</code>，返回<b>裁剪前</b>的全局 L2 范数。</p>
+<p>$$g=\sqrt{\sum_{p}\sum_{i} \bigl(p.\mathrm{grad}_i\bigr)^2},\qquad \text{若 } g&gt;\text{max\_norm}:\ \forall p,\; p.\mathrm{grad}\ \mathrel{*}=\ \frac{\text{max\_norm}}{g}$$</p>
+<p><b>三个点</b>：</p>
+<li><b>全局</b>范数、<b>同一个</b> scale。逐张量各裁各的话，参数量大的层（嵌入表、FFN）相对权重被改变，等于悄悄改了各层的步长配比。实现上就是：先扫一遍算出 <code>total</code>，再扫一遍乘同一个 <code>scale</code>。</li><li>返回裁剪<b>前</b>的范数。训练日志要它 —— <code>grad_norm</code> 突然抬头是发散的先行指标（阶段 6 的判据里 <code>grad_norm 中位数/最大值</code> 这条 info 就来自这里）。返回裁剪后的话你永远看不到尖刺。</li><li><code>g == 0</code> 时不要除。全零梯度是合法的（比如整个 batch 恰好都被忽略），<code>total &gt; max_norm and total &gt; 0.0</code> 那个额外条件就是防 <code>0/0</code>。</li></ol>
+<p><b>顺序</b>：<code>forward → backward → clip → step</code>。写在 <code>step()</code> 之后等于裁了一份已经被用掉的梯度 —— 不报错，只是永远没生效。</p>
+<p>这一节的核心只有一句：<b>全局</b>算一个范数、所有张量乘<b>同一个</b> scale，所以方向一点都不动。 下面这张图给了 6 个参数张量的梯度：拖 6 根长度滑杆和 <code>max_norm</code>，总范数条与阈值线当场算， 裁剪前的虚线箭头和裁剪后的实线箭头叠画在一起，六个夹角读数恒为 0.000° —— 那就是「只缩长度、不改方向」的现场证据。三个错法开关正好对应上面那三个点：逐张量各裁各的 （总范数仍然超阈值）、先裁再算范数（等于没裁）、无条件乘 scale（把本来不大的梯度放大）。</p>
+<div class="fig" data-fig="clipnorm" role="img" aria-label="可视化：clipnorm"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-23 <code>clip_grad_norm</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    params = _as_params(target)
+    total = math.sqrt(<span class="bi">float</span>(<span class="bi">sum</span>(np.<span class="bi">sum</span>(p.grad * p.grad) <span class="kw">for</span> p <span class="kw">in</span> params)))
+    <span class="kw">if</span> total &gt; max_norm <span class="kw">and</span> total &gt; <span class="num">0.0</span>:
+        scale = max_norm / total
+        <span class="kw">for</span> p <span class="kw">in</span> params:
+            p.grad *= scale
+    <span class="kw">return</span> total</code></pre></figure>
+<p><code>p.grad * p.grad</code> 而不是 <code>p.grad <b> 2</code> 再 <code>np.abs</code>：梯度是实数，平方和就是 L2；写成 <code>np.linalg.norm(p.grad)</code> 逐张量算再相加是</b>错的**（那是 $\sum_p\|g_p\|$，不是 $\sqrt{\sum_p\|g_p\|^2}$）。</p></div></details></section><section class="sec" id="sec-13" data-stage="s05"><h2>13. TODO-24：<code>lr_at</code></h2><div class="sec-act"><button data-check="TODO-24">跑 TODO-24 的单项检查</button><button data-edit="TODO-24">跳到编辑器</button><a class="sec-jump" href="/?stage=s05">在测评台里打开 →</a></div><p><b>契约</b>：<code>lr_at(step, total_steps, peak, warmup=400, final_frac=0.1) -&gt; float</code>。</p>
+<p>$$\mathrm{lr}(s)= \begin{cases} \mathrm{peak}\cdot\dfrac{s+1}{\mathrm{warmup}}, &amp; s&lt;\mathrm{warmup}\\[8pt] \mathrm{peak}\cdot\Bigl[f+(1-f)\cdot\dfrac{1+\cos\bigl(\pi\frac{s-\mathrm{warmup}}{\mathrm{total}-\mathrm{warmup}}\bigr)}{2}\Bigr], &amp; \text{否则} \end{cases}$$</p>
+<li><b><code>+1</code></b>：写 <code>s/warmup</code> 时第 0 步 lr 正好是 0 —— 那一步白走（<code>opt.step(0)</code> 仍然会执行衰减，于是第一步是<b>纯衰减</b>，权重被无谓地缩小了一点）。判据 <code>第 0 步的 lr 不是 0</code>。</li><li><b>夹在 $[0,1]$</b>：<code>step</code> 会走到 <code>total_steps</code>（日志/判据常按 <code>range(steps+1)</code> 取样），不夹就出现 $\cos(1.001\pi)$ 这种"略微回升"。</li><li><b><code>total_steps &lt;= warmup</code> 单独返回 peak</b>：否则分母 <code>total-warmup</code> 是 0 或负数。判据里 <code>short_ok</code> 就在测这个角落。</li><li><b>尾端留 10% 而不是归零</b>：后期还需要一点步长继续微调；归零会让模型卡在离最优点还有一小段的平台上。</li></ul>
+<p><b>warmup 存在的理由</b>（不是惯例，是 Adam 的性质）：§2.5 说前几十步 $\hat v$ 估不准。$\hat v$ 偏小时更新量被放大，这时用大 lr 容易把第一层权重打飞。所以"warmup 期"和"偏差修正"是同一个问题的两个解药 —— 都写在你已经实现的代码里。</p>
+<details class="answer"><summary>参考答案 · TODO-24 <code>lr_at</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">if</span> step &lt; warmup:
+        <span class="kw">return</span> peak * (step + <span class="num">1</span>) / <span class="bi">max</span>(<span class="num">1</span>, warmup)
+    <span class="kw">if</span> total_steps &lt;= warmup:
+        <span class="kw">return</span> peak
+    frac = (step - warmup) / <span class="bi">max</span>(<span class="num">1</span>, total_steps - warmup)
+    frac = <span class="bi">min</span>(<span class="num">1.0</span>, <span class="bi">max</span>(<span class="num">0.0</span>, frac))
+    cos = <span class="num">0.5</span> * (<span class="num">1.0</span> + math.cos(math.pi * frac))
+    <span class="kw">return</span> peak * (final_frac + (<span class="num">1.0</span> - final_frac) * cos)</code></pre></figure>
+<p><code>max(1, ...)</code> 是给"分母至少是 1"的第二重保险（前面的 <code>total_steps &lt;= warmup</code> 已经拦住了退化情形）。这种"两处都防"的写法看起来啰嗦，但 lr 函数被训练循环每步调用一次，一旦 NaN 会毁掉整轮训练，值得多一行。</p></div></details>
+<p>warmup 到底在防什么，下面这张图叠了两条线：<code>lr_at(i)</code> 本身，和前 30 步每步的权重更新幅度 $\|\Delta w\|$ —— 一上来就给满 lr 时更新幅度 spikes 到离谱；再给一组"有 warmup vs 满 lr"的 loss 对照。</p>
+<div class="fig" data-fig="lrsched" role="img" aria-label="可视化：lrsched"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-14" data-stage="s05"><h2>14. 训练循环：把这些串起来（已给你，写在判据脚本里）</h2><figure class="code"><figcaption>python</figcaption><pre><code><span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(STEPS):
+    opt.zero_grad()                                  <span class="com"># ① 清零（参数梯度是累加的）</span>
+    x, _y = batcher(B, rng)                          <span class="com"># ② 随机窗口</span>
+    curve.append(model.loss_backward(x))             <span class="com"># ③ 正向 + 反向</span>
+    clip_grad_norm(model, <span class="num">1.0</span>)                       <span class="com"># ④ 裁剪</span>
+    opt.step(lr_at(i, STEPS, LR, warmup=WARMUP))     <span class="com"># ⑤ 更新，lr 由调度决定</span></code></pre></figure>
+<p><b>为什么 <code>zero_grad</code> 在循环里而不是在 <code>loss_backward</code> 里</b>：梯度累加是<b>约定</b>（<code>nn.py</code> 头部第 4 条），因为多条路径会汇到同一参数（tied 就是活例子），层自己清就会把别的支路的贡献抹掉。谁调 forward 谁负责清，所以是训练循环的活。</p>
+<p><b>为什么这个循环写在判据脚本里而不是给你当 TODO</b>：它没有新数学，而且顺序错了的表现（"loss 在降但很慢"）最难归因。你在阶段 1 已经手写过一个训练循环（TODO-1A/2B），这里的六步和那里一一对应：<code>zero_grad ↔ 手工把 grad 归零</code>、<code>step(lr_at(...)) ↔ a.data -= lr * a.grad</code>。看懂它、能背出来就够了；真要有意识地练一次，是阶段 6 的判据脚本里那个加长版（多了 grad_norm 记录）。</p>
+<p><b>判据脚本里还有一个"单批过拟合"</b>：同一批数据（<code>fixed_batch</code>）训 250 步，loss 必须 $\le 0.05$。这是最狠的一条，因为它把所有"能训"的可能性排除掉：数据固定 → 不存在泛化问题；模型 5.9 万参数 vs 4×32 个 token → 背下来毫无压力。背不下来只能是<b>机器坏了</b>（反向错、移位错、优化器不动）。<code>docs/advanced-cpp-roadmap.md §7.1</code> 把它列为第一条诊断，理由就是"能抓住 90% 的实现 bug"。</p></section><section class="sec" id="sec-15" data-stage="s05"><h2>15. 验收判据逐条解读</h2><p><code>python stages/s05_char_lm.py</code>，36 条硬判据 + 2 条软提示，分五组：</p>
+<p><b>分词组（4 条）</b></p>
+<table><thead><tr><th>判据</th><th>查的是</th></tr></thead><tbody><tr><td>往返一致 <code>decode(encode(x)) == x</code></td><td>TODO-20，两个方向都要对</td></tr><tr><td>词表口径 / 编码结果全在词表内</td><td><code>vocab</code> 的定义、id 范围</td></tr><tr><td>语料外的字符按契约处理</td><td>默认丢弃 + <code>drop_unknown=False</code> 抛错</td></tr></tbody></table>
+<p><b>数据组（5 条）</b></p>
+<table><thead><tr><th>判据</th><th>查的是</th></tr></thead><tbody><tr><td>批次形状 (B, ctx)</td><td>窗口切片</td></tr><tr><td><code>y[:, :-1] == x[:, 1:]</code></td><td>移位关系写成数据</td></tr><tr><td>随机窗口真的随机且可复现</td><td><code>rng</code> 的传法、<code>max_start+1</code></td></tr><tr><td>train/val 按行切、不重叠</td><td><code>train_val_texts</code>（给你的那半，用一份每行唯一的语料测）</td></tr></tbody></table>
+<p><b>整机梯度组（8 条）</b></p>
+<table><thead><tr><th>判据</th><th>查的是</th></tr></thead><tbody><tr><td>Block 反向正确</td><td>TODO-15/16 + 阶段 3/4 的一切</td></tr><tr><td>残差出口置零后 Block 是恒等映射</td><td>forward 漏加 / backward 漏透传</td></tr><tr><td>tied 输出头反向正确</td><td>TODO-17 的数学</td></tr><tr><td>tied 的两路梯度是累加不是覆盖</td><td><code>+=</code> vs <code>=</code>（本组唯一能抓它的一条）</td></tr><tr><td>GPT 整机反向正确(含权重共享)</td><td>整链，包括 <code>GPT.backward</code> 那 6 行</td></tr><tr><td>无死参数 / 参数量与手算一致 / 输出头复用同一对象</td><td>装配：<code>pos</code> 参与了吗、多算了一份头吗</td></tr></tbody></table>
+<p>这一组用 <code>eps=1e-5, tol=1e-4, atol=1e-8</code>：整机的 <code>q.b</code> 梯度常常只有 <code>1e-6</code> 量级（大数相减的抵消结果），差分的舍入噪声 $\approx \mathrm{ulp}(目标)/\epsilon\approx10^{-11}$，相对误差看着像 <code>6e-3</code> 其实是噪声底。<b>1e-8 已经是量级上的让步</b>：真写错 backward 的误差是 <code>1e-2~1e-1</code>，不会被这条放过。</p>
+<p><b>训练组（7 条）</b></p>
+<table><thead><tr><th>判据</th><th>查的是</th></tr></thead><tbody><tr><td>初始 loss ≈ ln V</td><td>随机初始化的基准（§2.4）</td></tr><tr><td>单批过拟合最终 loss ≤ 0.05</td><td>反向 + 优化器 + 移位三件事同时成立</td></tr><tr><td>训练 loss 掉到 ln V 的零头 / 下降倍数 ≥ 5×</td><td>真训得动</td></tr><tr><td>验证 loss ≤ 0.35 ln V</td><td>按行切出来的 val 上也能降</td></tr><tr><td>贪心下一字符准确率 ≥ 0.85</td><td>模型确实知道下一个字符</td></tr><tr><td><b>随机数据学不动（反作弊）≥ 0.9 ln V</b></td><td><b>移位方向</b>（§8.2）</td></tr></tbody></table>
+<p><b>优化器组（10 条）</b></p>
+<table><thead><tr><th>判据</th><th>查的是</th></tr></thead><tbody><tr><td>AdamW 单步幅度 = lr</td><td>§2.5 偏差修正</td></tr><tr><td>weight decay 只作用于非豁免参数 / 梯度为 0 时只衰减不推进</td><td>解耦衰减 + <code>wd_exempt</code></td></tr><tr><td>clip 返回裁剪前范数 / 裁后 = 上限 / 同一系数 / 没超限不动</td><td>全局 L2 的四条性质</td></tr><tr><td>lr 单调性 / 不超 peak / warmup 末到 peak / 末端 10% / step0 不为 0</td><td>§13 的分段定义</td></tr></tbody></table>
+<p>软提示两条不计入通过率：<code>train/val 没有明显裂缝</code>（1.4K 字符的语料背得下来，别把背下来当学会）和 <code>loss=0 测试</code> 的对照说明。</p></section><section class="sec" id="sec-16" data-stage="s05"><h2>16. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>病因</th><th>修法</th></tr></thead><tbody><tr><td><code>残差出口置零后 Block 是恒等映射</code> 挂</td><td><code>norm2</code> 吃了 <code>x</code>，或 return 写成 <code>x + m</code></td><td>§4 那五行照抄一遍</td></tr><tr><td><code>Block 反向正确</code> 挂在 norm 的 <code>w</code> 上、mlp 全对</td><td>backward 漏了 <code>+ g</code>（只交支路）</td><td>§5 两处 <code>+</code> 都要</td></tr><tr><td><code>GPT 整机反向正确</code> 挂在 <code>tok.weight</code></td><td>TiedHead 写了 <code>=</code> 而不是 <code>+=</code></td><td>§6；单项快测会直接指出</td></tr><tr><td><code>无死参数</code> 挂：<code>pos.weight</code></td><td><code>GPT.backward</code> 里漏了 <code>self.pos.backward(g)</code></td><td>那是给你的代码，检查你有没有在 TODO-19 里改坏</td></tr><tr><td>单批过拟合 loss 卡住不动</td><td>lr 太小 / <code>step()</code> 没被调 / <code>zero_grad</code> 位置错</td><td>先在循环里打印第一次更新前后的参数变化</td></tr><tr><td>初始 loss 明显小于 ln V</td><td>移位写成"预测自己"，或 targets 用了同一批 logits</td><td>§8，判据 <code>随机数据学不动</code> 会一起红</td></tr><tr><td>随机数据上 loss 掉到接近 0</td><td>同上（这是它的<b>唯一</b>症状）</td><td>只改一处：<code>ids[:, 1:]</code></td></tr><tr><td>前 200 步 loss 几乎不动，之后正常</td><td>AdamW 忘了偏差修正</td><td>§11 那个 $c_1,c_2$</td></tr><tr><td>loss 一开始就 <code>nan</code></td><td><code>step_count += 1</code> 位置错 → 除零；或 eps 放进了根号</td><td>§11</td></tr><tr><td>lr 一直是 0 / warmup 没到 peak</td><td><code>step/warmup</code> 少 <code>+1</code>，或 <code>frac</code> 没夹区间</td><td>§13</td></tr><tr><td><code>参数量与手算一致</code> 差 <code>V·C</code></td><td>TiedHead 自己新建了一份权重</td><td>§3.2：传对象，别传 <code>.data</code></td></tr><tr><td><code>Batcher</code> 窗口总数少 1 / IndexError</td><td><code>max_start</code> 的 <code>-1</code>，或 <code>rng.integers</code> 上界写成 <code>max_start</code></td><td>§10</td></tr><tr><td><code>词表口径</code> 挂且第一个字符丢了</td><td>用 <code>if not i:</code> 判断"没找到"</td><td>§9：<code>if i is None:</code></td></tr><tr><td>每一步吃的 batch 一模一样</td><td><code>rng</code> 在 <code>__call__</code> 里新建</td><td>§10</td></tr></tbody></table></section><section class="sec" id="sec-17" data-stage="s05"><h2>17. 自查题</h2><li>把一个 block 的 <code>attn.proj.W</code> 和 <code>mlp.fc2.W</code> 全置零，forward 和 backward 各自应当交出什么？为什么这两条合起来比一次有限差分更能定位残差 bug？</li><li>为什么"预测自己"的实现在模式语料上<b>也</b>能拿高分？写出判据里是哪一条把它抓出来的，并说明这条判据的"通过"为什么看起来像"失败"。</li><li><code>tok.weight</code> 的两条梯度来源分别来自哪个函数的哪一行？如果 <code>Embedding.backward</code> 用 <code>=</code>、<code>TiedHead.backward</code> 用 <code>+=</code>，整机梯度会是什么结果？</li><li>手算一遍：$g$ 恒定、$\beta_1=0.9$、$\beta_2=0.95$ 时第一步和第二步的更新幅度各是多少？忘了偏差修正时呢？</li><li><code>clip_grad_norm</code> 为什么必须跨张量算全局范数？给出一个"逐张量裁剪"会让哪一层的相对步长被改变的算术例子。</li><li>warmup 和 Adam 的偏差修正在解决同一个问题，具体是什么问题？如果只留一个，你会留哪个，为什么？</li><li><code>Batcher</code> 返回的 <code>y</code> 在训练里根本没用到，为什么要它？（两个理由，并说出哪一个更接近判据的本质。）</li><li>阶段 3 里 CrossEntropy 的梯度是 <code>(probs - one_hot)/N</code>。这里 $N$ 是什么？把它写错会伪装成哪个别的 bug？</li></ol></section><section class="sec" id="sec-18" data-stage="s05"><h2>18. 下一步</h2><p>阶段 6：<code>checkpoint.py</code>（TODO-25~27）—— 把训好的权重写成 MGPT 二进制格式，让另一个进程（或 C++）读走；再把语料换成真的 <code>data/corpus.txt</code>，并且做一次"断了能续"的对账。</p>
+<p>顺便一提：写完这一章，<code>tests/test_model.py</code>（阶段 4 的考卷）里 Block、整机梯度、因果性那三组才第一次真的跑在你自己写的代码上。回去跑一次，看它们从"靠答案版绿"变成"靠你绿"。</p></section><section class="sec" id="sec-19" data-stage="s05"><h2>19. 进阶推导（现在可以跳过）</h2><h4>A. 残差出口为什么乘 $1/\sqrt{2L}$</h4>
+<p>由 §2.1 的展开式，主干方差大致是</p>
+<p>$$\operatorname{Var}(x_{\text{出}})\approx\operatorname{Var}(x_{\text{入}})+\sum_\ell\Bigl[\operatorname{Var}(\mathrm{attn}_\ell)+\operatorname{Var}(\mathrm{mlp}_\ell)\Bigr]$$</p>
+<p>子层出口如果不缩小，每加一层就加一份方差，$L$ 层后方差长成 $1+L$ 到 $1+2L$ 的量级，末端 norm 之前的数值尺度会随深度漂，训练前期不稳。让<b>每个出口贡献 $\frac{1}{2L}$ 份方差</b>，$2L$ 个出口加起来正好是 1 份 → 主干长度与深度无关。这就是 <code>GIV-3</code> 数的那个比值应当正好是 $\sqrt{2L}$（$L=3$ 时 $\sqrt 6=2.4495$）的来历。</p>
+<p>pre-norm 下"线性涨"、post-norm 下"指数涨"的完整递推，在 <a href="s03a.html#sec-11">阶段 3a §11 进阶推导 B</a>；§3.3 的动画能切换这两种假设当场对比。</p></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>

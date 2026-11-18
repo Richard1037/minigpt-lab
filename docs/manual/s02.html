@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 2 · 拟合 sin(x)：容量、非线性、学习率衰减</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s02">
+<article class="chapter" id="ch-s02">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-4" href="#sec-6" title="scalar.py TODO-4 tanh()"><i></i><code>TODO-4</code></a><a class="mm" data-todo="TODO-2A" href="#sec-4" title="exercises.py TODO-2A ScalarMLP.forward"><i></i><code>TODO-2A</code></a><a class="mm" data-todo="TODO-2B" href="#sec-5" title="exercises.py TODO-2B train_mlp"><i></i><code>TODO-2B</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s02">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s02</div>
+  <h1>阶段 2 · 拟合 sin(x)：容量、非线性、学习率衰减</h1>
+  <div class="meta"><span>判据 <code>stages/s02_fit_curve.py</code></span>
+    <span>预计 30~90 分钟</span>
+    <span>要交 minigpt/scalar.py、minigpt/exercises.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>stages/s02_fit_curve.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/scalar.py</code>、<code>minigpt/exercises.py</code>。预计 30~90 分钟。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-4"><td><code>TODO-4</code></td><td>scalar.py TODO-4 tanh()</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-4">去写</button></td></tr><tr data-todo="TODO-2A"><td><code>TODO-2A</code></td><td>exercises.py TODO-2A ScalarMLP.forward</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-2A">去写</button></td></tr><tr data-todo="TODO-2B"><td><code>TODO-2B</code></td><td>exercises.py TODO-2B train_mlp</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-2B">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. 必要理论</a><a href="#sec-3"><span>3</span>3. 已给你的代码：逐行讲透</a><a href="#sec-4"><span>4</span>4. TODO-2A：<code>ScalarMLP.forward</code></a><a href="#sec-5"><span>5</span>5. TODO-2B：<code>train_mlp</code></a><a href="#sec-6"><span>6</span>6. TODO-4：<code>tanh</code></a><a href="#sec-7"><span>7</span>7. 验收判据逐条解读</a><a href="#sec-8"><span>8</span>8. 常见失败模式对照表</a><a href="#sec-9"><span>9</span>9. 自查题</a><a href="#sec-10"><span>10</span>10. 下一步</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s02"><p>预计：约 30 行代码 + tanh 算子，1 小时。 验收命令：<code>python stages/s02_fit_curve.py</code> 要写的地方：<code>src/minigpt/scalar.py</code> 的 TODO-4（tanh）、<code>src/minigpt/exercises.py</code> 的 TODO-2A/2B。</p></section><section class="sec" id="sec-1" data-stage="s02"><h2>1. 这一步在干什么</h2><p>12 个点，<code>y = sin(x)</code>，<code>x ∈ [-3, 3]</code>。学出这个函数。</p>
+<p>脚本会跑<b>三组对照</b>，这是本阶段真正的内容：</p>
+<table><thead><tr><th>组</th><th>模型</th><th>预期</th></tr></thead><tbody><tr><td>1</td><td>没有隐藏层的线性模型</td><td>撞墙：MSE ≈ 0.217</td></tr><tr><td>2</td><td>4 个神经元、两层线性，中间<b>不加</b>激活</td><td>撞<b>同一面</b>墙：MSE ≈ 0.217</td></tr><tr><td>3</td><td>同样结构，中间加一个 <code>tanh</code></td><td>墙消失：MSE ≈ 0.005</td></tr></tbody></table>
+<p>第 2 组是重点。你会看到"我把网络加深了、参数变多了，结果一模一样"， 这件事比任何公式都更能让你理解什么叫<b>模型容量</b>。</p></section><section class="sec" id="sec-2" data-stage="s02"><h2>2. 必要理论</h2><h4 id="sec-2-1">2.1 线性 ∘ 线性 = 线性</h4>
+<li>第一层：$z = W_1 x + b_1$</li><li>第二层：$y = W_2 z + b_2$</li><li>代进去：</li></ul>
+<p>$$y \;=\; W_2\bigl(W_1 x + b_1\bigr) + b_2 \;=\; \underbrace{(W_2 W_1)}_{\text{还是一个矩阵}}\;x \;+\; (W_2 b_1 + b_2)$$</p>
+<p>所以多层线性叠起来<b>等价于一层</b>，参数再多也没用 ——所以多层线性叠起来<b>等价于一层</b>，参数再多也没用 —— 它只能画出直线（在这里是一条水平线附近的直线，sin 的波峰波谷一个都抓不住）。 加深层数不买新能力，<b>加非线性才买</b>。</p>
+<h4 id="sec-2-2">2.2 激活函数是"能不能表达"的开关</h4>
+<p><code>tanh</code> 夹在中间之后，网络变成</p>
+<p>$$y = \sum_{j} W_{2j}\,\tanh\bigl(W_{1j} x + b_{1j}\bigr) + b_2$$</p>
+<p>—— 8 个 S 形的、可平移可缩放的小台阶拼起来，就能逼近任意连续曲线（这是通用近似定理的直觉版本）。 sin 的 12 个点用 8 个隐藏神经元足够。</p>
+<p>transformer 里对应的位置是 FFN 中间的 GELU，以及注意力打分后的 softmax。 <b>如果哪天你的 transformer loss 卡住不动，第一反应不该是"再训久一点"， 而是"我的非线性是不是被我不小心拿掉了"。</b></p>
+<h4 id="sec-2-3">2.3 激活函数全家福</h4>
+<p>从这一节起，讲的是<b>已经写在你眼前的代码</b>。手册不能只给"你要写的东西"的契约， 却把"给你的东西"当黑盒 —— 那等于让你自己反推，反而更费时间。 <code>exp / relu / sigmoid</code> 是三个样例（和阶段 1 §3 里那条 <code>__add__</code> 一个地位：演示闭包规则）， <code>tanh</code> 才是要你写的（TODO-4，阶段 2）。但四个都得读懂，因为<b>后面每次 loss 卡住， 第一个被怀疑的就是它们</b>。</p>
+<table><thead><tr><th>函数</th><th>定义</th><th>导数</th><th>值域</th><th>性格</th><th>本项目在哪儿用它</th></tr></thead><tbody><tr><td>exp</td><td>$e^{x}$</td><td>$e^{x}$</td><td>$(0,+\infty)$</td><td>求导还是自己；$x\gtrsim 709$ 溢出</td><td><code>__truediv__</code> 和 sigmoid 的零件；softmax 的心脏</td></tr><tr><td>relu</td><td>$\max(0,x)$</td><td>$\mathbf{1}[x&gt;0]$</td><td>$[0,+\infty)$</td><td>最便宜；负半轴梯度恒 0</td><td>教学对照（FFN 最终用 GELU）</td></tr><tr><td>sigmoid</td><td>$\sigma(x)=\dfrac{1}{1+e^{-x}}$</td><td>$\sigma(x)\bigl(1-\sigma(x)\bigr)$</td><td>$(0,1)$</td><td>像概率；饱和得早</td><td>二分类输出；注意力里被 softmax 取代</td></tr><tr><td>tanh</td><td>$\tanh(x)=\dfrac{e^{x}-e^{-x}}{e^{x}+e^{-x}}=2\sigma(2x)-1$</td><td>$1-\tanh^{2}(x)$</td><td>$(-1,1)$</td><td>零中心；饱和比 sigmoid 轻</td><td><b>阶段 2 的主角</b>；GELU 里也用它</td></tr><tr><td>GELU</td><td>$\frac{x}{2}\Bigl(1+\tanh\bigl(\sqrt{2/\pi}(x+0.044715x^{3})\bigr)\Bigr)$</td><td>见阶段 3 §7</td><td>$(-0.17,+\infty)$</td><td>relu 的平滑版</td><td>阶段 3 之后的 FFN</td></tr></tbody></table>
+<p>表里两个恒等式值得你亲手验一次（它们是"这几个函数是一家人"的证据）：</p>
+<p>$$\tanh(x)=2\sigma(2x)-1,\qquad \sigma'(x)=\sigma(x)\bigl(1-\sigma(x)\bigr)$$</p>
+<h4 id="sec-2-4">2.4 三条必须有的直觉</h4>
+<p><b>一、饱和 = 导数趋 0 = 学不动。</b> $\sigma(8)=0.999665$，而 $\sigma'(8)=3.35\times10^{-4}$ —— 曲线已经躺平，梯度基本没了。 <code>tanh</code> 同样饱和但轻一些（$1-t^{2}$，$|t|\to1$ 才趋 0）。 以后 loss 卡住别只想着"再训久一点"，先看激活值是不是长期贴在两端。</p>
+<p><b>二、零中心（zero-centered）为什么重要。</b> sigmoid 的输出恒正。如果一层的输入全是正数，那么 $\partial L/\partial W = g^{\top}x$ 的 每一项都同号 → 这一层所有权重的梯度同号 → 更新只能"一起增"或"一起减"， 走的是锯齿形路线，而不是直指最优点。tanh 输出可正可负，relu 至少能把一半梯度归零而不是 全同号。这是历史上大家离开 sigmoid 的原因（比"tanh 更像线性"这种说法实在得多）。</p>
+<p><b>三、导数用"函数值自己"表示。</b> <code>sigmoid</code> 的反向写的是 <code>s <i> (1 - s)</code>，<code>tanh</code> 的是 <code>1 - t</i>t</code> —— 用的是正向已经算好的那个值， 不再求一次 exp。两个好处：省计算，而且<b>这正是"forward 缓存中间量"这个约定的最早形态</b>。 阶段 3 里你会把它写成 <code>self._probs</code>、<code>self._xh</code>，道理一模一样： 反向需要的东西，正向顺手存下来。</p>
+<h4 id="sec-2-5">2.5 relu 在 0 处不可导，代码里怎么选</h4>
+<p><code>mask = 1.0 if self.data &gt; 0 else 0.0</code> —— 在 $x=0$ 这个点上取了导数 0。 严格说 $\max(0,x)$ 在 0 处不可导（左导数 0、右导数 1），任选 0 或 1 都合法， <b>但整个项目必须一致</b>：否则有限差分梯度校验会在 $x=0$ 附近给出"对不上"的假警报 （差分的 $\epsilon$ 会把点推到左或右半边）。这也是为什么本项目用 GELU 而不是 relu： GELU 处处可导，梯度校验干净。</p>
+<p>顺带记住 relu 的著名失效模式 —— <b>死神经元</b>：一旦某个神经元的输入长期为负， 它的梯度恒 0，权重从此不再更新，这个单元就报废了。GELU / leaky relu 存在的一半理由在这里。</p>
+<h4 id="sec-2-6">2.6 exp 的溢出，和"减最大值"这一招</h4>
+<p>$e^{709}=8.2\times10^{307}$ 已经贴着 float64 上限，$e^{710}$ 直接 <code>OverflowError</code>。 所以本项目<b>从不</b>直接对 logits 求 exp，而是先减每行最大值 $m$：</p>
+<p>$$\mathrm{softmax}(z_i)=\frac{e^{z_i-m}}{\sum_j e^{z_j-m}},\qquad m=\max_j z_j$$</p>
+<p>分子分母同乘 $e^{-m}$，值完全不变；但最大项变成 $e^{0}=1$，其余 $\le1$，不可能溢出。 这一招会在三处反复出现：阶段 3 的 <code>CrossEntropy</code>、阶段 4 的注意力打分、阶段 7 的采样。 判据"logits=900 不溢出"就是在查你有没有记住它。</p>
+<h4 id="sec-2-7">2.7 为什么注意力用 softmax 而不是"几个 sigmoid"</h4>
+<p>softmax 强制 $\sum_j a_{ij}=1$：<b>在第 $i$ 个位置，看向各处的权重加起来必须是 1</b>。 sigmoid 每一列各自开关，和不为 1，于是 $\mathrm{out}_i=\sum_j a_{ij}v_j$ 的尺度会随 "有几个位置被打开了"漂移 —— 序列越长越明显。</p>
+<p>这个"每行和守恒"不是抽象美德，它在反向里必须被尊重： 阶段 4 的 <code>softmax_backward</code> 里那个减掉的项 $\sum_j(\mathrm{gp}_j p_j)$， 就是守恒约束的数学后果；同一个性质还让 $b_k$ 的梯度恒等于 0（一个死参数）。 看到"某处要减一个均值/加数"，条件反射就该想到"这是守恒约束"。</p>
+<h4 id="sec-2-8">2.8 三十秒自查：把四个导数都摸一遍</h4>
+<p>在项目根目录跑这一行（PowerShell / cmd / Git Bash 都能直接粘贴，<code>src/</code> 里 tanh 还没写也没关系， 前面三个函数已经给你了）：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py ACT-1 TODO-4</code></pre></figure>
+<p><code>ACT-1</code> 会把 <code>exp / relu / sigmoid</code> 在 $x=-3,-0.7,0.4,2$ 四个点上的值和导数都跑一遍， <code>TODO-4</code> 单独查 tanh。它下面就是网站上那两个「测」按钮，跑的是同一段代码。</p>
+<p>期望数字（$x=-0.7$，手算也能对上）：</p>
+<table><thead><tr><th>函数</th><th>值</th><th>梯度</th><th>梯度怎么来的</th></tr></thead><tbody><tr><td>exp</td><td>0.496585</td><td>0.496585</td><td>$e^{-0.7}$</td></tr><tr><td>relu</td><td>0.000000</td><td>0.000000</td><td>$x&lt;0$ → 导数取 0</td></tr><tr><td>sigmoid</td><td>0.331812</td><td>0.221713</td><td>$s(1-s)=0.331812\times0.668188$</td></tr><tr><td>tanh</td><td>−0.604368</td><td>0.634740</td><td>$1-t^{2}=1-0.365261$</td></tr></tbody></table>
+<p>网站上还有两条专门测这节的<b>单项快测</b>：<code>ACT-1</code>（三个已给函数的导数与饱和数值）和 <code>ACT-2</code>（exp 溢出与"减最大值不变性"）。它们测的是<b>给你的代码</b>，所以你现在点就是绿的。 两点说明：</p>
+<li><code>ACT-1</code> 里"有限差分对拍"那一半要等你的 <code>backward()</code>（TODO-3）写完才会生效 ——</li></ul>
+<p>没写完时它会老实说"差分对拍待 TODO-3"，不算失败也不算全测到。</p>
+<li>绿了不代表懂了。把结论那行的数字和上面那张表逐个对上，再回答 §2.4 的三个"为什么"。</li></ul>
+<h4 id="sec-2-9">2.9 为什么这三个给你、tanh 让你写</h4>
+<p>三个样例的共同点是"规则只有一行"，读它们是为了让你认得出模板； <code>tanh</code> 和它们完全同构（$1-t^{2}$），写一次就够，写第二次没增量。 如果你觉得没写够，两个可选练习：</p>
+<li>把 <code>relu</code> 的规则改成"在 0 处取 1"，然后跑 <code>ACT-1</code> —— 它会告诉你哪一处不一致。</li><li>自己加一个 <code>leaky_relu(alpha=0.01)</code>（模板照抄 relu，负半轴乘 alpha），</li></ol>
+<p>再用 <code>gradient_check_graph</code> 验一遍。加完记得 <code>ACT-1</code> 里它不在名单里，不影响判据。</p>
+<h4 id="sec-2-10">2.10 怎么区分"容量不够"和"优化没调好"</h4>
+<p>看 loss 曲线的形状，这个技能以后每次训练都要用：</p>
+<li><b>容量不够</b>：前几十步快速下降，然后<b>平在一个较高的值</b>，无论训多久都不动。</li><li><b>lr 太大</b>：曲线<b>震荡</b>，甚至发散（值越来越大 / 出现 nan）。</li><li><b>lr 太小</b>：几乎是一条直线，降得极慢 —— 再等 10 倍时间才看得出是不是容量问题。</li></ul>
+<p>阶段 1 的 lr 演示是第二种，本阶段的对照组是第一种。</p>
+<h4 id="sec-2-11">2.11 学习率衰减：为什么固定 lr 到不了最低点</h4>
+<p>梯度下降在谷底附近的行为是"跨过谷底 → 梯度反向 → 再跨回来"。 只要 lr 不为 0，这个来回就停不下来，你看到的 loss 是<b>谷底附近的一个震荡带</b>， 而不是谷底本身。把 lr 随时间收小，就是"越走越慢，最后停在谷底"：</p>
+<p>$$\mathrm{lr}_t = \frac{\mathrm{lr}}{1 + d\,\dfrac{t}{T}}</p>
+<p>\qquad (d = \texttt{decay})$$</p>
+<p>$d=3$ 时末端的 lr 正好是初值的 1/4。</p>
+<p>脚本第 3 组用 <code>decay=3.0</code> 跑 6000 步；你可以把 decay 改成 0 再跑一次， 对比 <code>MLP loss 下降倍数</code>（要求 ≥80）会不会掉下来 —— 会掉。这个实验值得亲手做一次， 它比这段文字有用。阶段 7 的 warmup + cosine 是同一道理的放大版。</p><div class="fig" data-fig="steps" role="img" aria-label="可视化：steps"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-3" data-stage="s02"><h2>3. 已给你的代码：逐行讲透</h2><p><code>ScalarMLP.__init__</code> 造 25 个参数：<code>W1[6][1]</code>、<code>b1[6]</code>、<code>W2[6]</code>、<code>b2</code>（n_hidden=6 时）。 注意两个细节：</p>
+<li><b>初始化尺度 $1/\sqrt{n_{\mathrm{in}}}$、$1/\sqrt{n_{\mathrm{hidden}}}$</b>：随机权重若按 <code>std=1</code> 初始化，</li></ul>
+<p>加权求和之后方差变成 n 倍，激活值一层层放大，网络一开始就在饱和区或发散区。 除以 $\sqrt{\mathrm{fan\_in}}$ 让方差保持 1 左右。这个技巧会一路用到阶段 5 的 <code>Linear</code> 里。</p>
+<li><b>每个参数都有 <code>label</code></b>（<code>W1[2][0]</code>）：梯度校验失败时会打印 label，</li></ul>
+<p>你能立刻知道是第几个神经元出错。养成给参数命名的习惯。</p>
+<p><code>loss()</code>、<code>parameters()</code>、<code>zero_grad()</code>、<code>predict()</code> 也已给你 —— 它们没有数学含量。</p>
+<h4 id="sec-3-1">3.1 <code>__init__</code>：为什么要造这些参数，以及为什么正好是这个数</h4>
+<p>参数不是"先造好再说"，它们是<b>你想表示的那个函数</b>的直接翻译。先把式子写下来：</p>
+<p>$$y(x) = b_2 + \sum_{j=1}^{n_{\text{hidden}}} W_{2j}\;\tanh\!\bigl(b_{1j} + W_{1j}\,x\bigr)$$</p>
+<p>然后逐个问一句"<b>删了会怎样</b>"——这才是"为什么要它"的答案：</p>
+<table><thead><tr><th>参数</th><th>个数</th><th>式子里它是哪一项</th><th>删了会怎样</th></tr></thead><tbody><tr><td><code>W1[j][k]</code></td><td>$n_{\text{hidden}}\times n_{in}$</td><td>$\tanh$ 里 $x$ 的系数：第 $j$ 个神经元"以多大倍率看第 $k$ 个输入"</td><td>$z_j$ 与 $x$ 无关，整个网络输出一个常数 —— 连直线都画不出来</td></tr><tr><td><code>b1[j]</code></td><td>$n_{\text{hidden}}$</td><td>$\tanh$ 的<b>拐点位置</b>（$z_j=0$ 发生在 $x=-b_{1j}/W_{1j}$）</td><td>六个 tanh 全被钉在 $x=0$ 处翻转，网络只能表达关于原点对称的形状，$y=3x+1$ 这种就学不动</td></tr><tr><td><code>W2[j]</code></td><td>$n_{\text{hidden}}$</td><td>第 $j$ 个神经元对输出的<b>贡献</b>，正负都能调</td><td>没有求和，输出等于第一个神经元的 tanh，其它五个白造</td></tr><tr><td><code>b2</code></td><td>1</td><td>整体上下平移</td><td>截距只能靠隐藏层硬凑，而隐藏层的和本来就受 $\tanh\in(-1,1)$ 限制</td></tr></tbody></table>
+<p>所以总数是 $3\,n_{\text{hidden}} + n_{\text{hidden}}\,n_{in} + 1$：</p>
+<li><code>n_hidden=6</code> → <b>19 个</b>；</li><li>判据里那句"梯度校验(25 参数 MLP)"用的是 <code>n_hidden=8</code> → <b>25 个</b>（$3\times8+8+1$）；</li><li>对照组 <code>n_hidden=1</code> 只有 <b>4 个</b>，正好退化成 $ax+b$ —— 这就是 §2.1"线性∘线性=线性"的实物证据，</li></ul>
+<p>也是为什么它必须学不动：它的参数集里根本没有能弯的东西。</p>
+<p><b>为什么 <code>W1</code> 是二维、<code>W2</code> 是一维</b>：<code>W1[j]</code> 要接 $n_{in}$ 个输入，所以是"每行一个神经元"的矩阵； 本阶段 $n_{in}=1$，每行只有一个数 —— 但形状必须留成二维，否则你以后喂多维数据时要改代码。 <code>W2[j]</code> 只接一个隐藏神经元的标量输出，一维就够。这两句话合起来就是 §2.9 那条"形状是数据决定的，不是习惯"。</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>scale1 = <span class="num">1.0</span> / n_in ** <span class="num">0.5</span>
+scale2 = <span class="num">1.0</span> / n_hidden ** <span class="num">0.5</span></code></pre></figure>
+<p>随机权重若按 $\mathrm{std}=1$ 初始化，加权和 $z=\sum_k W_k x_k$ 的方差是</p>
+<p>$$\operatorname{Var}(z)=\sum_k \operatorname{Var}(W_k x_k)=n\,\sigma_W^{2}\operatorname{Var}(x)$$</p>
+<p>（独立、零均值）。要让 $z$ 的方差和 $x$ 一个量级，就得取 $\sigma_W=1/\sqrt n$ —— 这就是那两行的全部来历，和阶段 3 里 <code>Linear</code> 用 <code>std*sqrt(2/fan_in)</code> 是同一件事。 本阶段 $n_{in}=1$，所以 <code>scale1</code> 恰好是 1（第一层其实没做缩放，因为它只有一个输入）。</p>
+<p><code>b1</code>、<code>b2</code> 从 <b>0</b> 开始，不从随机开始：bias 只负责"平移"，从 0 起步是最短路径； 随机起点等于先给模型一个没来由的偏移，前期梯度全在纠正它。</p>
+<p><b>这套记账以后每一步都要用</b>，问法完全一样，只是数字变大：</p>
+<table><thead><tr><th>阶段</th><th>那层的参数</th><th>怎么数</th></tr></thead><tbody><tr><td>阶段 3 <code>Linear(in_f, out_f)</code></td><td>$W$ 是 $(out, in)$，$b$ 是 $(out,)$</td><td>每个输出神经元 = 对 $in$ 个输入加权 + 一个平移，和上表同构，只是把 for 循环换成一次矩阵乘</td></tr><tr><td>阶段 4 <code>CausalSelfAttention</code></td><td>q/k/v/proj 四个 $d\times d$，其中 k 没有 bias</td><td>$4d^{2}+3d$ —— 少掉的那个 $d$ 是 §3.4 里被数学判死的 $b_k$</td></tr><tr><td>阶段 4/5 每个 Block</td><td>注意力 + MLP（两个 $d\times 4d$）+ 两个 RMSNorm 的 $d$</td><td>$12d^{2}+10d$，乘 $L$ 层再加词表 $Vd$，就是判据里那条参数量对账</td></tr></tbody></table>
+<p>以后你打开任何一个模型，第一件事就是列这张表：<b>每个参数在式子里是哪一项，删了会怎样</b>。 数不出这张表的时候，说明你还没真的看懂它。</p>
+<h4 id="sec-3-2">3.2 值得亲手做一次的两分钟实验</h4>
+<p>把 <code>scale2</code> 改成 <code>5.0</code>（或把 <code>train_mlp</code> 的 <code>lr</code> 改成 3.0）再跑第 3 组，你会看到：</p>
+<table><thead><tr><th>改动</th><th>loss 曲线形状</th><th>结论</th></tr></thead><tbody><tr><td><code>scale2 = 5.0</code></td><td>几乎不动，贴在初始值</td><td>隐藏单元全进 tanh 饱和区，$1-t^{2}\approx0$ → 梯度消失</td></tr><tr><td><code>lr = 3.0</code></td><td>剧烈震荡、甚至发散</td><td>步长跨过谷底（阶段 1 §9 的 lr 演示放大版）</td></tr><tr><td>默认</td><td>快速下降后变平</td><td>正常</td></tr></tbody></table>
+<p><b>看曲线形状判断病因</b>，这个技能从阶段 2 开始练，到阶段 6 训真模型时每天都要用。</p>
+<h4 id="sec-3-3">3.3 <code>loss()</code>：为什么除以点数</h4>
+<p>$$L=\frac1N\sum_{i}\bigl(f(x_i)-y_i\bigr)^{2}$$</p>
+<p>用 mean 而不是 sum，是为了让梯度的尺度<b>与 batch 大小无关</b>。用了 sum，等效于 把 lr 放大 $N$ 倍 —— 症状是"一开始就炸"。阶段 3 的 <code>CrossEntropy</code> 里那个 <code>/ count</code> 是同一个约定的延续，判据"均匀 logits 的 loss $=\ln V$"就是它的守门人。</p>
+<h4 id="sec-3-4">3.4 <code>parameters()</code> 与 <code>zero_grad()</code>：为什么必须存在</h4>
+<p>你的算子用 <code>+=</code> 累加梯度（这是对的：一个 Value 会被多条路径用到），所以 <b>必须由谁把它清成 0</b>。<code>zero_grad()</code> 就是这个"谁"。<code>parameters()</code> 存在的意义是 让训练循环不必知道网络内部长什么样 —— 加一层不用改循环。这两行是"框架"的雏形： 阶段 3 的 <code>Module.parameters()</code>、阶段 5 的 <code>optimizer.zero_grad()</code> 是它们的直接升级。</p>
+<p>顺带记住：梯度累积（几条小 batch 攒一次更新）以后会<b>故意</b>利用"不清零"， 那时它是特性；现在它是 bug。同一个机制，两种用法，别混。</p>
+<h4 id="sec-3-5">3.5 <code>predict()</code>：为什么单独存在</h4>
+<p><code>forward()</code> 每次都会建一张新图（分配几百个 Value 对象、留下 <code>_prev</code> 引用）， 而预测只需要数值。<code>predict()</code> 走的是同一条路径但只取 <code>.data</code>， 所以它慢得和训练一样、但语义上明确"这是推理"。 以后写 KV cache（进阶手册 §9）就是为了干掉这种重复建图。</p>
+<h4 id="sec-3-6">3.6 为什么这里加宽不加深</h4>
+<p>12 个点、8 个隐藏神经元就够：$y=\sum_j W_{2j}\tanh(W_{1j}x+b_{1j})+b_2$ 是 8 段 可调的 S 形台阶拼曲线，宽度直接换成"能弯几次"。深度在标量引擎里代价极高 （每多一层，图上的节点数和 Python 调用都翻倍），而且会引入梯度消失这个新问题。 所以：<b>阶段 2 用宽度，阶段 5 之后用深度 + 残差</b>，残差正是为了让深度可用而存在的。</p>
+<h4 id="sec-3-7">3.7 参数为什么要有 <code>label</code></h4>
+<p><code>gradient_check_graph</code> 失败时打印的就是 label：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>      W1[2][0]: 解析 +0.1234567  数值 +0.1234567  相对误差 3.1e-11
+      W2[3]:    解析 +0.0000000  数值 -0.0048213  相对误差 1.0e+00   ← 对不上</code></pre></figure>
+<p>"第 3 个隐藏神经元的输出权重错了"——这句话能直接把你带到那一行代码。 没有 label 的话，你只知道"25 个参数里有一个错了"。养成给参数命名的习惯。</p></section><section class="sec" id="sec-4" data-stage="s02"><h2>4. TODO-2A：<code>ScalarMLP.forward</code></h2><div class="sec-act"><button data-check="TODO-2A">跑 TODO-2A 的单项检查</button><button data-edit="TODO-2A">跳到编辑器</button><a class="sec-jump" href="/?stage=s02">在测评台里打开 →</a></div><p><b>契约</b>：<code>forward(x)</code> 接一个 float（n_in=1），返回一个 <code>Value</code>（预测值）。 每调一次就<b>新建一张图</b>，因为图的叶子必须包含参数对象本身。</p>
+<p>结构就是两次加权求和，中间可选一次 <code>tanh</code>：</p>
+<p>$$z_j = b_{1j} + \sum_k W_{1jk}\,x_k \qquad (j = 0 \ldots n_{\text{hidden}}-1)$$</p>
+<p>$$y = b_2 + \sum_j W_{2j}\,h_j, \qquad h_j = \begin{cases}\tanh(z_j) &amp; \text{activate}\\ z_j &amp; \text{否则}\end{cases}$$</p>
+<p>写的时候注意三件事：</p>
+<li>起点用 <code>self.b1[j]</code> 而不是 <code>Value(0)</code> —— 少加一个 bias 是本阶段最容易犯的错，</li></ol>
+<p>症状是拟合曲线的形状对但整体偏移。</p>
+<li><code>self.activate</code> 决定中间那步。对照组靠它，不要把它简化掉。</li><li>累加用 <code>z = z + ...</code>（Value 的 <code>+</code> 会建新节点），不是 <code>z += ...</code> 的浮点语义 ——</li></ol>
+<p>两者在你这儿等价，但请写成前者，读代码时一眼是"建图"。</p>
+<p><b>自检</b>：<code>ScalarMLP().forward(0.5).data</code> 应该是个有限小数； <code>ScalarMLP(activate=False)</code> 的输出对 x 必须是严格线性的（两个不同 x 的斜率一致）。</p>
+<details class="answer"><summary>参考答案 · TODO-2A <code>ScalarMLP.forward</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x: <span class="bi">float</span>) -&gt; Value:
+        vals = [x] <span class="kw">if</span> <span class="kw">not</span> <span class="bi">isinstance</span>(x, (<span class="bi">list</span>, <span class="bi">tuple</span>)) <span class="kw">else</span> <span class="bi">list</span>(x)
+        hidden = []
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(self.n_hidden):
+            z = self.b1[j]                          <span class="com"># 起点是 bias，不是 Value(0)</span>
+            <span class="kw">for</span> k <span class="kw">in</span> <span class="bi">range</span>(<span class="bi">len</span>(vals)):
+                z = z + self.W1[j][k] * vals[k]
+            hidden.append(z.tanh() <span class="kw">if</span> self.activate <span class="kw">else</span> z)
+        out = self.b2
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(self.n_hidden):
+            out = out + self.W2[j] * hidden[j]      <span class="com"># 累加 = 建图；写等号就只剩最后一个神经元</span>
+        <span class="kw">return</span> out</code></pre></figure>
+<p>两个自查：<code>ScalarMLP(activate=False)</code> 的输出对 $x$ 必须严格线性（换两个 x 算斜率应当一致）； <code>ScalarMLP()</code> 的 <code>forward(0.5)</code> 必须是有限数。第二版里 <code>out = out + ...</code> 而不是 <code>out += ...</code>， 在这儿两者等价，但写成前者，读代码时一眼就知道"这是在建图"。</p></div></details></section><section class="sec" id="sec-5" data-stage="s02"><h2>5. TODO-2B：<code>train_mlp</code></h2><div class="sec-act"><button data-check="TODO-2B">跑 TODO-2B 的单项检查</button><button data-edit="TODO-2B">跳到编辑器</button><a class="sec-jump" href="/?stage=s02">在测评台里打开 →</a></div><p>和阶段 1 的 <code>fit_by_autograd</code> 是同一个循环，参数从 2 个变成 25 个：</p>
+<div class="flow"><div class="fs"><i class="n">1</i><span><b>清梯度</b> —— <code>model.zero_grad()</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">2</i><span><b>正向</b> —— <code>loss = model.loss(xs, ys)</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">3</i><span><b>反传</b> —— <code>loss.backward()</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">4</i><span><b>算这一轮的学习率</b> —— <code>lr_t = ...</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">5</i><span><b>走一步</b> —— 对每个参数 <code>p</code>：<code>p.data -= lr_t * p.grad</code></span></div></div>
+<p>返回每一轮的 <code>loss.data</code> 列表（曲线），判据要用 <code>curve[0] / curve[-1] ≥ 80</code>。 <code>log_every</code> 非 0 时调 <code>print_progress(it + 1, iters, every=log_every, prefix=prefix)</code>。</p>
+<p><b>一个容易漏的点</b>：<code>loss.backward()</code> 要在<b>清梯度之后、更新参数之前</b>调用。 顺序写成"更新 → 清 → backward"的话，第一轮会用 0 梯度，第二轮开始就用错了梯度， 症状是 loss 降得动但收敛明显变差 —— 又是只有判据能抓出来的那类错误。</p>
+<details class="answer"><summary>参考答案 · TODO-2B <code>train_mlp</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    curve = []
+    <span class="kw">for</span> it <span class="kw">in</span> <span class="bi">range</span>(iters):
+        model.zero_grad()                 <span class="com"># ① 清</span>
+        loss = model.loss(xs, ys)         <span class="com"># ② 建图 + 正向</span>
+        loss.backward()                   <span class="com"># ③ 反传</span>
+        curve.append(loss.data)           <span class="com"># ④ 记账（float，长度 = iters）</span>
+        lr_t = lr / (<span class="num">1.0</span> + decay * it / iters)          <span class="com"># it=0 → lr；it=iters → lr/(1+decay)</span>
+        <span class="kw">for</span> p <span class="kw">in</span> model.parameters():      <span class="com"># ⑤ 逐个走一步</span>
+            p.data -= lr_t * p.grad
+        <span class="kw">if</span> log_every:
+            print_progress(it + <span class="num">1</span>, iters, every=log_every, prefix=prefix)
+    <span class="kw">return</span> curve</code></pre></figure>
+<p>和阶段 1 的 <code>fit_by_autograd</code> 唯一的结构差别：参数从"你手里那两个变量"变成 <code>model.parameters()</code> 这个列表，所以清零和更新都要遍历。<code>loss</code> 必须在循环<b>里面</b>新建 —— 提到循环外就等于把 4000 轮串成一张巨图，<code>backward()</code> 一次走完整条历史，既慢又不对。</p></div></details></section><section class="sec" id="sec-6" data-stage="s02"><h2>6. TODO-4：<code>tanh</code></h2><div class="sec-act"><button data-check="TODO-4">跑 TODO-4 的单项检查</button><button data-edit="TODO-4">跳到编辑器</button><a class="sec-jump" href="/?stage=s02">在测评台里打开 →</a></div><p>（定义、导数、饱和、和 sigmoid 的关系都在 §2.3–§2.4；这一节只讲怎么写。）</p>
+<p>照 <code>exp</code>/<code>relu</code>/<code>sigmoid</code> 的模板三行：</p>
+<li>正向：<code>t = math.tanh(self.data)</code></li><li>反向：$\partial\tanh(x)/\partial x = 1 - t^{2}$（用 $t$ 自己，不用 $x$）</li></ul>
+<p><b>为什么 tanh 会让梯度变小</b>：$1-t^{2}$ 在 $|t|\to 1$ 时趋近 0，也就是饱和区梯度趋 0。 这就是深网络"梯度消失"的来源之一，也是后来 transformer 选 GELU/RMSNorm + 残差的动机。 阶段 3 的 GELU 也是同样的形状，只是饱和没那么狠。</p>
+<p>写完跑判据；<code>tanh</code> 的正确性会被"梯度校验(25 参数 MLP)"这条直接查出来。</p>
+<p>这句话值得亲手拖一遍：下面这张图把 <code>tanh</code> 和它的导数 <code>1−t²</code> 画在一起，拖 x 到 ±4 以外， 看导数塌到 1e-7 量级。更要紧的是「层数 L」和「权重尺度 w」两根滑杆 —— 它<b>真算</b> L 层连乘的 梯度，在对数坐标上画出那条衰减直线，并告诉你第几层就塌穿 float32 的下限（1.18e-38）。 打开 ReLU / GELU 两个对照开关，三条衰减曲线叠在一起看，这就是后来 transformer 换掉 tanh 的 全部理由。</p>
+<div class="fig" data-fig="tanhsat" role="img" aria-label="可视化：tanhsat"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-4 <code>Value.tanh()</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">tanh</span>(self):
+        t = math.tanh(self.data)
+        out = Value(t, (self,), <span class="str">"tanh"</span>)
+
+        <span class="kw">def</span> <span class="fn">_backward</span>():
+            self.grad += (<span class="num">1.0</span> - t * t) * out.grad
+
+        out._backward = _backward
+        <span class="kw">return</span> out</code></pre></figure>
+<p>和 <code>exp</code>/<code>relu</code>/<code>sigmoid</code> 是同一个模板：算正向 → 建 out → 写规则 → 挂上去 → 返回。 规则里用的是 <b><code>t</code>（正向的结果）而不是 <code>self.data</code></b>，这就是 §2.4 说的"用值表示导数"： 省一次 <code>math.tanh</code>，而且 $1-t^2$ 在 $|t|\to 1$ 时趋 0，饱和区梯度自动变小。</p></div></details></section><section class="sec" id="sec-7" data-stage="s02"><h2>7. 验收判据逐条解读</h2><p><code>python stages/s02_fit_curve.py</code> 应有 5 条 <code>[OK]</code>（一条 <code>[!!]</code> 是提示，不影响）：</p>
+<table><thead><tr><th>判据</th><th>含义</th><th>没过最可能是</th></tr></thead><tbody><tr><td>线性模型学不动 ≥ 0.05</td><td>对照组成立：容量确实不够</td><td>你不小心给对照组开了 activate</td></tr><tr><td>(提示) 深层线性同样学不动</td><td>线性∘线性=线性</td><td>同上</td></tr><tr><td>MLP 最终 MSE ≤ 6e-3</td><td>主角学到了 sin 的形状</td><td>lr/iters/decay 被改动，或 forward 写错</td></tr><tr><td>MLP 比线性好 ≥ 20 倍</td><td>不是靠"多训几步"赢的</td><td>decay 太小，还在震荡带里</td></tr><tr><td>MLP loss 下降倍数 ≥ 80</td><td>确实从头走到尾</td><td>梯度累加/清零有问题，降得慢</td></tr><tr><td><b>梯度校验(25 参数)</b></td><td>反向传播数值正确</td><td><code>tanh</code> 导数、或 forward 里 bias 漏了</td></tr></tbody></table>
+<p>注意那条 <code>[!!]</code>（提示）：<b>"线性模型学不动"是通过判据而不是失败判据</b>。 一个"loss 很高"的结果在这个实验里是正确答案。以后你看到"训练失败"先分清： 是 bug，还是模型本来就到不了那里。</p>
+<p>ASCII 散点图里 <code>.</code> 是真值、<code>o</code> 是预测。第 3 组跑完自己看一眼波形贴合程度， 再看 <code>最大单点误差</code> 出现在 x=±3 端点 —— 12 个点里端点信息最少，外推最差，天经地义。</p></section><section class="sec" id="sec-8" data-stage="s02"><h2>8. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>病因</th><th>修法</th></tr></thead><tbody><tr><td>三组 MSE 全都 ≈ 0.217</td><td><code>activate</code> 没起作用（forward 里没分支，或总走 False 分支）</td><td>检查 §4 第 2 点</td></tr><tr><td>MLP MSE 停在 0.05 左右且曲线末端有毛刺</td><td>decay=0，在谷底震荡</td><td>用 <code>decay=3.0, iters=6000</code></td></tr><tr><td>MLP MSE 比线性还差、或 nan</td><td>lr 太大发散</td><td>回到 0.1；确认 <code>train_mlp</code> 里减的是 <code>lr_t</code></td></tr><tr><td>梯度校验里 <code>b1[j]</code> 全对、<code>W1</code> 全错</td><td>forward 的 <code>z</code> 起点用了 <code>Value(0)</code> 后忘了加 bias，但梯度从别处流过来</td><td>用 §4 自检：两个不同 x 检查斜率与截距</td></tr><tr><td>梯度校验里 <code>b2</code> 的解析梯度是 0</td><td><code>out = self.b2</code> 后面被覆盖而不是累加</td><td>确认循环里是 <code>out = out + W2[j]*hidden[j]</code></td></tr><tr><td>loss 下降倍数不足 80 但 MSE 达标</td><td>起点 lr 或 iters 改动</td><td>按脚本默认参数跑，别"顺手优化"</td></tr><tr><td><code>TypeError: object of type 'float' has no len</code></td><td><code>forward</code> 里对 x 用了列表操作</td><td>脚本里那行 <code>isinstance(x, (list, tuple))</code> 的判断照抄</td></tr></tbody></table></section><section class="sec" id="sec-9" data-stage="s02"><h2>9. 自查题</h2><li>把 <code>activate=False</code>、<code>n_hidden=64</code> 会怎样？为什么参数变多不能救它？</li><li>为什么初始化要除以 $\sqrt{n_{\mathrm{hidden}}}$？不做的话 loss 曲线长什么样？</li><li><code>tanh</code> 饱和时梯度趋 0，这对训练是好是坏？给出你的判断依据（不是标准答案）。</li><li>如果只训 12 个点、10000 步，模型会不会"过拟合"？在这个任务里过拟合意味着什么？</li></ol>
+<p>（阶段 5 用真数据时这个问题会变得重要。）</p>
+<li><code>decay</code> 从 3 改成 0，<code>MLP 比线性好至少 20 倍</code> 这条会不会挂？为什么？</li><li>判据里"线性模型学不动"要求 MSE ≥ 0.05。如果哪天它变成 0.001，说明你改坏了什么？</li></ol></section><section class="sec" id="sec-10" data-stage="s02"><h2>10. 下一步</h2><p>进 <a href="s03a.html">docs/stage-03a-形状轴与第一个层.md</a>。 阶段 3 数学不再新增任何东西，难的是<b>用整块数组重写一遍你已经会的东西</b> —— 形状推理代替数字推理，这是从"能算"到"能训"的分水岭。 它拆成了三章，每章末尾各有一次独立的跑绿：<b>3a</b> 先补 numpy 的轴运算、写一个没有形状问题 的玩具层 <code>Scale</code>，再上 <code>Linear</code>；<b>3b</b> 四个层（GELU / RMSNorm / Embedding / MLP）； <b>3c</b> <code>CrossEntropy</code> 和"gradcheck 自己可信吗"。一章一章走，别一口气写完再测。</p><div class="fig" data-fig="capacity" role="img" aria-label="可视化：capacity"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>

@@ -1,0 +1,1421 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniGPT 测评台</title>
+<!-- 公式用 MathJax 渲染（CDN，离线时自动退回 LaTeX 原文，不影响任何功能） -->
+<script>window.MathJax={tex:{inlineMath:[['$','$']],displayMath:[['$$','$$']]},svg:{fontCache:'global'}};</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" onerror="window.NO_MATHJAX=1"></script>
+<!-- 讲义的样式和组件：先 link 讲义的，再走下面这段应用样式 ——
+     两边 :root 令牌同名，应用这份后加载所以颜色以测评台为准。 -->
+<link rel="stylesheet" href="/manual/assets/manual.css">
+<style>
+:root{
+  --bg:#0f1115; --panel:#161a21; --panel2:#1b2029; --line:#262c37;
+  --fg:#dbe1ea; --dim:#8b95a7; --accent:#5cc8ff; --ok:#3ddc97; --bad:#ff6b6b;
+  --warn:#ffb454; --code:#12161d;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  display:flex; flex-direction:column;
+}
+/* 这三个选择器必须限定 body 的直接子元素：讲义 HTML 里也有 <header>/<main>，
+   注入中栏后如果继承这些规则，讲义的 <main> 会变成三栏 grid —— 正文叠成正好那种乱码。 */
+body>header{
+  padding:10px 18px; border-bottom:1px solid var(--line); background:var(--panel);
+  display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+}
+body>header h1{font-size:16px; margin:0; letter-spacing:.5px}
+body>header .meta{color:var(--dim); font-size:12px}
+body>main{flex:1; display:grid; min-height:0;
+  grid-template-columns:var(--w1,250px) 5px minmax(0,1fr) 5px var(--w3,390px)}
+@media (max-width:1180px){ body>main{grid-template-columns:var(--w1,210px) 5px minmax(0,1fr)} .rail,.grip[data-pane=w3]{display:none} }
+
+/* 分栏边界：平时几乎看不见，指上去才亮 —— 但要能精确抓到，所以热区 5px + 内部 1px 线 */
+.grip{background:var(--line); cursor:col-resize; position:relative; transition:background .12s}
+.grip:hover,.grip.drag{background:var(--accent)}
+.grip.h{cursor:row-resize; height:9px; flex:0 0 auto; align-self:stretch}
+.grip::after{content:""; position:absolute; inset:-2px -4px}          /* 加大可点区域 */
+.grip.h::after{inset:-4px -2px}
+/* 横向那条只有几像素、颜色和边框一样，用户根本不知道哪里能抓 —— 给它一个可见的把手 */
+.grip.h::before{content:""; position:absolute; left:50%; top:3px; width:46px; height:3px;
+  transform:translateX(-50%); border-radius:2px; background:#3d4a5c}
+.grip.h:hover::before,.grip.h.drag::before{background:var(--accent)}
+.col{min-height:0; display:flex; flex-direction:column; overflow:hidden}
+.stages{border-right:1px solid var(--line); background:var(--panel); overflow:auto; padding:10px}
+.stages h2{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin:6px 4px 10px}
+.st{
+  border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:8px;
+  cursor:pointer; background:var(--panel2); transition:.15s;
+}
+.st:hover{border-color:var(--accent)}
+.st.sel{border-color:var(--accent); background:#1e2734}
+.st .t{font-size:13px; font-weight:700}
+.st .s{font-size:11px; color:var(--dim); margin-top:3px; display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+.track{height:4px; border-radius:99px; background:#232a35; margin-top:7px; overflow:hidden; display:flex}
+.track i{display:block; height:100%; background:var(--ok); border-radius:99px}
+.track i.part{background:var(--warn)}
+.pnum{font-size:11px; color:var(--dim); margin-top:4px; font-family:ui-monospace,Consolas,monospace}
+.pnum b{color:var(--fg)}
+.todolist li.doneld{color:var(--ok); text-decoration:line-through; text-decoration-color:#3d6b57}
+.todolist li.doneld::before{border-color:var(--ok); background:var(--ok)}
+.chip{font-size:10px; padding:1px 6px; border-radius:99px; border:1px solid var(--line); color:var(--dim)}
+.chip.pass{color:#0c1a14; background:var(--ok); border-color:var(--ok)}
+.chip.fail{color:#1a0c0c; background:var(--bad); border-color:var(--bad)}
+.chip.error{color:#1a0c0c; background:var(--bad); border-color:var(--bad)}
+.chip.todo{color:#1a1408; background:var(--warn); border-color:var(--warn)}
+.chip.off{opacity:.55}
+/* 答案跑通：虚线、灰字 —— 它不是"你的代码过了"，别和实心绿的 .chip.pass 混 */
+.chip.answer{color:var(--dim); border:1px dashed #4a5b70; background:transparent}
+.chip.stale{color:var(--fg); border-color:var(--warn); background:transparent}
+.pnum .stale{color:var(--warn)}
+.center{padding:12px 14px; gap:12px}
+.views{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.views button{font-size:12.5px; padding:5px 12px; border-radius:99px; background:var(--panel2);
+  border:1px solid var(--line); color:var(--dim); cursor:pointer; white-space:nowrap}
+.views button.on{color:var(--fg); border-color:var(--accent); background:#1e2734}
+#view-code{display:flex; flex-direction:column; flex:1; min-height:0}
+#view-code[hidden]{display:none}
+#view-manual{flex:1; min-height:0; overflow:auto; background:var(--panel);
+  border:1px solid var(--line); border-radius:10px; padding:2px 18px 40px}
+#view-manual .chapter{max-width:none; margin:0; padding:0}
+#view-manual .toc{display:none}
+#view-manual .hero{margin-top:8px}
+/* ---- 调参试验 ---- */
+#view-lab{flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:12px}
+#view-lab[hidden]{display:none}
+.labnote{font-size:12.5px; line-height:1.7; color:#c6cede; background:#211b12;
+  border:1px solid #3a3020; border-left:3px solid var(--warn); border-radius:9px; padding:9px 13px}
+.kbdish{font:11px/1 ui-monospace,Consolas,monospace; border:1px solid var(--line);
+  border-radius:4px; padding:2px 5px; background:var(--panel2)}
+.labform{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px 16px;
+  border:1px solid var(--line); border-radius:10px; background:var(--panel2); padding:12px 14px}
+.labfield{display:flex; flex-direction:column; gap:4px}
+.labfield label{font-size:12px; color:var(--dim); display:flex; justify-content:space-between; gap:8px}
+.labfield label b{color:var(--fg); font:12px/1.4 ui-monospace,Consolas,monospace}
+.labfield input[type=range]{width:100%; accent-color:var(--accent)}
+.labfield input[type=number]{width:110px; background:var(--code); color:var(--fg);
+  border:1px solid var(--line); border-radius:6px; padding:4px 7px; font:12.5px ui-monospace,Consolas,monospace}
+.labfield .why{font-size:11.5px; color:var(--dim); line-height:1.5}
+.labfield.check{flex-direction:row; align-items:center; gap:9px}
+.labbar{display:flex; align-items:center; gap:9px}
+.labhead{display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; margin-bottom:8px;
+  font-size:12.5px; color:var(--dim)}
+.labhead b{color:var(--fg); font-size:13.5px}
+#labout{flex:1; min-height:0}
+/* .fig-result 的样式在 manual.css —— 测评台和独立窗口都会往里写结果，样式只留一份 */
+.tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+.tab{
+  font-family:ui-monospace,Consolas,monospace; font-size:12px; padding:4px 10px;
+  border:1px solid var(--line); border-radius:6px; background:var(--panel2); cursor:pointer; color:var(--dim);
+}
+.tab.sel{color:var(--fg); border-color:var(--accent); background:#1e2734}
+textarea{
+  flex:1; min-height:260px; width:100%; resize:vertical;
+  background:var(--code); color:#e6edf3; border:1px solid var(--line); border-radius:8px;
+  font:13px/1.55 ui-monospace,Consolas,"JetBrains Mono",monospace; padding:12px; tab-size:4;
+}
+textarea:focus{outline:none; border-color:var(--accent)}
+.bar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0}
+button{
+  font:inherit; font-size:13px; padding:7px 14px; border-radius:7px; cursor:pointer;
+  border:1px solid var(--line); background:var(--panel2); color:var(--fg); transition:.15s;
+}
+button:hover{border-color:var(--accent)}
+button.go{background:var(--accent); color:#06121a; border-color:var(--accent); font-weight:700}
+button.go:hover{filter:brightness(1.12)}
+button.save{border-color:#3a4657}
+button[disabled]{opacity:.45; cursor:not-allowed}
+.hint{font-size:12px; color:var(--dim)}
+.console{
+  background:var(--code); border:1px solid var(--line); border-radius:8px; padding:12px;
+  font:12.5px/1.5 ui-monospace,Consolas,monospace; white-space:pre-wrap; word-break:break-word;
+  overflow:auto; flex:0 0 var(--ch,340px); height:var(--ch,340px); min-height:90px;
+}
+.console .ok{color:var(--ok)} .console .bad{color:var(--bad)} .console .dim{color:var(--dim)}
+.console .warn{color:var(--warn)} .console .b{color:#fff; font-weight:700}
+.verdict{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:13px}
+.dot{width:9px; height:9px; border-radius:50%}
+/* 判据卡片：一条一行，左边状态色条，右边详情。文本输出收进下面的 <details>。
+   为什么换掉整块等宽文本：ASCII 清单在 390~900px 的中栏里会横向溢出，
+   而"哪条过了"是这里唯一需要扫读的信息 —— 扫读靠颜色和位置，不靠对齐的空格。 */
+/* 卡片接管显示时，控制台和它的拖动条一起让位：卡片吃掉腾出来的高度并自己滚动。
+   空的时候完全不占位，避免编辑器下面多出一条空白带。 */
+#cards:empty{display:none}
+#cards{flex:1 1 auto; min-height:0; overflow:auto}
+.crit{display:grid; grid-template-columns:auto 1fr; gap:1px 10px; align-items:baseline;
+  border:1px solid var(--line); border-left:3px solid var(--dim); border-radius:8px;
+  background:var(--panel2); padding:7px 11px; margin-bottom:6px}
+.crit .mk{font:11px/1.7 ui-monospace,Consolas,monospace; letter-spacing:.4px}
+.crit .nm{font-size:13px; font-weight:700}
+.crit .dt{grid-column:2; font:11.5px/1.6 ui-monospace,Consolas,monospace;
+  color:#a9b6c9; word-break:break-word}
+.crit.pass{border-left-color:var(--ok)} .crit.pass .mk{color:var(--ok)}
+.crit.fail{border-left-color:var(--bad)} .crit.fail .mk{color:var(--bad)}
+.crit.warn{border-left-color:var(--warn)} .crit.warn .mk{color:var(--warn)}
+.crit.info{border-left-color:var(--line)} .crit.info .mk{color:var(--dim)}
+.crit.info .nm{font-weight:400; color:var(--dim)}
+.grp{margin:12px 0 5px; font:11.5px/1.4 ui-monospace,Consolas,monospace; color:var(--accent);
+    letter-spacing:.3px; border-bottom:1px dashed #223047; padding-bottom:4px}
+.grp:first-child{margin-top:0}
+.fitgo{display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+       margin:10px 0 2px; padding:9px 11px; border:1px solid #223047; border-radius:7px;
+       background:#111823; font-size:12.5px; color:var(--dim)}
+.fitgo b{color:var(--accent); font-weight:700}
+.fitgo button{font:12px/1 system-ui,sans-serif; padding:6px 10px; border-radius:6px;
+              border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer}
+.fitgo button:hover{background:rgba(110,168,254,.14)}
+.rawbox{margin:8px 0 0}
+.rawbox > summary{cursor:pointer; font-size:11.5px; color:var(--dim); list-style:none}
+.rawbox > summary::-webkit-details-marker{display:none}
+.rawbox > summary::before{content:"▸ "; } .rawbox[open] > summary::before{content:"▾ "}
+.curves{border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:10px 12px; margin-bottom:8px}
+.curves h4{margin:0 0 6px; font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.4px}
+.legend{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; font-size:11.5px; color:#a9b6c9}
+.legend i{display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
+.curves svg{display:block; width:100%; height:auto}
+.mats{border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:10px 12px; margin-bottom:8px}
+.mats h4{margin:0 0 8px; font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.4px}
+.matgrid{display:flex; flex-wrap:wrap; gap:8px 18px}
+.mat .mname{font-size:12px; font-weight:700; color:#dfe8f5; margin-bottom:1px}
+.mat .mnote{font-size:11px; color:var(--dim); margin-bottom:4px; font-family:ui-monospace,Consolas,monospace}
+.mat .mcells{display:grid; gap:2px}
+.mat .mc{display:grid; place-items:center; border-radius:3px; font:10.5px/1 ui-monospace,Consolas,monospace;
+  color:#0b1016; font-weight:700}
+.mat .mc.masked{background:repeating-linear-gradient(135deg,#1b222c 0 4px,#232c38 4px 8px); color:#4a5b70}
+/* 形状动线（试验台 flow 通道）：一行一步，形状做成 chip，箭头串起来。
+   读法是竖着扫最后一列 —— 主干那几行的形状必须一模一样。 */
+.flow{border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:10px 12px; margin-bottom:8px}
+.flow h4{margin:0 0 8px; font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.4px}
+.fstep{display:grid; grid-template-columns:22px minmax(120px,1fr) auto; gap:0 10px; align-items:baseline;
+  padding:3px 0}
+.fstep .fn{font:10.5px/1.6 ui-monospace,Consolas,monospace; color:#4a5b70; text-align:right}
+.fstep .fname{font-size:12.5px; color:#dfe8f5}
+.fstep .fshape{font:11.5px/1.5 ui-monospace,Consolas,monospace; color:#8ec7ff; background:#122132;
+  border:1px solid #1f3a55; border-radius:6px; padding:1px 7px; white-space:nowrap}
+.fstep .fnote{grid-column:3; font-size:11px; color:var(--dim); line-height:1.5}
+.farrow{grid-column:2; color:#3b475a; font-size:11px; line-height:1; margin:1px 0 1px 4px}
+.fstep.here{background:#122132; border-radius:6px}
+/* 分布对比条（bars 通道）：每个候选一个柱子组，定义侧和经验侧并排 */
+.bars{border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:10px 12px; margin-bottom:8px}
+.bars h4{margin:0 0 2px; font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.4px}
+.bars .bnote{font-size:11px; color:var(--dim); margin-bottom:6px}
+.bars svg{display:block; width:100%; height:auto}
+/* 生成文本（text 通道）：等宽、可折行，空格画成 ␠ 才看得出复读 */
+.gen{border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:10px 12px; margin-bottom:8px}
+.gen h4{margin:0 0 2px; font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.4px}
+.gen .bnote{font-size:11px; color:var(--dim); margin-bottom:6px}
+.gen pre{margin:0; font:13px/1.7 ui-monospace,Consolas,monospace; color:#dbe6f3;
+  white-space:pre-wrap; word-break:break-all; background:var(--code); border-radius:6px; padding:8px 10px}
+.rail{border-left:1px solid var(--line); background:var(--panel); overflow:auto; padding:12px}
+.card{border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:10px 12px; margin-bottom:12px}
+.card h3{margin:0 0 8px; font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--accent)}
+.card ul{margin:0; padding-left:18px} .card li{margin:4px 0; font-size:12.5px; color:#c6cede}
+.card .file{font-family:ui-monospace,Consolas,monospace; font-size:12px}
+.todolist li{list-style:none; margin-left:-18px; font-size:12.5px; color:#c6cede; display:flex; gap:7px; align-items:baseline}
+.todolist li::before{content:""; flex:0 0 11px; height:11px; border:1.5px solid var(--warn);
+  border-radius:3px; transform:translateY(1px)}
+.chk{display:flex; gap:8px; padding:7px 0; border-top:1px dashed var(--line)}
+.chk:first-child{border-top:0}
+.cbtn{padding:2px 10px; font-size:12px; flex:0 0 auto; align-self:flex-start; margin-top:1px}
+/* 小链接：把右栏的一行和讲义里的那一节缝起来 */
+.mlink{padding:1px 7px; font-size:11px; line-height:1.5; flex:0 0 auto; align-self:center;
+  color:var(--dim); background:transparent; border:1px solid var(--line); border-radius:99px; cursor:pointer}
+.mlink:hover{color:var(--accent); border-color:var(--accent)}
+#manualhost .sec.flash, #manualhost tr.flash, #manualhost .flash{animation:flash 1.6s ease-out}
+/* 提示文案里的 §N 芯片：比 .mlink 再轻一点，别抢正文的注意力 */
+#rail .mlink.sec{padding:0 5px;font-size:10.5px;line-height:1.4;margin:0 1px}
+@keyframes flash{0%{background:#243449}70%{background:#1d2836}100%{background:transparent}}
+.cbody{font-size:12.5px; line-height:1.5}
+.cbody b{color:var(--accent); font-family:ui-monospace,Consolas,monospace; font-size:11.5px}
+.needs{color:var(--dim); font-size:11.5px}
+.cres{margin-top:3px; font-size:12px; font-family:ui-monospace,Consolas,monospace; white-space:pre-wrap; word-break:break-word}
+.cres.pass{color:var(--ok)} .cres.fail{color:var(--bad)} .cres.blocked{color:var(--warn)} .cres.error{color:var(--bad)}
+.cres.answer{color:var(--dim)}
+.cres details{margin-top:4px; border:1px solid var(--line); border-radius:6px; background:var(--panel2)}
+.cres details > summary{cursor:pointer; padding:3px 8px; font-size:11px; color:var(--dim); list-style:none}
+.cres details > summary::-webkit-details-marker{display:none}
+.cres details > summary::before{content:"▸ "}
+.cres details[open] > summary::before{content:"▾ "}
+.cres details pre{margin:0; padding:8px 10px; border-top:1px dashed var(--line);
+  font-size:11.5px; line-height:1.5; white-space:pre-wrap; word-break:break-word; color:#cdd6e4;
+  max-height:230px; overflow:auto}
+dialog{
+  background:var(--code); color:var(--fg); border:1px solid var(--accent); border-radius:10px;
+  width:min(880px,92vw); max-height:88vh; padding:0;
+}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .head{position:sticky; top:0; background:var(--panel); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line)}
+dialog pre{margin:0; padding:16px; white-space:pre-wrap; font:13px/1.6 ui-monospace,Consolas,monospace}
+dialog .md{padding:18px 24px; font-size:14px; line-height:1.75; max-height:80vh; overflow:auto}
+dialog .raw{display:block; margin:0; padding:16px; white-space:pre-wrap; overflow:auto; max-height:80vh;
+  font:13px/1.6 ui-monospace,Consolas,monospace}
+.md h1{font-size:20px; margin:.2em 0 .8em; border-bottom:1px solid var(--line); padding-bottom:6px}
+.md h2{font-size:17px; margin:1.4em 0 .6em; color:var(--accent)}
+.md h3{font-size:15px; margin:1.2em 0 .5em}
+.md p{margin:.6em 0}
+.md ul,.md ol{margin:.5em 0; padding-left:1.5em}
+.md li{margin:.25em 0}
+.md code{background:#10141a; border:1px solid var(--line); border-radius:4px; padding:1px 5px;
+  font:12.5px/1.5 ui-monospace,Consolas,monospace; color:#ffd9a0}
+.md pre{background:var(--code); border:1px solid var(--line); border-radius:8px; padding:12px; overflow:auto}
+.md pre code{background:none; border:0; padding:0; color:#e6edf3}
+.md blockquote{margin:.6em 0; padding:.2em 1em; border-left:3px solid var(--accent); background:#141a22; color:#cdd6e4}
+.md table{border-collapse:collapse; margin:.8em 0; font-size:13px; width:100%}
+.md th,.md td{border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top}
+.md th{background:var(--panel2); font-weight:700}
+.md hr{border:0; border-top:1px solid var(--line); margin:1.2em 0}
+.md details.ans{border:1px solid #3a4657; border-left:3px solid var(--warn); border-radius:8px;
+  background:var(--panel2); margin:.9em 0; padding:0}
+.md details.ans > summary{cursor:pointer; padding:8px 12px; font-size:13px; color:var(--warn);
+  list-style:none; user-select:none}
+.md details.ans > summary::-webkit-details-marker{display:none}
+.md details.ans > summary::before{content:"▸ "; }
+.md details.ans[open] > summary::before{content:"▾ "}
+.md details.ans[open] > summary{border-bottom:1px dashed var(--line)}
+.md details.ans .ansbody{padding:2px 12px 10px}
+.md details.ans pre{background:var(--code)}
+.md mjx-container{color:#ffe9b3}
+.mini{font-size:11px; color:var(--dim)}
+a{color:var(--accent)}
+kbd{border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size:11px; background:var(--panel2)}
+</style>
+</head>
+<body>
+<header>
+  <h1>MiniGPT 测评台</h1>
+  <span class="meta" id="meta">载入中…</span>
+  <span class="meta" id="overall"></span>
+  <span class="meta">提交只在副本上跑，<b>不会覆盖你的 src/</b>；判据 = 命令行里那同一个脚本</span>
+</header>
+
+<main>
+  <!-- 左：阶段列表 -->
+  <div class="col stages" id="stages">
+    <h2>阶段</h2>
+  </div>
+  <div class="grip" data-pane="w1" title="拖动改变宽度，双击复位"></div>
+
+  <!-- 中：三个视图 —— 写代码（编辑器+控制台）/ 读讲义（同一份 HTML 章节）/ 调参试验 -->
+  <div class="col center">
+    <div class="views">
+      <button data-view="code" class="on">写代码</button>
+      <button data-view="manual">读讲义</button>
+      <button data-view="lab">调参试验</button>
+      <button id="popout" hidden title="把这一章另开一个窗口：可以边读讲义边看代码/终端">↗ 独立窗口</button>
+      <button id="popresult" title="另开一个窗口盯判据结果：结论、拟合图像、原始输出，跑完自动刷新">↗ 结果窗口</button>
+      <span class="hint" id="viewhint"></span>
+    </div>
+
+    <div id="view-code">
+      <div class="tabs" id="tabs"></div>
+      <textarea id="editor" spellcheck="false" placeholder="左边选一个阶段开始"></textarea>
+      <div class="bar">
+        <button class="go" id="run" disabled>提交并测评</button>
+        <button class="save" id="save" disabled>保存到 src/</button>
+        <button id="reload" disabled>丢弃改动重新载入</button>
+        <button id="manual">读讲义</button>
+        <button id="judgesrc">看判据脚本</button>
+        <span class="hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 提交</span>
+        <span class="hint" id="dirty"></span>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <div id="cards"></div>
+      <div class="grip h" data-pane="ch" title="拖动改变控制台高度，双击复位"></div>
+      <div class="console" id="console">选一个阶段 → 把 TODO 写完 → 提交并测评。
+第一次点会看到「还没写完 → TODO-x」，那是正常起点，不是坏了。</div>
+    </div>
+
+    <div id="view-manual" hidden><div id="manualhost"></div></div>
+
+    <!-- 调参试验：跑你的代码，但参数归你调；结果不算验收（判据必须用固定参数才有意义） -->
+    <div id="view-lab" hidden>
+      <div class="labnote">这里跑的是<b>你写的实现</b>，只是把几个输入做成旋钮给你玩。
+        <b>结论不算验收</b> —— 判据那 5 条阈值是照固定参数定的，改了参数再去比阈值就自欺欺人。
+        要验收请回「写代码」点<span class="kbdish">提交并测评</span>。</div>
+      <div class="labform" id="labform"><div class="mini">这个阶段的旋钮还没发布。</div></div>
+      <div class="labbar"><button class="go" id="labrun">跑一次</button>
+        <button id="labreset">回到默认</button><span class="hint" id="labhint"></span></div>
+      <div id="labout"></div>
+    </div>
+  </div>
+
+  <!-- 右：提交提示 -->
+  <div class="grip" data-pane="w3" title="拖动改变宽度，双击复位"></div>
+  <div class="col rail" id="rail"></div>
+</main>
+
+<dialog id="dlg">
+  <div class="head"><b id="dlgtitle">讲义</b><button id="dlgclose">关闭</button></div>
+  <div id="dlgbody" class="md"></div>
+</dialog>
+
+<script>
+window.__MGPT_APP = true;   // 告诉 manual.js：别自己 mount，宿主会调
+window.name = 'mgpt-app';   // 独立讲义窗口用这个名字把"跳到编辑器"送回这里，而不是另开一个
+const S = {stages:[], cur:null, file:null, shown:null, seq:0, contents:{}, results:{}, view:'code'};
+const $ = id => document.getElementById(id);
+const stageOf = id => S.stages.find(s => s.id === id);
+
+/* ---------- 载入阶段 ---------- */
+async function boot(){
+  initGrips();                      // 分栏宽度先恢复，再渲染，省得第一眼跳一下
+  const r = await fetch('/api/stages').then(x=>x.json());
+  S.stages = r.stages; S.overall = r.overall;
+  if (r.panes && Object.keys(r.panes).length) applyPanes(r.panes);   // 服务端记的布局优先
+  $('meta').textContent = `仓库 ${r.root} · Python ${r.python}`;
+  S.results = JSON.parse(localStorage.getItem('mgpt.results') || '{}');
+  S.checkResults = JSON.parse(localStorage.getItem('mgpt.checks') || '{}');
+  // 服务端记的结果优先于浏览器本地缓存：换台机器、换个浏览器也看得到真实进度
+  for(const s of S.stages) for(const c of (s.checks||[]))
+    if (c.last) S.checkResults[s.id + ':' + c.id] = c.last;
+  renderStages();
+  // 深链一：?stage=s03&check=TODO-7 —— 讲义独立打开时，按钮的退路链接长这样
+  const q = new URLSearchParams(location.search);
+  const want = q.get('stage');
+  const first = (want && stageOf(want) && stageOf(want).available)
+    ? want
+    : (S.stages.find(s => s.available) || S.stages[0]).id;
+  await select(first);
+  if (q.get('manual')) setView('manual');
+  // ?lab=1 打开试验台；?lab=run 顺手跑一次 —— 试验台不写 state.json，所以自动跑是安全的
+  if (q.get('lab')) { setView('lab'); if (q.get('lab') === 'run') await runLab(); }
+  // ?check= 是讲义里「跑这条单项检查」按钮在独立打开时的退路 —— 所以既要滚过去，也要真跑
+  if (q.get('check')) { await gotoSection(q.get('check')); await appCheck(q.get('check')); }
+  else if (q.get('edit')) await gotoCode(q.get('edit'));
+  // 深链二：#manual=s03 直接打开某阶段讲义（也方便无头浏览器截图验收排版）
+  const m = (location.hash || '').match(/#manual=(\w+)/);
+  if (m && stageOf(m[1])) { await select(m[1]); setView('manual'); }
+}
+
+function barHtml(p){
+  if(!p || !p.todo_total) return '';
+  const pct = Math.round(p.todo_done / p.todo_total * 100);
+  const suite = p.suite && p.suite.status
+    ? ` · 整卷 <b>${p.suite.got}/${p.suite.total}</b>${p.suite_stale?'<span class="stale"> 过期</span>':''}${p.suite.answer?'<span class="stale"> · 那是答案</span>':''}` : '';
+  const one = p.checks_total ? ` · 单项 <b>${p.checks_pass}/${p.checks_total}</b>` : '';
+  return `<div class="track"><i style="width:${pct}%"></i></div>` +
+         `<div class="pnum">TODO <b>${p.todo_done}/${p.todo_total}</b>${one}${suite}</div>`;
+}
+
+/* 那个小胶囊只说一件事：**最近一次整卷测评**的结论。
+   它不认浏览器本地缓存 —— 旧版本会拿上次"没写完"的结果一直挂着，
+   于是出现"4/4 写完 + 单项全过"却写着"没写完"的怪事。
+   代码又改过之后，旧结论标成"过期"，而不是继续冒充现状。 */
+function chipFor(s){
+  if(!s.available) return '<span class="chip off">未发布</span>';
+  const p = s.progress || {}, suite = p.suite || {};
+  if(suite.status){
+    if(p.suite_stale) return '<span class="chip stale">结果过期</span>';
+    /* 答案跑通（提交的就是 solutions/ 那份）不算你过了 —— 它只在验证判据时存在。
+       以前这里没有区分，于是出现过「已过」配「TODO 0/7」的画面。 */
+    if(suite.status === 'pass' && suite.answer)
+      return '<span class="chip answer" title="这次跑的是 solutions/ 里的答案，不是你的代码">答案已过</span>';
+    const t = suite.status==='pass' ? '已过'
+            : suite.status==='fail' ? `差 ${suite.total-suite.got} 条`
+            : suite.status==='error' ? '脚本报错' : '没写完';
+    return `<span class="chip ${suite.status}">${t}</span>`;
+  }
+  if(p.todo_total && p.todo_done === p.todo_total) return '<span class="chip todo">待整卷</span>';
+  return '<span class="chip">未测</span>';
+}
+
+function renderStages(){
+  const box = $('stages');
+  box.innerHTML = '<h2>阶段</h2>';
+  for(const s of S.stages){
+    const div = document.createElement('div');
+    div.className = 'st' + (s.id===S.cur ? ' sel' : '');
+    div.innerHTML = `<div class="t">${s.title}</div>` +
+      `<div class="s">${chipFor(s)}<span>${s.mins}</span></div>` + barHtml(s.progress);
+    div.onclick = () => select(s.id);
+    box.appendChild(div);
+  }
+  const o = S.overall || {done:0, total:0};
+  $('overall').innerHTML = o.total
+    ? `总进度 <b>${o.done}/${o.total}</b> 个 TODO · ` +
+      `<span class="track" style="display:inline-flex;width:120px;vertical-align:middle;margin:0 6px">` +
+      `<i style="width:${Math.round(o.done/o.total*100)}%"></i></span>`
+    : '';
+}
+
+/* 服务端才是进度的唯一真相：src/ 里的占位删没删、最近一次测评/单项的结果都记在
+   webapp/state.json。每次跑完都重新拉一次，左栏的条才会当场动。 */
+async function refreshStages(){
+  const r = await fetch('/api/stages').then(x=>x.json());
+  S.stages = r.stages; S.overall = r.overall;
+  renderStages();
+  if(S.cur){ const s = stageOf(S.cur); if(s) renderTodoState(s); }
+  // 讲义开着的话，小地图跟着这次刷新重涂 —— 跑完判据不用切视图再回来
+  const box = $('manualhost');
+  if (box && box.firstChild && window.Manual) Manual.refresh(box.querySelector('.chapter'));
+}
+
+async function select(id){
+  S.cur = id; S.contents = {}; S.file = S.shown = null;   // 换阶段时先把"编辑器里是哪份"清空
+  const s = stageOf(id);
+  renderStages(); renderRail(s); renderTabs(s); renderTodoState(s);
+  $('run').disabled = $('save').disabled = $('reload').disabled = !s.available;
+  $('manual').disabled = !s.available;
+  if (S.view === 'manual') loadManual(id);        // 左栏换了阶段，中栏的讲义跟着换
+  if (S.view === 'lab') renderLab(s);             // 试验台的旋钮也是按阶段定义的
+  if(!s.available){
+    $('editor').value = '';
+    $('cards').innerHTML = '';
+    noteConsole(`<span class="warn">这个阶段还没发布骨架和讲义。</span>\n` +
+      `已发布的阶段做完再回来。想先看清结构，用命令行跑答案版：\n` +
+      `  MGPT_ANSWER=1 python ${s.judge}\n（那是答案，不是你的进度。）`);
+    $('verdict').innerHTML = '';
+    $('dirty').textContent = '';
+    return;
+  }
+  await loadFile(s.files[0]);
+  if(S.results[id] && S.results[id].output) showOutput(S.results[id]);
+}
+
+async function loadFile(rel){
+  const seq = ++S.seq;
+  const r = await fetch(`/api/file?stage=${S.cur}&path=${encodeURIComponent(rel)}`).then(x=>x.json());
+  if(r.error){ noteConsole(escapeHtml(r.error)); return; }
+  if(seq !== S.seq) return;               // 已经有更新的载入在飞，这份过期响应丢掉
+  S.contents[rel] = r.content;
+  S.file = rel; S.shown = rel;            // 这两个必须同时改：分开就会"编辑器显示 A、写回写到 B"
+  $('editor').value = r.content;
+  renderTabs(stageOf(S.cur));
+}
+
+function renderTabs(s){
+  const box = $('tabs'); box.innerHTML='';
+  for(const f of s.files){
+    const d = document.createElement('div');
+    d.className = 'tab' + (f===S.file ? ' sel' : '');
+    d.textContent = f.replace('minigpt/','');
+    d.onclick = () => switchFile(f);
+    box.appendChild(d);
+  }
+}
+
+async function switchFile(f){
+  flush();
+  if(S.contents[f] !== undefined){
+    S.file = f; S.shown = f; $('editor').value = S.contents[f]; renderTabs(stageOf(S.cur));
+  }
+  else await loadFile(f);
+}
+
+function flush(){ if(S.shown) S.contents[S.shown] = $('editor').value; }
+
+/* 结果槽的 id：必须保留字母和数字。之前写成 /[^w-]/g 会把 T/O/D/O/数字全删掉，
+   于是 16 条检查共用同一个 id，getElementById 永远返回第一行 —— 点后面几条
+   "没有反馈"，其实结果写到别处去了。 */
+const slotId = id => 'res-' + id.replace(/[^A-Za-z0-9]/g, '_');
+
+/* 一条检查的完整输出（输入/输出那几行）折叠在结果下面：
+   失败时默认展开，通过时收着 —— 但随时能点开看它到底喂了什么、吐了什么。 */
+function checkBody(r){
+  const rest = (r.output || '').split('\n').filter(l => !/^(PASS|FAIL|BLOCKED)/.test(l)).join('\n').trim();
+  if (!rest) return '';
+  const n = rest.split('\n').length;
+  return `<details${r.status === 'pass' ? '' : ' open'}><summary>目的 / 输入 / 输出与细节（${n} 行）</summary>` +
+         `<pre>${colorize(rest)}</pre></details>`;
+}
+
+/* ---------- 提交 ---------- */
+async function submit(){
+  flush();
+  const s = stageOf(S.cur);
+  if(!s.available) return;
+  const files = Object.fromEntries(Object.entries(S.contents));
+  $('run').disabled = true; $('run').textContent = '测评中…';
+  $('cards').innerHTML = '';
+  noteConsole('正在跑判据（第一次会慢一点，numpy 载入 + 有限差分抽查）…');
+  let res;
+  try{ res = await fetch('/api/run', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({stage:S.cur, files})}).then(x=>x.json()); }
+  catch(e){ noteConsole(escapeHtml('请求失败：' + e)); reset(); return; }
+  S.results[S.cur] = {status:res.status, got:res.got, total:res.total, output:res.output};
+  localStorage.setItem('mgpt.results', JSON.stringify(S.results));
+  showOutput(res); renderStages(); reset();
+  await refreshStages();
+}
+function reset(){ $('run').disabled = false; $('run').textContent = '提交并测评'; }
+
+/* 控制台是"兜底展示位"：整卷判据改用卡片渲染时它会被藏起来，
+   所以任何直接往里写的地方都必须先让它显形 —— 否则消息发出去了，你看不见。
+   连带把它的拖动条一起藏：拖一根下面没有面板的线，只会让人以为界面坏了。 */
+function noteConsole(html){
+  consolePane(true);
+  $('console').innerHTML = html;
+  $('console').scrollTop = 0;
+}
+
+function consolePane(on){
+  $('console').hidden = !on;
+  const g = document.querySelector('.grip[data-pane=ch]');
+  if (g) g.style.display = on ? '' : 'none';
+}
+
+function showOutput(res){
+  const map = {pass:['var(--ok)','判据全绿'], fail:['var(--bad)','判据未全过'],
+               todo:['var(--warn)','还没写完'], error:['var(--bad)','脚本报错'], pending:['var(--dim)','未发布']};
+  const [c,label] = map[res.status] || map.error;
+  const cnt = res.total ? `（${res.got}/${res.total}）` : '';
+  $('verdict').innerHTML = `<span class="dot" style="background:${c}"></span><b>${label}</b> ${cnt}` +
+      (res.secs!==undefined ? `<span class="hint">用时 ${res.secs}s · 工作区 ${res.workspace||''}</span>`:'');
+  $('cards') && renderCards(res);
+  if(res.status==='todo') $('console').textContent = res.output;
+}
+
+/* ---------- 判据结果：卡片 + 曲线，原始文本折叠 ----------
+   数据来自 toolkit.Report 的机器可读通道（MGPT_JSON=1）。没有那一行时
+   （老脚本、报错、超时）退回整块文本 —— 展示层永远不能把判据弄没。 */
+function renderCards(res){
+  const box = $('cards');
+  box.innerHTML = '';
+  const rows = res.criteria || [];
+  if(!rows.length){
+    noteConsole(colorize(res.output || ''));
+    return;
+  }
+  appendCards(box, rows);
+  /* 拟合图像要宽度，右栏 390px 画出来只能看个形状 —— 所以这里给入口，
+     曲线本身在结果窗口里画（同一份 res.fits 数据，服务端 last_run.json）。 */
+  if((res.fits || []).length)
+    box.insertAdjacentHTML('beforeend',
+      `<div class="fitgo"><span>这次跑出了 <b>${res.fits.length}</b> 张拟合图像（数据点 + 你的曲线 + 目标）</span>` +
+      `<button onclick="openResult()">在结果窗口看 ↗</button></div>`);
+  if((res.curves || []).length) box.insertAdjacentHTML('beforeend', curvesSvg(res.curves));
+  const det = document.createElement('details');
+  det.className = 'rawbox';
+  det.innerHTML = `<summary>原始输出（${(res.output || '').split('\n').length} 行，含 ASCII 图与 traceback）</summary>` +
+                  `<div class="console" style="max-height:46vh">${colorize(res.output || '')}</div>`;
+  box.appendChild(det);
+  consolePane(false);
+}
+
+/* 判据/观察值 → 卡片。试验台和测评共用这一段：同一套颜色语义，
+   用户不需要学两种读法。 */
+function appendCards(box, rows){
+  const cls = {PASS:'pass', FAIL:'fail', '注意':'warn', '提示':'warn', info:'info'};
+  const icon = {PASS:'✔', FAIL:'✘', '注意':'!', '提示':'·', info:'·'};
+  /* 分组只在判据自己声明了组名时才出现（阶段 3/4 的层校验有，阶段 1/2 没有）。
+     组名是脚本里的字符串，不是前端另起的分类 —— 命令行和网页看到的是同一份。 */
+  const grouped = rows.some(r => r.group);
+  let last = null;
+  for(const r of rows){
+    if(grouped){
+      const g = r.group || '';
+      if(g !== last){
+        const h = document.createElement('div');
+        h.className = 'grp'; h.textContent = g || '未分组';
+        box.appendChild(h); last = g;
+      }
+    }
+    const d = document.createElement('div');
+    d.className = 'crit ' + (cls[r.mark] || 'info');
+    d.innerHTML = `<span class="mk">${icon[r.mark] || '·'}</span>` +
+                  `<span class="nm">${escapeHtml(r.name)}</span>` +
+                  (r.detail ? `<span class="dt">${escapeHtml(r.detail)}</span>` : '');
+    d.title = r.kind === 'must' ? '硬性判据：不过就不算这一阶段完成' :
+              r.kind === 'soft' ? '软性提示：不影响验收，但值得看一眼' : '观察项';
+    box.appendChild(d);
+  }
+}
+
+/* loss 曲线：纵轴取 log₁₀。训练曲线跨度是 1e0 → 1e-6，线性轴会把"降了六个数量级"
+   压成贴着零的一根线；三条画在同一坐标系里，对照才看得出。 */
+function curvesSvg(curves){
+  const W = 720, H = 210, P = {l:52, r:12, t:12, b:26};
+  const palette = ['#5ec8a8', '#e0a458', '#6ea8fe', '#c77dd6', '#8fa1b3'];
+  const data = curves.map(c => ({...c, lg: c.values.map(v => Math.log10(Math.max(v, 1e-300)))}));
+  let lo = Math.min(...data.flatMap(d => d.lg)), hi = Math.max(...data.flatMap(d => d.lg));
+  if (hi - lo < 1e-9) { hi += 0.5; lo -= 0.5; }
+  const X = (i, n) => P.l + (W - P.l - P.r) * (n < 2 ? 0 : i / (n - 1));
+  const Y = v => H - P.b - (H - P.t - P.b) * (v - lo) / (hi - lo);
+  const grid = [];
+  // 整数十年轮画实线并标 1e-N；上下边界画虚线并标**真实值**。
+  // 边界标成 1e-0.09 这种数没人能心算，标 0.81 / 0.0067 才一眼看懂曲线跨了多远。
+  const marks = [{v: lo, edge: true}, {v: hi, edge: true}];
+  for (let d = Math.ceil(lo); d <= Math.floor(hi); d++) marks.push({v: d, edge: false});
+  for (const m of marks.slice().sort((a, b) => a.v - b.v)) {
+    const y = Y(m.v).toFixed(1);
+    const label = m.edge ? fmt(Math.pow(10, m.v)) : `1e${m.v}`;
+    grid.push(`<line x1="${P.l}" y1="${y}" x2="${W-P.r}" y2="${y}"
+        stroke="${m.edge ? '#1c2432' : '#243044'}" stroke-dasharray="${m.edge ? '3 3' : 'none'}"/>` +
+      `<text x="${P.l-7}" y="${+y+3.5}" fill="#6d7f96" font-size="10" text-anchor="end"
+        font-family="ui-monospace,Consolas,monospace">${label}</text>`);
+  }
+  const nMax = Math.max(...data.map(d => d.values.length));
+  grid.push(`<text x="${P.l}" y="${H-5}" fill="#6d7f96" font-size="10"
+      font-family="ui-monospace,Consolas,monospace">第 1 轮</text>` +
+    `<text x="${W-P.r}" y="${H-5}" fill="#6d7f96" font-size="10" text-anchor="end"
+      font-family="ui-monospace,Consolas,monospace">第 ${nMax} 轮（横轴线性）</text>`);
+  const paths = data.map((c, k) => {
+    const pts = c.lg.map((v, i) => `${X(i, c.lg.length).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${palette[k % palette.length]}" stroke-width="1.8"/>`;
+  }).join('');
+  const legend = data.map((c, k) =>
+    `<span><i style="background:${palette[k % palette.length]}"></i>${escapeHtml(c.name)} ` +
+    `<span style="color:var(--dim)">${fmt(c.values[0])} → ${fmt(c.values[c.values.length-1])}` +
+    (c.note ? ` · ${escapeHtml(c.note)}` : '') + '</span></span>').join('');
+  return `<div class="curves"><h4>loss 曲线（纵轴 log₁₀，越靠下越小）</h4>` +
+         `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="loss 曲线">` +
+         grid.join('') + paths + `</svg><div class="legend">${legend}</div></div>`;
+}
+
+function fmt(v){ return Math.abs(v) < 1e-3 || Math.abs(v) >= 1e5 ? v.toExponential(2) : v.toFixed(4); }
+
+/* 矩阵热力图（试验台 mats 通道）：红=正、蓝=负，每格颜色按**该矩阵自己的**最大
+   |值| 归一 —— W 的量级 0.01 和 g 的量级 2 放在一起用同一把尺子的话，W 会整片全白。
+   格子里直接写数：这些矩阵最大 8×8，看数值比看颜色重要。 */
+function matsHtml(mats){
+  if(!(mats || []).length) return '';
+  const blocks = mats.map(m => {
+    const vals = m.values || [];
+    const prob = m.scale === 'prob';
+    let mx = 0;
+    vals.forEach(r => r.forEach(v => { if (v === v) mx = Math.max(mx, Math.abs(v)); }));
+    const nr = vals.length, nc = nr ? vals[0].length : 0;
+    const cell = Math.max(30, Math.min(56, Math.floor(420 / Math.max(nc, 1))));
+    const cells = vals.map((r, i) => r.map((v, j) => {
+      if (m.mask && m.mask[i] && m.mask[i][j])
+        return `<span class="mc masked" style="width:${cell}px;height:${cell}px"
+        title="[${i},${j}] 被因果掩码遮住：概率恒为 0，梯度也恒为 0">·</span>`;
+      if (v === null || v === undefined)          // 服务端把 NaN/inf 换成了 null，否则 JSON 都传不回来
+        return `<span class="mc masked" style="width:${cell}px;height:${cell}px"
+        title="[${i},${j}] 不是有限数（nan/inf）">✕</span>`;
+      const t = mx ? v / mx : 0, a = Math.min(1, Math.abs(t));
+      // 概率走单色阶：红蓝是给有正负的矩阵用的，概率全正会被画成一整片红
+      const bg = v !== v ? '#2a2f3a'
+        : prob ? `rgba(90,175,255,${(0.05 + 0.85 * Math.min(1, Math.max(0, v))).toFixed(3)})`
+        : t >= 0 ? `rgba(255,120,95,${(0.10 + 0.72 * a).toFixed(3)})`
+                 : `rgba(105,165,255,${(0.10 + 0.72 * a).toFixed(3)})`;
+      const fg = v !== v || (prob ? v < 0.45 : a < 0.42) ? '#e8eef8' : '#0b1016';
+      return `<span class="mc" style="width:${cell}px;height:${cell}px;background:${bg};color:${fg}"
+        title="[${i},${j}] = ${v}">${v === v ? fmtShort(v) : 'nan'}</span>`;
+    }).join('')).join('');
+    return `<div class="mat"><div class="mname">${escapeHtml(m.name)}</div>` +
+           `<div class="mnote">${escapeHtml((m.shape ? m.shape.join('×') + ' · ' : '') + (m.note || ''))}</div>` +
+           `<div class="mcells" style="grid-template-columns:repeat(${nc},${cell}px)">${cells}</div></div>`;
+  }).join('');
+  return `<div class="mats"><h4>每个数都画出来（红=正 蓝=负，概率走蓝阶，灰格=被掩码遮住）</h4>` +
+         `<div class="matgrid">${blocks}</div></div>`;
+}
+
+/* 形状动线（flow 通道）：一行一步。竖着扫形状那一列 —— 主干上每一步的形状
+   必须一模一样，哪个子层把长度改了，一眼就看得出来。 */
+function flowHtml(steps){
+  if(!(steps || []).length) return '';
+  const rows = steps.map((s, i) =>
+      `<div class="fstep${i === steps.length - 1 ? ' here' : ''}">` +
+      `<span class="fn">${i + 1}</span><span class="fname">${escapeHtml(s.name)}</span>` +
+      `<span class="fshape">${escapeHtml(String(s.shape))}</span>` +
+      `<span class="fnote">${escapeHtml(s.note || '')}</span></div>` +
+      (i < steps.length - 1 ? '<div class="farrow">↓</div>' : '')).join('');
+  return `<div class="flow"><h4>形状动线：从上往下是数据流过的顺序</h4>${rows}</div>`;
+}
+
+/* 分布对比条（bars 通道）：定义侧和经验侧并排。柱子差多少就是采样器偏了多少 ——
+   光看 L1 那一个数看不出是哪个词错了，柱子能。 */
+function barsHtml(bars){
+  if(!(bars || []).length) return '';
+  return bars.map(b => {
+    const series = b.series || [], labels = b.labels || [];
+    const n = labels.length, W = 640, H = 190, pad = {l:34, r:8, t:10, b:26};
+    let top = 0;
+    series.forEach(s => s.values.forEach(v => { if (v > top) top = v; }));
+    top = Math.max(top, 0.01);
+    const gw = (W - pad.l - pad.r) / Math.max(n, 1);
+    const bw = Math.max(3, (gw - 8) / Math.max(series.length, 1));
+    const y = v => H - pad.b - v / top * (H - pad.t - pad.b);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="分布对比">`;
+    for (let g = 0; g <= 4; g++){                       // 横刻度：概率
+      const v = top * g / 4, yy = y(v);
+      svg += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="#28313f"/>` +
+             `<text x="${pad.l - 6}" y="${yy + 3}" fill="#8d99ac" font-size="9"
+               text-anchor="end" font-family="ui-monospace,Consolas,monospace">${v.toFixed(2)}</text>`;
+    }
+    labels.forEach((lb, i) => {
+      const x0 = pad.l + i * gw + 4;
+      svg += `<text x="${x0 + (gw - 8) / 2}" y="${H - 8}" fill="#8d99ac" font-size="10"
+        text-anchor="middle" font-family="ui-monospace,Consolas,monospace">${escapeHtml(String(lb))}</text>`;
+      series.forEach((s, si) => {
+        const v = (s.values || [])[i] || 0;
+        svg += `<rect x="${(x0 + si * bw).toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}"
+          height="${Math.max(0, (H - pad.b - y(v))).toFixed(1)}" fill="${s.color || '#4aa3ff'}"
+          opacity="${si ? '0.72' : '1'}"><title>${escapeHtml(s.name)} ${escapeHtml(String(lb))} = ${(+v).toFixed(4)}</title></rect>`;
+      });
+    });
+    svg += `<line x1="${pad.l}" y1="${H - pad.b}" x2="${W - pad.r}" y2="${H - pad.b}" stroke="#3b475a"/></svg>`;
+    const lg = series.map(s => `<span class="legend"><i style="background:${s.color}"></i>${escapeHtml(s.name)}</span>`).join('');
+    return `<div class="bars"><h4>${escapeHtml(b.name)}</h4>` +
+           `<div class="bnote">${escapeHtml(b.note || '')}</div>${svg}` +
+           `<div class="legend">${lg}</div></div>`;
+  }).join('');
+}
+
+/* 生成文本（text 通道）：空格画成 ␠、换行画成 ↵，否则"复读了一个空格"根本看不出来 */
+function genHtml(items){
+  if(!(items || []).length) return '';
+  return items.map(t => `<div class="gen"><h4>${escapeHtml(t.name)}</h4>` +
+    `<div class="bnote">${escapeHtml(t.note || '')}</div>` +
+    `<pre>${escapeHtml(String(t.body || '').replace(/ /g, '␠').replace(/\n/g, '↵\n'))}</pre></div>`).join('');
+}
+function fmtShort(v){
+  const a = Math.abs(v);
+  if (a !== 0 && (a < 1e-2 || a >= 1e4)) return v.toExponential(1);
+  return (Math.round(v * 1000) / 1000).toString();
+}
+
+/* 判据输出上色：[OK]/[NO]/[!!] 与汇总行 */
+function colorize(t){
+  return t.split('\n').map(ln=>{
+    const e = escapeHtml(ln);
+    // 单项快测的四段先判：段标签淡色、结论行着色。
+    // 放在最前面是有原因的 —— 「目的」里常写着 ValueError / KeyError，
+    // 走到下面那条按子串染红的规则，一整段说明就变红了。
+    const seg = /^((?:  )?(?:目的|输入|输出)  )([\s\S]*)$/.exec(ln);
+    if (seg) return `<span class="dim">${escapeHtml(seg[1])}</span>${escapeHtml(seg[2])}`;
+    if (/^PASS\b/.test(ln)) return `<span class="ok">${e}</span>`;
+    if (/^FAIL\b/.test(ln)) return `<span class="bad">${e}</span>`;
+    if (/^BLOCKED\b/.test(ln)) return `<span class="warn">${e}</span>`;
+    if(/^\s*\[OK\]/.test(ln) || ln.includes('[OK]')) return `<span class="ok">${e}</span>`;
+    if(ln.includes('[NO]') || ln.includes('Traceback') || ln.includes('Error')) return `<span class="bad">${e}</span>`;
+    if(ln.includes('[!!]') || ln.includes('还没写完')) return `<span class="warn">${e}</span>`;
+    if(ln.includes('验收通过') || ln.includes('可以进下一阶段')) return `<span class="b">${e}</span>`;
+    if(ln.includes('验收未通过') || ln.includes('卡住的项')) return `<span class="bad b">${e}</span>`;
+    if(ln.startsWith('  ·') || ln.startsWith('─') || ln.startsWith('[') ) return `<span class="dim">${e}</span>`;
+    return e;
+  }).join('\n');
+}
+const escapeHtml = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ---------- 保存 ---------- */
+async function save(){
+  flush();
+  if(!confirm('把当前编辑器内容写进 src/minigpt/？旧内容会先备份到 webapp/backups/。')) return;
+  const res = await fetch('/api/save', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({stage:S.cur, files:S.contents})}).then(x=>x.json());
+  // 保存的反馈写在视图切换那一行：控制台这时多半被卡片藏着，写进去等于没写
+  toast(res.saved ? `已保存到 src/：${res.saved.join(', ')}（备份在 ${res.backups}）`
+                  : (res.error || '保存失败'));
+  if (res.saved) await refreshStages();
+}
+
+/* ---------- 右侧提示 ---------- */
+const todoIds = txt => (txt.match(/TODO-[0-9]+(?:\/[0-9]+)*[A-Za-z]?/g) || [])
+  .flatMap(t => t.replace('TODO-', '').split('/').map(p => 'TODO-' + p));
+
+function renderTodoState(s){
+  const pend = (s.progress && s.progress.todo_pending) || [];
+  document.querySelectorAll('#rail .todolist li').forEach(li => {
+    const ids = todoIds(li.dataset.todo || '');
+    li.classList.toggle('doneld', ids.length > 0 && ids.every(i => !pend.includes(i)));
+  });
+}
+
+function renderRail(s){
+  const box = $('rail');
+  const li = arr => arr.map(x => `<li>${linkifySec(mdToHtml(x))}</li>`).join('');
+  box.innerHTML = `
+    <div class="card"><h3>要提交的文件</h3>
+      <ul class="file">${s.files.map(f=>`<li>${f}</li>`).join('')}</ul></div>
+    <div class="card"><h3>你要写这几处${s.progress && s.progress.todo_total
+        ? ` <span class="pnum" style="margin:0">（已写 ${s.progress.todo_done}/${s.progress.todo_total}）</span>` : ''}</h3>
+      <ul class="todolist">${(s.todos||[]).map(x => {
+        const tid = (x.match(/TODO-[0-9A-Za-z]+/) || [''])[0];
+        return `<li data-todo="${escapeHtml(x)}">${mdToHtml(x)}` +
+          (tid ? `<button class="mlink" data-tid="${tid}" title="在讲义里定位到讲它的节">讲义</button>` : '') +
+          `</li>`; }).join('')}</ul></div>
+    <div class="card"><h3>单项快测（写完一条就能测）</h3>
+      <div class="mini" style="margin-bottom:8px">不用等整卷跑通：每条只测一个 TODO，
+        前置没写完会直接告诉你"先写哪个"。</div>
+      <div id="checks">${(s.checks||[]).map(c=>`
+        <div class="chk">
+          <button class="cbtn" data-id="${c.id}">测</button>
+          ${c.id.startsWith('TODO') ? `<button class="mlink" data-tid="${c.id}">讲义</button>` : ''}
+          <div class="cbody"><b>${c.id}</b> ${c.label}
+            ${c.here?'':`<span class="mini">（主场在 ${c.home}，这里因为代码就在本阶段文件里）</span>`}
+            ${c.needs.length?`<div class="needs">需要先写：${c.needs.join('、')}</div>`:''}
+            <div class="cres" id="${slotId(c.id)}"></div></div>
+        </div>`).join('') || '<div class="mini">这个阶段还没有单项检查。</div>'}</div></div>
+    <div class="card"><h3>判据在测什么</h3>
+      <ul>${li(s.criteria)}</ul>
+      <div class="mini" style="margin-top:8px">跑的是 <code>${s.judge}</code>，和命令行完全同一个脚本。</div></div>
+    <div class="card"><h3>提交提示（先读这几条）</h3>
+      <ul>${li(s.tips)}</ul>
+      <div class="mini" style="margin-top:6px">这几条会用 LaTeX 渲染公式，例如 $12d^{2}+10d$。</div></div>
+    <div class="card"><h3>建议动线</h3>
+      <div class="mini">
+        1. 点上方「读讲义」读 §理论 → §契约，讲义里的「跳到编辑器」会把你放到那一行；<br>
+        2. 在「写代码」视图里把 TODO 换成实现；<br>
+        3. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> 测评，<b>只读第一条</b>错误；<br>
+        4. 改一处再测，别攒；右栏每条旁边的「测」只测这一条；<br>
+        5. 全绿后点「保存到 src/」，然后回命令行确认一次。<br>
+        <span class="warn">卡住 30 分钟以上</span>才允许看 solutions/，看完关掉自己重写。</div></div>`;
+  // 上次的单项结果先标出来，省得你以为没测过
+  for(const c of (s.checks||[])){
+    const st = S.checkResults && S.checkResults[s.id+':'+c.id];
+    if (st) {
+      const slot = document.getElementById(slotId(c.id));
+      if (slot){ slot.className='cres '+st; slot.textContent='上次：'+({pass:'通过',fail:'不通过',blocked:'待前置',error:'出错',answer:'答案跑通'}[st]||st); }
+    }
+  }
+  typeset(box);
+}
+
+/* ---------- 分栏宽度：像 VSCode 一样拖边界，双击复位 ----------
+   宽度以服务端为准（webapp/state.json 的 _panes，走 /api/stages 带回 + /api/panes 保存），
+   localStorage 只当兜底：服务还没起来、或者你换成了 file:// 打开时还能记住。
+   三栏共用一套代码：w1 越往右越宽，w3 越往左越宽，ch 越往下越高 ——
+   差别只是"取反方向"和"用哪条轴"，所以用一张表描述，不写三份。 */
+/* sign 的含义：cfg.sign * (指针位移) 要等于"这一栏的增量"，而且方向必须让边界跟着手走。
+   ch 是控制台的高度，分隔线在控制台**上方**：控制台长 100px，上面那些（编辑器 flex:1）
+   就被挤掉 100px，分隔线跟着往上移 100 —— 所以往上拖（位移为负）必须让 ch 变大，sign = -1。
+   实测过：ch 340→440 时 gripY 455→355。写成 +1 就是"手往上、线往下"，看起来像拖不动。 */
+const PANES = {
+  w1: {axis:'x', sign: 1, min:170, max:520, dflt:250},
+  w3: {axis:'x', sign:-1, min:260, max:640, dflt:390},
+  ch: {axis:'y', sign:-1, min:90,  max:760, dflt:340},
+};
+
+function paneSizes(){
+  try { return JSON.parse(localStorage.getItem('mgpt.panes') || '{}'); } catch(e){ return {}; }
+}
+function applyPanes(p){
+  p = p || paneSizes();
+  const m = document.querySelector('body>main');
+  for (const k of Object.keys(PANES)) m.style.setProperty('--' + k, (p[k] || PANES[k].dflt) + 'px');
+}
+function savePane(key, value){
+  const p = paneSizes(); p[key] = value;
+  localStorage.setItem('mgpt.panes', JSON.stringify(p));           // 先本地，立刻生效
+  fetch('/api/panes', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(p)}).catch(() => {});                     // 再送服务端，失败不影响用
+}
+function initGrips(){
+  applyPanes();
+  document.querySelectorAll('.grip').forEach(g => {
+    const key = g.dataset.pane, cfg = PANES[key];
+    g.addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      g.setPointerCapture(ev.pointerId); g.classList.add('drag');
+      const start = ev[cfg.axis === 'x' ? 'clientX' : 'clientY'];
+      const cur = parseInt(getComputedStyle(document.querySelector('body>main'))
+                              .getPropertyValue('--' + key)) || cfg.dflt;
+      const clamp = e => {
+        const now = e[cfg.axis === 'x' ? 'clientX' : 'clientY'];
+        return Math.max(cfg.min, Math.min(cfg.max, cur + cfg.sign * (now - start)));
+      };
+      const move = e => {
+        document.querySelector('body>main').style.setProperty('--' + key, clamp(e) + 'px');
+        e.preventDefault();
+      };
+      const up = e => {
+        g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up);
+        g.classList.remove('drag');
+        savePane(key, clamp(e));
+      };
+      g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+    });
+    g.addEventListener('dblclick', () => {
+      const p = paneSizes(); delete p[key];
+      localStorage.setItem('mgpt.panes', JSON.stringify(p));
+      applyPanes(p);
+      fetch('/api/panes', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(p)}).catch(() => {});
+    });
+  });
+}
+
+/* ---------- 极简 markdown 渲染（够讲义用了，不装依赖） ----------
+   顺序很重要：先把 $$…$$ 和 $…$ 抠成占位符，跑完 markdown 再原样塞回去，
+   否则 MathJax 会拿到被 ** / ` 之类的替换搅乱的公式。 */
+/* 提交提示、判据说明里的 "§2.6" / "3a §4.1" 变成可点芯片 —— 讲义里那一节才是解释的
+   本体，但人是在测评台上卡住的，所以从卡住的地方点过去，而不是让他自己去翻目录。
+   只替换标签之外的 §：属性值里万一有 § 不能被换成 <button>。 */
+function linkifySec(html){
+  return String(html).replace(/(<[^>]+>)|§(\d+(?:\.\d+)*)/g, (m, tag, num, off, whole) => {
+    if (tag) return tag;
+    // 前面跟着章节号的（"3a §4.1"）说的是另一本讲义，跳过去会在当前章节里
+    // 找到一个同号的节 —— 内容完全不同却"看起来跳成功了"，所以这种不做成芯片。
+    if (/[0-9][abc]?\s*$/.test(whole.slice(0, off))) return m;
+    return `<button class="mlink sec" data-sec="sec-${num.replace(/\./g, '-')}"`
+         + ` title="跳到讲义 §${num}">§${num}</button>`;
+  });
+}
+
+function mdToHtml(src, shared){
+  const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  // shared：递归进来时传外层那份公式暂存表。不传就自己建一张、并把公式抠成占位符。
+  // 少了这个参数，<details> 里嵌套渲染时内层会拿自己的空表去还原外层的占位符 —— 公式全变 undefined。
+  const stash = shared || [];
+  const keep = m => { stash.push(m); return '\u0000' + (stash.length - 1) + '\u0000'; };
+  let text = shared ? src
+                    : src.replace(/\$\$[\s\S]+?\$\$/g, keep)                    // 独立公式
+                        .replace(/\$([^$\n]+?)\$/g, (m, g) => /^\s|^$/.test(g) ? m : keep(m)); // 行内公式
+  const restore = s => s.replace(/\u0000(\d+)\u0000/g, (m, i) => esc(stash[+i]));
+  const inline = s => esc(s)
+      .replace(/&lt;(\/?)(code|b|i|em|strong|kbd|sup|sub)&gt;/g, '<$1$2>')  // 讲义里手写的少量行内标签，别转义成原文
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/(^|[^*\w])\*([^*\n]+)\*/g, '$1<i>$2</i>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  const L = text.split(/\r?\n/), out = [];
+  let i = 0, para = [];
+  const flushP = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
+  while (i < L.length) {
+    const ln = L[i];
+    if (/^\s*<details\b/i.test(ln)) {                            // 折叠的参考答案
+      flushP();
+      const head = [];
+      while (i < L.length && !/^\s*<\/details>/i.test(L[i])) head.push(L[i++]);
+      i++;                                                       // 跳过 </details>
+      const body = head.join('\n')
+                   .replace(/^\s*<details[^>]*>\s*/i, '')
+                   .replace(/\s*<summary>([\s\S]*?)<\/summary>\s*/i, '');
+      const sum = (head.join(' ').match(/<summary>([\s\S]*?)<\/summary>/i) || [])[1]
+                  || '参考答案';
+      out.push('<details class="ans"><summary>' + inline(sum) + '</summary>' +
+               '<div class="ansbody">' + mdToHtml(body, stash) + '</div></details>');
+      continue;
+    }
+    if (/^```/.test(ln)) {                                     // 代码块
+      flushP(); const buf = []; i++;
+      while (i < L.length && !/^```/.test(L[i])) buf.push(L[i++]);
+      i++; out.push('<pre><code>' + esc(buf.join('\n')) + '</code></pre>'); continue;
+    }
+    if (/^\|/.test(ln) && /^\s*\|[\s:|-]+\|\s*$/.test(L[i + 1] || '')) {   // 表格
+      flushP(); const rows = [];
+      while (i < L.length && /^\|/.test(L[i])) rows.push(L[i++]);
+      const cells = r => r.replace(/^\||\|$/g, '').split('|').map(c => inline(c.trim()));
+      let t = '<table><thead><tr>' + cells(rows[0]).map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+      t += rows.slice(2).map(r => '<tr>' + cells(r).map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+      out.push(t + '</tbody></table>'); continue;
+    }
+    if (/^#{1,4}\s/.test(ln)) { flushP(); const n = ln.match(/^#+/)[0].length;
+      out.push(`<h${n}>` + inline(ln.replace(/^#+\s*/, '')) + `</h${n}>`); i++; continue; }
+    if (/^---+\s*$/.test(ln)) { flushP(); out.push('<hr>'); i++; continue; }
+    if (/^>\s?/.test(ln)) { flushP(); const buf = [];
+      while (i < L.length && /^>\s?/.test(L[i])) buf.push(L[i++].replace(/^>\s?/, ''));
+      out.push('<blockquote>' + inline(buf.join(' ')) + '</blockquote>'); continue; }
+    if (/^\s*[-*]\s+/.test(ln)) { flushP(); const buf = [];
+      while (i < L.length && /^\s*[-*]\s+/.test(L[i])) buf.push(L[i++].replace(/^\s*[-*]\s+/, ''));
+      out.push('<ul>' + buf.map(b => '<li>' + inline(b) + '</li>').join('') + '</ul>'); continue; }
+    if (/^\s*\d+\.\s+/.test(ln)) { flushP(); const buf = [];
+      while (i < L.length && /^\s*\d+\.\s+/.test(L[i])) buf.push(L[i++].replace(/^\s*\d+\.\s+/, ''));
+      out.push('<ol>' + buf.map(b => '<li>' + inline(b) + '</li>').join('') + '</ol>'); continue; }
+    if (!ln.trim()) { flushP(); i++; continue; }
+    para.push(ln.trim()); i++;
+  }
+  flushP();
+  return restore(out.join('\n'));
+}
+
+function typeset(el){
+  if (!window.MathJax || !MathJax.typesetPromise) {
+    // MathJax 是 async 载入的，可能还没到；到不了就当作离线（公式显示 LaTeX 原文）
+    if (window.NO_MATHJAX && !el.querySelector('.offhint'))
+      el.insertAdjacentHTML('afterbegin',
+        '<div class="mini offhint">离线状态：公式按 LaTeX 原文显示（功能不受影响）。</div>');
+    setTimeout(() => { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(()=>{}); }, 1800);
+    return;
+  }
+  MathJax.typesetPromise([el]).catch(() => {});
+}
+
+/* ---------- 讲义 / 判据原文 ---------- */
+async function showText(title, path, asMarkdown = true){
+  const r = await fetch(`/api/manual?path=${encodeURIComponent(path)}`).then(x=>x.json());
+  $('dlgtitle').textContent = title + ' · ' + path;
+  const body = $('dlgbody');
+  if (asMarkdown) { body.className = 'md'; body.innerHTML = mdToHtml(r.text || r.error || ''); typeset(body); }
+  else { body.className = ''; body.textContent = r.text || r.error || ''; }
+  $('dlg').showModal();
+}
+
+/* ---------- 单项快测 ---------- */
+async function runCheck(id, btn){
+  flush();
+  const slot = document.getElementById(slotId(id));
+  btn.disabled = true; const old = btn.textContent; btn.textContent = '…';
+  slot.className = 'cres'; slot.textContent = '';
+  let r;
+  try{
+    r = await fetch('/api/check', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({stage:S.cur, id, files:S.contents})}).then(x=>x.json());
+  }catch(e){ slot.className='cres error'; slot.textContent='请求失败：'+e; btn.disabled=false; btn.textContent=old; return; }
+  const label = {pass:'通过', fail:'不通过', blocked:'待前置', error:'出错'}[r.status] || r.status;
+  slot.className = 'cres ' + r.status;
+  slot.innerHTML = `<b>${label}</b> ${escapeHtml(r.line || '')}` + checkBody(r);
+  // 完整输出同时贴到中间的大控制台：右边那栏只有 390px，装不下"输入/输出"这种长行
+  // （整卷判据走卡片渲染时会把控制台藏起来，这里必须显形，不然单项输出看不见）
+  noteConsole(`<span class="b">单项快测 ${id}</span> · ${label} · ${r.secs}s\n` +
+              colorize(r.output || '(这条检查没有打印内容)'));
+  if (r.status === 'pass') $('verdict').innerHTML = '';
+  S.checkResults = S.checkResults || {}; S.checkResults[S.cur+':'+id] = r.status;
+  localStorage.setItem('mgpt.checks', JSON.stringify(S.checkResults));
+  btn.disabled = false; btn.textContent = old;
+  await refreshStages();          // 左栏的进度条当场动，不用刷新页面
+}
+
+/* ---------- 事件 ---------- */
+$('editor').addEventListener('input', ()=>{ $('dirty').textContent = '● 有改动（提交时自动带上）'; });
+$('editor').addEventListener('blur', flush);
+$('editor').addEventListener('keydown', e=>{
+  if(e.key==='Tab'){ e.preventDefault(); const t=e.target, s=t.selectionStart;
+    t.value = t.value.slice(0,s) + '    ' + t.value.slice(t.selectionEnd);
+    t.selectionStart = t.selectionEnd = s+4; }
+  if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); submit(); }
+});
+$('run').onclick = submit;
+$('save').onclick = save;
+$('reload').onclick = () => { if(confirm('丢弃当前改动，从 src/ 重新载入？')) select(S.cur); };
+$('manual').onclick = () => setView('manual');
+/* 结果窗口：读讲义/写代码时不想被输出占屏，就把它甩到另一个窗口去。
+   那一页轮询 /api/result（服务端 last_run.json），所以这边一跑完，那边自己就更新了。 */
+function openResult(){
+  const url = '/result?stage=' + encodeURIComponent(S.cur || 's01');
+  const w = window.open(url, 'mgpt-result', 'width=1000,height=880,left=140,top=30');
+  if (!w) toast('浏览器拦住了弹窗 —— 允许本站弹窗，或直接开 ' + url);
+}
+$('popresult').onclick = openResult;
+/* 视图快捷键：Ctrl+1/2/3 被浏览器占去切标签页了，抢它会让你按不下去，
+   所以用 Ctrl+Shift+数字；Ctrl+Shift+R 开结果窗口。 */
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || !e.shiftKey) return;
+  const i = {'1': 'code', '2': 'manual', '3': 'lab'}[e.key];
+  if (i) { e.preventDefault(); setView(i); }
+  else if (e.key.toLowerCase() === 'r') { e.preventDefault(); $('popresult').click(); }
+});
+/* 独立窗口：读讲义和看代码/终端各占一屏，是两个窗口而不是一次跳转。
+   传 ?solo=1 让那一页自己跑单项检查（见 manual.js 的 standaloneCheck），
+   否则点「跑这条单项检查」会把那个窗口导航回测评台，读的位置就丢了。 */
+$('popout').onclick = () => {
+  const url = `/manual/${S.cur}?solo=1`;
+  const w = window.open(url, 'mgpt-manual-' + S.cur, 'width=1080,height=900,left=80,top=40');
+  if (!w) toast('浏览器拦住了弹窗 —— 允许本站弹窗，或直接在新标签打开 ' + url);
+  else toast('已在新窗口打开 ' + S.cur + '（那个窗口里点「跑单项检查」也有效）');
+};
+$('labrun').onclick = runLab;
+$('labreset').onclick = () => { renderLabReset(); };
+$('judgesrc').onclick = () => S.cur && showText('判据脚本', stageOf(S.cur).judge, false);
+$('dlgclose').onclick = () => $('dlg').close();
+// 视图切换：按钮在 .views 里，绑一次就够（不随阶段重建）
+document.querySelector('.views').addEventListener('click', e => {
+  const b = e.target.closest('button[data-view]');
+  if (b) setView(b.dataset.view);
+});
+// 检查按钮用事件委托：renderRail 每次重建 DOM，直接绑会丢
+$('rail').addEventListener('click', e => {
+  const b = e.target.closest('.cbtn');
+  if (b) { runCheck(b.dataset.id, b); return; }
+  const l = e.target.closest('.mlink');
+  if (l) { l.dataset.sec ? gotoAnchor(l.dataset.sec) : gotoSection(l.dataset.tid); }
+});
+
+/* ---------- 讲义视图：中栏的第二视图，和编辑器共用左栏进度 ----------
+   讲义是 docs/manual/sNN.html（由 scripts/md_to_html.py 从 docs/stage-0N-*.md 生成）：
+     · 这里 fetch 过来、给 .chapter 加 .in-app、注入中栏（crumb 和自己的 TOC 自动隐藏）；
+     · 也可以直接开 /manual/s02 读或打印 —— 同一份文件，两种用法。
+   两边共用一套 host 协议：checkTodo / editTodo / openStage / openPath，
+   讲义自己不认识测评台的 DOM，所以它坏了也不拖累正文。 */
+const host = {
+  get stage(){ return S.cur; },
+  checkTodo: tid => appCheck(tid),
+  editTodo: tid => gotoCode(tid),
+  openStage: id => { select(id); if (S.view === 'manual') loadManual(id); },
+  openPath: (rel, line) => showSource(rel, line),
+  // 小地图要的两个数：哪些 TODO 还没写、每条单项上次什么结论。左栏刚刷新，数据是热的。
+  progress(){
+    const s = stageOf(S.cur) || {};
+    return Object.assign({}, s.progress || {}, {last: s.progress && s.progress.last || {}});
+  },
+};
+
+/* 讲义里指向判据/骨架源码的链接：弹窗展示，并滚到链接上写的那一行 */
+async function showSource(rel, line){
+  const r = await fetch(`/api/manual?path=${encodeURIComponent(rel)}`).then(x=>x.json());
+  $('dlgtitle').textContent = rel + (line ? ':' + line : '');
+  const body = $('dlgbody');
+  const txt = r.text || r.error || '';
+  body.className = '';
+  body.innerHTML = '';
+  const pre = document.createElement('pre');
+  pre.className = 'raw';
+  pre.textContent = txt;
+  body.appendChild(pre);
+  $('dlg').showModal();
+  if (line) setTimeout(() => { pre.scrollTop = Math.max(0, (line - 4) * 20.8); }, 60);
+}
+
+async function loadManual(id){
+  const box = $('manualhost');
+  if(box.dataset.stage === id && box.firstChild) return;
+  if(!stageOf(id) || !stageOf(id).available){
+    box.dataset.stage = '';
+    box.innerHTML = '<div class="mini">这个阶段还没发布讲义。已发布的阶段做完再回来 —— ' +
+      '骨架、讲义、判据是三样一起发布的，缺一样判据就不可信。</div>';
+    return;
+  }
+  box.innerHTML = '<div class="mini">讲义载入中…</div>';
+  let resp, text;
+  try{ resp = await fetch('/manual/' + id); text = await resp.text(); }
+  catch(e){ box.innerHTML = '<div class="mini">讲义加载失败：' + e + '</div>'; return; }
+  const ch = new DOMParser().parseFromString(text, 'text/html').querySelector('.chapter');
+  if(!ch){
+    box.innerHTML = '<div class="mini">讲义没生成（HTTP ' + resp.status + '）—— ' +
+      '在项目根目录跑 <code>python scripts/md_to_html.py</code> 再刷新。</div>';
+    return;
+  }
+  ch.classList.add('in-app');
+  box.innerHTML = ''; box.appendChild(document.importNode(ch, true));
+  box.dataset.stage = id;
+  if(window.Manual) Manual.mount(box.querySelector('.chapter'), host);
+}
+
+function setView(v){
+  S.view = v;
+  $('view-code').hidden = v !== 'code';
+  $('view-manual').hidden = v !== 'manual';
+  $('view-lab').hidden = v !== 'lab';
+  document.querySelectorAll('.views button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  $('popout').hidden = v !== 'manual' || !stageOf(S.cur)?.available;
+  $('viewhint').textContent = v === 'manual'
+    ? '在讲义里点「跑这条单项检查」就地出结果；点「跳到编辑器」回到代码并定位到那一行；「↗ 独立窗口」把这一章另开一屏'
+    : v === 'lab' ? '这里的数字不写进进度，也不等于验收 —— 它只回答"改这个参数会怎样"'
+    : '';
+  if(v === 'manual') loadManual(S.cur);
+  if(v === 'lab') renderLab(stageOf(S.cur));
+}
+
+/* ---------- 调参试验台 ----------
+   表单由 webapp/lab.py 的 KNOBS 生成：旋钮只在一处定义，前端不硬写第二个清单。
+   每次跑都带上编辑器里的内容（和「提交并测评」同一套工作区机制），
+   所以你调的是**自己的实现** —— 换成答案版就没意义了。 */
+function renderLab(s){
+  const form = $('labform');
+  if(form.dataset.stage === S.cur && form.firstChild) return;
+  form.innerHTML = '';
+  form.dataset.stage = S.cur;
+  if(!(s && s.lab && s.lab.length)){
+    form.innerHTML = '<div class="mini">这个阶段还没有试验台。已发布的阶段做完再回来。</div>';
+    $('labrun').disabled = true;
+    return;
+  }
+  $('labrun').disabled = !s.available;
+  for(const k of s.lab){
+    const f = document.createElement('div');
+    f.className = 'labfield' + (k.type === 'bool' ? ' check' : '');
+    if(k.type === 'bool'){
+      f.innerHTML = `<input type="checkbox" id="lab-${k.key}" ${k.default ? 'checked' : ''}>` +
+                    `<label for="lab-${k.key}" style="display:inline">${escapeHtml(k.label)}</label>` +
+                    `<span class="why">${escapeHtml(k.why || '')}</span>`;
+    } else {
+      const isLog = k.type === 'logrange';
+      // 对数滑杆：滑块刻度走 log10（lr 从 0.001 到 1.5 跨三个数量级，线性滑杆前 90% 都在挤高端）
+      const lo = isLog ? Math.log10(k.min) : k.min;
+      const hi = isLog ? Math.log10(k.max) : k.max;
+      const val = isLog ? Math.log10(k.default) : k.default;
+      const step = isLog ? 0.01 : (k.step || (k.max <= 10 ? 0.1 : 1));
+      f.innerHTML = `<label for="lab-${k.key}">${escapeHtml(k.label)}<b id="labv-${k.key}"></b></label>` +
+        `<input type="range" id="lab-${k.key}" min="${lo}" max="${hi}" step="${step}" value="${val}"
+          data-log="${isLog ? 1 : 0}">` +
+        `<span class="why">${escapeHtml(k.why || '')}</span>`;
+    }
+    form.appendChild(f);
+  }
+  form.querySelectorAll('input[type=range]').forEach(r => r.addEventListener('input', syncLabValues));
+  form.querySelectorAll('input').forEach(r => r.addEventListener('change', syncLabValues));
+  syncLabValues();
+}
+
+function renderLabReset(){
+  $('labform').dataset.stage = '';        // 让 renderLab 重新生成，旋钮回到 KNOBS 里的默认值
+  $('labout').innerHTML = '';
+  renderLab(stageOf(S.cur));
+}
+
+function labValue(el){
+  if(el.type === 'checkbox') return el.checked;
+  const raw = +el.value;
+  return el.dataset.log === '1' ? Math.pow(10, raw) : raw;   // 对数滑杆：滑块位置是 log10(lr)
+}
+
+function syncLabValues(){
+  for(const el of document.querySelectorAll('#labform input')){
+    if(el.type === 'checkbox') continue;
+    const v = labValue(el);
+    const out = $('labv-' + el.id.slice(4));
+    if(out) out.textContent = el.dataset.log === '1' ? v.toFixed(4) : String(v);
+  }
+}
+
+function labParams(){
+  const p = {};
+  for(const el of document.querySelectorAll('#labform input')) p[el.id.slice(4)] = labValue(el);
+  return p;
+}
+
+async function runLab(){
+  flush();
+  const btn = $('labrun');
+  btn.disabled = true; btn.textContent = '跑…';
+  $('labhint').textContent = '';
+  let res;
+  try{
+    res = await fetch('/api/lab', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({stage:S.cur, files:S.contents, params:labParams()})}).then(x=>x.json());
+  }catch(e){ $('labhint').textContent = '请求失败：' + e; btn.disabled = false; btn.textContent = '跑一次'; return; }
+  const box = $('labout');
+  box.innerHTML = '';
+  if(res.status !== 'ok'){
+    box.innerHTML = `<div class="crit warn"><span class="mk">!</span><span class="nm">跑不起来</span>` +
+                    `<span class="dt">${escapeHtml((res.output || '').slice(0, 400))}</span></div>`;
+  } else {
+    const head = document.createElement('div');
+    head.className = 'labhead';
+    head.innerHTML = `<b>${escapeHtml(res.title || '')}</b><span>${escapeHtml(res.subtitle || '')}</span>` +
+                     `<span class="hint">${res.secs}s</span>`;
+    box.appendChild(head);
+    appendCards(box, res.criteria || []);
+    if((res.flow || []).length) box.insertAdjacentHTML('beforeend', flowHtml(res.flow));
+    if((res.curves || []).length) box.insertAdjacentHTML('beforeend', curvesSvg(res.curves));
+    if((res.mats || []).length) box.insertAdjacentHTML('beforeend', matsHtml(res.mats));
+    if((res.bars || []).length) box.insertAdjacentHTML('beforeend', barsHtml(res.bars));
+    if((res.text || []).length) box.insertAdjacentHTML('beforeend', genHtml(res.text));
+  }
+  btn.disabled = false; btn.textContent = '跑一次';
+}
+
+function toast(msg){ $('viewhint').textContent = msg; }
+
+/* 从讲义里直接跑单项检查：结果既写回讲义那一节，也同步右栏的槽位和左栏进度 */
+async function appCheck(tid){
+  const s = stageOf(S.cur);
+  if(!(s.checks || []).some(c => c.id === tid)){ toast('这个阶段没有编号 ' + tid + ' 的单项检查'); return; }
+  flush();
+  const btns = [...document.querySelectorAll(`#manualhost [data-check="${tid}"]`)];
+  btns.forEach(b => { b.disabled = true; b.textContent = '测…'; });
+  let r;
+  try{
+    r = await fetch('/api/check', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({stage:S.cur, id:tid, files:S.contents})}).then(x=>x.json());
+  }catch(e){ r = {status:'error', line:'请求失败：' + e, output:''}; }
+  const label = {pass:'通过', fail:'不通过', blocked:'待前置', error:'出错'}[r.status] || r.status;
+  btns.forEach(b => {
+    b.disabled = false; b.textContent = '跑 ' + tid + ' 的单项检查';
+    let out = b.parentElement.querySelector('.fig-result');
+    if(!out){ out = document.createElement('span'); out.className = 'fig-result'; b.parentElement.appendChild(out); }
+    out.className = 'fig-result ' + r.status;
+    out.textContent = `${tid} → ${label}：` + (r.line || '').slice(0, 160);
+    out.title = (r.output || '').slice(0, 4000);          // 悬停看输入/输出那几行
+  });
+  S.checkResults = S.checkResults || {};
+  S.checkResults[S.cur + ':' + tid] = r.status;
+  localStorage.setItem('mgpt.checks', JSON.stringify(S.checkResults));
+  const slot = document.getElementById(slotId(tid));
+  if(slot){ slot.className = 'cres ' + r.status;
+            slot.innerHTML = `<b>${label}</b> ${escapeHtml(r.line || '')}` + checkBody(r); }
+  await refreshStages();
+}
+
+/* 讲义里的「跳到编辑器」→ 找到占位那句，切标签页、选中那一行。
+
+   判定和 server._pending_in 用的是同一条规则，否则会出现"网站说已写、
+   跳过去却停在 raise 上"的矛盾：
+     · 整行被注释      → 已处理
+     · 上面已有 return → 死代码，等于已写（只是没删干净）
+   优先跳"还活着"的那句；都死了也照样跳过去，但告诉你该删。 */
+function findPlaceholder(txt, tid){
+  const needle = 'NotImplementedError("' + tid;
+  let dead = null;
+  for (let i = txt.indexOf(needle); i >= 0; i = txt.indexOf(needle, i + 1)) {
+    const lineStart = txt.lastIndexOf('\n', i - 1) + 1;
+    const lineEnd = txt.indexOf('\n', i);
+    const line = txt.slice(lineStart, lineEnd < 0 ? txt.length : lineEnd);
+    if (line.slice(0, line.indexOf('NotImplementedError')).trimStart().startsWith('#')) continue;
+    const indent = line.length - line.trimStart().length;
+    let deadLine = false;
+    for (const prev of txt.slice(0, lineStart).split('\n').reverse()) {
+      if (!prev.trim()) continue;
+      const ind = prev.length - prev.trimStart().length;
+      if (ind < indent || /^(def |class )/.test(prev.trim())) break;
+      if (ind === indent && /^(return|raise)\b/.test(prev.trim()) && !prev.includes('NotImplementedError')) { deadLine = true; break; }
+    }
+    const hit = { rel: null, line: txt.slice(0, i).split('\n').length };
+    if (!deadLine) return { ...hit, live: true };
+    dead = dead || { ...hit, live: false };
+  }
+  return dead;
+}
+
+async function gotoCode(tid){
+  const s = stageOf(S.cur);
+  let fallback = null;
+  for(const rel of s.files){
+    if(S.contents[rel] === undefined) await loadFile(rel);
+    const hit = findPlaceholder(S.contents[rel] || '', tid);
+    if(!hit) continue;
+    hit.rel = rel;
+    if(hit.live){ fallback = hit; break; }
+    fallback = fallback || hit;
+  }
+  setView('code');
+  if(!fallback){ toast('骨架里已经找不到 ' + tid + ' 的占位了 —— 大概写完啦，跑判据确认一下。'); return; }
+  if(S.file !== fallback.rel) await switchFile(fallback.rel);
+  const ed = $('editor'), line = fallback.line, txt = S.contents[fallback.rel];
+  const pos = txt.split('\n').slice(0, line - 1).join('\n').length + (line > 1 ? 1 : 0);
+  ed.focus(); ed.setSelectionRange(pos, pos);
+  ed.scrollTop = Math.max(0, (line - 6) * 20);
+  toast(fallback.live ? `${fallback.rel}:${line} ← ${tid}`
+        : `${fallback.rel}:${line} ← ${tid}：这句 raise 已被你写在上面的 return 挤成死代码，删掉即可（进度按已写算）`);
+}
+
+/* 右栏点 TODO → 讲义里定位到讲它的那一节。
+   优先用节尾的「跑这条单项检查」按钮（只有 TODO-N 有）；
+   找不到就退到「代码地图」表格里的同一行（那一行必然存在，否则地图漏了）。 */
+/* 点提示里的 §N 芯片：切到讲义视图、滚到那一节并闪一下。
+   锚点不在当前这本讲义里（例如在 3b 的提示里点 "3a §4.1"）就直说，
+   让人自己切阶段 —— 猜一本别的讲义跳过去比不跳更糟。 */
+async function gotoAnchor(anchor){
+  setView('manual');
+  await loadManual(S.cur);
+  const el = $('manualhost').querySelector(`#${anchor}`);
+  if (!el) { toast(`这一节不在当前阶段的讲义里（找的是 #${anchor}）—— 左栏切到对应阶段再点一次`); return; }
+  const sec = el.closest('.sec') || el;
+  sec.scrollIntoView({block:'start'});
+  for (const t of new Set([sec, el])) { t.classList.add('flash'); setTimeout(()=>t.classList.remove('flash'), 1600); }
+}
+
+async function gotoSection(tid){
+  setView('manual');
+  await loadManual(S.cur);
+  const box = $('manualhost');
+  const el = box.querySelector(`[data-check="${tid}"]`) || box.querySelector(`tr[data-todo="${tid}"]`);
+  const sec = el && (el.closest('.sec') || el.closest('tr'));
+  if (sec){ sec.scrollIntoView({block:'start'}); sec.classList.add('flash'); setTimeout(()=>sec.classList.remove('flash'), 1600); }
+}
+
+boot();
+</script>
+<!-- 讲义页脚那份清单的副本：测评台把 .chapter 用 importNode 搬进来，搬进来的
+     <script> 不会执行，所以组件模块必须在这里自己引一遍。
+     加/改名一个 figs_*.js 时，scripts/md_to_html.py 的页脚和这里要一起改。 -->
+<script src="/manual/assets/manual.js"></script>
+<script src="/manual/assets/figs.js"></script>
+<script src="/manual/assets/figs2.js"></script>
+<script src="/manual/assets/figs_a.js"></script>
+<script src="/manual/assets/figs_b.js"></script>
+<script src="/manual/assets/figs_c.js"></script>
+<script src="/manual/assets/figs_d.js"></script>
+<script src="/manual/assets/figs_e.js"></script>
+<script src="/manual/assets/figs_f.js"></script>
+<script src="/manual/assets/figs_g.js"></script>
+</body>
+</html>

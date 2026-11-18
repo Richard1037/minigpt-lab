@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 7 · 采样与生成质量：同一台模型的四种性格</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s07">
+<article class="chapter" id="ch-s07">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-28" href="#sec-4" title="sampler.py TODO-28 apply_penalty"><i></i><code>TODO-28</code></a><a class="mm" data-todo="TODO-29" href="#sec-5" title="sampler.py TODO-29 keep_top_k"><i></i><code>TODO-29</code></a><a class="mm" data-todo="TODO-30" href="#sec-6" title="sampler.py TODO-30 keep_top_p"><i></i><code>TODO-30</code></a><a class="mm" data-todo="TODO-31" href="#sec-7" title="sampler.py TODO-31 sample_next"><i></i><code>TODO-31</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s07">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s07</div>
+  <h1>阶段 7 · 采样与生成质量：同一台模型的四种性格</h1>
+  <div class="meta"><span>判据 <code>stages/s07_generate.py</code></span>
+    <span>预计 2~4 小时</span>
+    <span>要交 minigpt/sampler.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>stages/s07_generate.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/sampler.py</code>。预计 2~4 小时。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-28"><td><code>TODO-28</code></td><td>sampler.py TODO-28 apply_penalty</td><td><code class="path">minigpt/sampler.py</code> : <b class="ln">62</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-28">去写</button></td></tr><tr data-todo="TODO-29"><td><code>TODO-29</code></td><td>sampler.py TODO-29 keep_top_k</td><td><code class="path">minigpt/sampler.py</code> : <b class="ln">81</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-29">去写</button></td></tr><tr data-todo="TODO-30"><td><code>TODO-30</code></td><td>sampler.py TODO-30 keep_top_p</td><td><code class="path">minigpt/sampler.py</code> : <b class="ln">103</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-30">去写</button></td></tr><tr data-todo="TODO-31"><td><code>TODO-31</code></td><td>sampler.py TODO-31 sample_next</td><td><code class="path">minigpt/sampler.py</code> : <b class="ln">131</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-31">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. 必要理论</a><a href="#sec-3"><span>3</span>3. 已给你的代码：<code>_softmax</code>、<code>MASK</code>、<code>entropy</code>、<code>temperature_sweep</code></a><a href="#sec-4"><span>4</span>4. TODO-28：<code>apply_penalty</code></a><a href="#sec-5"><span>5</span>5. TODO-29：<code>keep_top_k</code></a><a href="#sec-6"><span>6</span>6. TODO-30：<code>keep_top_p</code></a><a href="#sec-7"><span>7</span>7. TODO-31：<code>sample_next</code></a><a href="#sec-8"><span>8</span>8. 端到端：<code>GPT.generate</code> 怎么把采样用起来</a><a href="#sec-9"><span>9</span>9. 验收判据逐条解读</a><a href="#sec-10"><span>10</span>10. 常见失败模式对照表</a><a href="#sec-11"><span>11</span>11. 自查题</a><a href="#sec-12"><span>12</span>12. 下一步</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s07"><p>预计：2~4 小时。 验收命令：<code>python stages/s07_generate.py</code>（30 条硬判据 + 1 条软提示，约 2 秒） 要写的地方：<code>src/minigpt/sampler.py</code>（TODO-28、TODO-29、TODO-30、TODO-31）。 网站：选「阶段 7 · 采样与生成质量」，提交 <code>minigpt/sampler.py</code>。</p></section><section class="sec" id="sec-1" data-stage="s07"><h2>1. 这一步在干什么</h2><p>训练结束以后，模型对每个位置只交出一样东西：一个长度等于词表的分数向量（logits）。<b>说出口的是哪一个</b>，完全由这个文件里的十几行决定。</p>
+<div class="flow"><div class="fs"><i class="n">1</i><span>起点：最后一个位置的 logits <code>z (V,)</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">2</i><span><b>惩罚</b> —— <code>apply_penalty(z, seen, penalty)</code>，<code>TODO-28</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">3</i><span><b>贪心岔口</b> —— <code>temperature &lt;= 0</code> 时直接 <code>argmax</code>，不经过任何随机</span></div><i class="fa">↓</i><div class="fs"><i class="n">4</i><span><b>温度</b> —— <code>z / T</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">5</i><span><b>top-k</b> —— <code>keep_top_k(·, k)</code>，<code>TODO-29</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">6</i><span><b>softmax</b> → 概率</span></div><i class="fa">↓</i><div class="fs"><i class="n">7</i><span><b>top-p</b> —— <code>keep_top_p(probs, p)</code>，<code>TODO-30</code></span></div><i class="fa">↓</i><div class="fs"><i class="n">8</i><span><b>抽样</b> —— <code>rng.choice(V, p=…)</code> → 一个 token id，<code>TODO-31</code></span></div></div>
+<p>这四个开关各自改的是<b>不同的东西</b>：温度改<b>分布形状</b>、top-k 改<b>候选集</b>、top-p 改<b>概率质量</b>、惩罚改<b>分数本身</b>。所以它们不能互相替代，而顺序换了结论就换（§2.6）。</p>
+<p>因为采样<b>不参与训练</b>，它是整个手册里唯一一个"改坏了也不会让 loss 变差"的部分。这带来一个方法论问题：loss 这条万能拐杖失效了，判据必须直接盯着<b>分布</b>本身。于是这一卷的设计分两段：</p>
+<li><b>前 22 条</b>在一份固定的合成 logits（12 个分数，<code>V=12</code>）上做<b>大样本统计检验</b>：不训模型，跑得快，结论干净。每条都重复抽 1200~6000 次，和解析算出来的理论值对账（§2.7 讲那个 <code>0.14</code> 是怎么来的）。</li><li><b>后 8 条</b>才上真模型：36 行自造小诗训 300 步（约 2 秒），看它贪心能不能接上下句、升温会不会换说法、加惩罚会不会少复读。</li></ul>
+<p>判据里的"候选集"一律指<b>词表下标的集合</b>（<code>{2, 5, 7}</code> 这种），不是分数。</p></section><section class="sec" id="sec-2" data-stage="s07"><h2>2. 必要理论</h2><h4 id="sec-2-1">2.1 从 logits 到一个分布：为什么 argmax 不是唯一答案</h4>
+<p>模型交出的是"每个候选的分数"，不是概率。要抽签就得先变成概率，第三件老工具（阶段 3 的 CrossEntropy、阶段 4 的 <code>_softmax_rows</code>，这是第三次出现）：</p>
+<p>$$p_i=\frac{e^{z_i}}{\sum_j e^{z_j}}$$</p>
+<p>贪心（$\arg\max$）是这个分布的一个特例：它只取峰，丢掉全部"第二名有多接近"的信息。后果是<b>复读</b>：既然每次都取峰，同一个前缀永远给同一个下一词，模型一旦进入某个循环就出不来 —— 阶段 6 判据最后那条 info 就是活样本（贪心 60 个字符：<code>the small town sits between two hills an and the the the the anoond the the the...</code>）。采样把"次优候选"重新变成可能，代价是可能抽到差的。这一章就是学怎么花这笔钱。</p>
+<h4 id="sec-2-2">2.2 温度：分布的陡峭程度</h4>
+<p>$$p_i(T)=\frac{\exp(z_i/T)}{\sum_j \exp(z_j/T)}$$</p>
+<p>$T$ 是分数轴的<b>缩放</b>，不是加法，所以它改的是形状而不是名次：</p>
+<li>$T\to 0^+$：峰被无限拉高，分布收敛到 one-hot（$\arg\max$）。判据 <code>温度极小但不为 0 时仍在赌最高分</code> 用 $T=10^{-3}$ 测的就是这个：<code>exp</code> 里其余候选<b>下溢成 0</b>，抽出来必然是峰。</li><li>$T\to\infty$：所有分数被压成同一个数，分布趋于均匀，熵趋于上限 $\ln V$。</li><li>中间：$T$ 越大，第二三名越有机会。<b>熵单调上升</b>（判据第 1 条）：$H(T)=-\sum_i p_i\log p_i$，那 12 个分数在 $T=0.2/0.5/1/2/5$ 下的熵是 <code>0.025 / 0.425 / 1.207 / 1.957 / 2.371</code>，$\ln 12=2.485$ 是天花板。</li></ul>
+<p>两个必须做对的地方：</p>
+<li><b><code>temperature &lt;= 0</code> 要单独走贪心</b>。$z/0$ 给 <code>inf</code>/<code>nan</code>，而 $\texttt{softmax}(\text{nan})$ 是 nan，<code>rng.choice</code> 收到 nan 概率才炸 —— 报错位置离真正的错误隔了两层。而 $T=0$ 的定义本来就是"取最大分数"，不需要经过任何随机：判据 <code>temperature=0 就是贪心（与 seed 无关）</code> 用三个不同种子验它。</li><li><b>温度必须在 softmax 之前</b>。如果把温度放到概率上（$p_i/T$ 再归一化），分子分母同时除以 $T$，结果<b>一个字都不变</b> —— 这是本章最隐蔽的一个 bug：代码看着像"实现了温度"，症状是"T 开得很大，输出仍然很单调"。</li></ol>
+<p>温度的实际取值要跟模型自信度匹配。判据后段那台小模型训得很熟（末段 loss 0.145，$\ln V=3.091$），$T=1.0$ 时 24 个种子仍然几乎总是同一个词 —— 所以多样性判据把温度开到 <code>T=2.0</code> 并配 <code>top_k=8</code>。<b>这不是采样坏了，这是真实结论：模型越自信，同样的温度越驯服。</b></p>
+<h4 id="sec-2-3">2.3 top-k：只保留最高的 k 个候选</h4>
+<p>$$\mathcal{K}=\text{最大的 }k\text{ 个下标},\qquad z_i\leftarrow \text{MASK}\ (i\notin\mathcal{K})$$</p>
+<p>动机：$T$ 放大以后<b>所有</b>候选都参与抽签，长尾里的垃圾（本项目词表 22，但真实模型上万）会涌进来。top-k 先把尾巴剪掉，再在剩下的 k 个里按温度抽签。</p>
+<p>三个要点：</p>
+<li><b>切在分数上、掩成 MASK，不删元素</b>（§5 详说）：删了就得到"一个不知道对应哪些 id 的分布"，最后那一步 <code>rng.choice(V, p=...)</code> 直接对不上号。</li><li><b>k 与温度可交换</b>。温度是正的等比缩放，名次不变，所以"k 留下的名单"与 $T$ 无关 —— 判据 <code>k 这一刀在温度之前生效：升温不引入新候选</code> 用 <code>T=4, k=2</code> 验的正是这个不变性（$T$ 只改这 2 个之间的比例）。这和 §2.2 的第 2 点不矛盾：<b>可交换的是 k 与温度，不可交换的是温度与 softmax。</b></li><li><b>k 是个开关</b>：<code>k&lt;=0</code> 或 <code>k&gt;=V</code> 时原样返回。判据 <code>k=0 或 k&gt;=V 时不剪枝</code> 查它；把它写成"无论如何都切一刀"，$k=0$ 时会返回一行全 MASK → softmax 给出均匀分布 → 等于把整个词表拉平，非常像"温度开到了无穷大"。</li></ol>
+<h4 id="sec-2-4">2.4 top-p（nucleus）：覆盖多少概率质量</h4>
+<p>top-k 的老毛病是 $k$ 与"当前这一步有多确定"无关：模型极度确定时 $k=40$ 会硬塞进 39 个垃圾，模型很犹豫时 $k=40$ 又太窄。nucleus 采样改成<b>把概率从高到低累加，刚攒够 $p$ 就停</b>：</p>
+<p>$$\mathcal{N}=\{\,i_1,\dots,i_n\ \text{(按概率降序)}:\ \underbrace{p_{i_1}+\cdots+p_{i_{n-1}}}_{&lt;\,p\ \text{（轮到 }i_n\text{ 之前还没攒够）}}\,\},\qquad \sum_{i\in\mathcal{N}}p_i\ \ge\ p$$</p>
+<p>于是候选数是<b>自适应</b>的：分布尖时只有一两个，分布平时几十个。三条判据就是在钉这三件事：核的覆盖 <code>≥ p</code>、核是概率降序的<b>前缀</b>、归一化后和为 1。</p>
+<p>为什么定义里要说"轮到这一格<b>之前</b>攒了多少"（§6 的 <code>before = cum - q[order]</code>）：判据 <code>top_p=0.5 的核覆盖原分布 ≥ 0.5 的质量</code> 里，那 12 个分数的第一名概率是 0.620 &gt; 0.5，所以核就是 <code>{7}</code> —— 覆盖 0.620。如果你写成"到这一格<b>为止</b>的累计 ≤ p"，跨过 $p$ 的那一格会被踢掉，留下的质量总是<b>刚不到</b> $p$（$p=0.8$ 时可能只有 0.62）。所有人都说"nucleus 覆盖 80% 概率"，指的从来是 ≥ 80%。</p>
+<p>还有一个角落：<b>极端 one-hot</b>。$T=10^{-4}$ 把分布压成第一名 = 1.000000，此时 $p=0.5$ 的核应该只剩它一个，而不是"一格都选不上 → 全 0 → 归一化 0/0 → nan"。判据 <code>极端 one-hot 时不冒出 nan</code> 专查这个兜底。</p>
+<h4 id="sec-2-5">2.5 重复惩罚：GPT-2 的两个不对称</h4>
+<p>$$z_i'=\begin{cases}z_i/\rho &amp; z_i&gt;0\\[3pt] z_i\cdot\rho &amp; z_i\le 0\end{cases}\qquad (i\in\text{seen},\ \rho\ge 1)$$</p>
+<p>两条分支只做一件事：<b>把它往更小的方向推</b>。如果统一写成"除以 $\rho$"，负分会被<b>抬向 0</b> —— 也就是更接近被选中，惩罚变成了奖励。判据 <code>正分除以惩罚、负分乘以惩罚</code> 用精确到 $10^{-12}$ 的两个等式验它（<code>id 7</code> 的 4.48 → 1.792，<code>id 4</code> 的 −4.80 → −12.000）。</p>
+<p>它是 <b>presence</b> 而不是 <b>frequency</b> 惩罚：<code>seen</code> 是"出现过"的集合，出现三次和出现一次一样惨。这就是实现里那句 <code>np.unique</code> 的意义 —— 不去重的话同一个 id 会被连除两次，强度悄悄变成 $\rho^2$。（想要 frequency 版：把 <code>np.unique</code> 换成 <code>np.bincount(seen, minlength=V)</code>，按次数开幂。阶段 8 的可选作业。）</p>
+<p>三个判据角度：<code>惩罚不修改调用者的 logits</code>（§4 的头号坑）、<code>被罚的那个词经验频率明显下降</code>（同一颗种子、同一批随机数，<code>penalty=3</code> 时 <code>0.627 → 0.080</code>）、<code>penalty=1 等于不惩罚</code>、<code>越界 id 被安全忽略</code>。</p>
+<h4 id="sec-2-6">2.6 顺序为什么是这一个</h4>
+<div class="flow"><div class="fs"><i class="n">1</i><span><b>惩罚</b>（在分数上）→ <b>贪心岔口</b>（<code>T&lt;=0</code> 就到此为止）</span></div><i class="fa">↓</i><div class="fs"><i class="n">2</i><span><b>温度</b>（还是分数）→ <b>top-k</b>（还是分数）</span></div><i class="fa">↓</i><div class="fs"><i class="n">3</i><span><b>softmax</b></span></div><i class="fa">↓</i><div class="fs"><i class="n">4</i><span><b>top-p</b>（在概率上）→ <b><code>rng.choice</code></b></span></div></div>
+<p>四个滑块就是上面这根管子：拖 ρ 看词1/词4 的分数怎么被"往小推"（注意正负两条分支）， 拖 T 到 0 看贪心岔口怎么让 ρ 和 k 全部失效，按那个"把 top-p 挪到 softmax 之前"的按钮 看同一批参数留下完全不同的词。</p>
+<div class="fig" data-fig="sampling" role="img" aria-label="可视化：sampling"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>逐条说"换了会怎样"：</p>
+<li><b>惩罚必须在贪心岔口之前</b>。$T=0$ 时它也要生效，否则复读问题在最容易复现的模式下最严重（贪心一定选回同一个词）。判据 <code>top_k=1 与贪心等价</code> 和单项 <code>TODO-31</code> 里那条 <code>seen=[best], penalty=8, temperature=0 → 必须换第二个</code> 两头都在钉它。</li><li><b>温度必须在 softmax 之前</b>（§2.2）：放之后就等于没放。</li><li><b>top-k 在 softmax 之前</b>是定义选择（"最高的 k 个<b>分数</b>"），而且掩码写法让后面只跑一次 softmax；<b>top-p 必须在 softmax 之后</b>：它的定义在概率质量上，同一刀切在分数上会因为分布陡缓不同而切出完全不同的东西（§2.4）。</li><li><b>top-p 之后不要再自己归一化</b>：<code>keep_top_p</code> 交出的已经是一个和为 1 的分布，<code>rng.choice</code> 要的也只是"非负 + 和为 1"。多除一次和本身不会炸，但它意味着"归一化"这件事有两个地方各写一半 —— 一旦其中一处漏了（比如你把 <code>keep_top_p</code> 写成只置 0、不除），症状就是 <code>ValueError: Probabilities do not sum to 1</code>，而你会先去怀疑别的地方。骨架注释里点名的正是这条报错。</li></ul>
+<h4 id="sec-2-7">2.7 怎么证明"真的在按分布抽"</h4>
+<p>看文本是看不出来的 —— 采样随机，任何一段输出都可能来自任何一套错误的实现。唯一的证据是<b>大样本频率对得上解析概率</b>：</p>
+<p>$$\sum_{i}\lvert\hat p_i-p_i\rvert\ \le\ 0.14,\qquad \hat p_i=\frac{\text{id }i\text{ 出现次数}}{n}$$</p>
+<p>这个 L1 距离（= 2 × 总变差距离）的随机波动量级是 $\sqrt{V/n}$：判据前段 $V=12$、$n=6000$ → 约 0.045，阈值 <code>0.14</code> 差不多是 3σ（实测 0.014）。$n=1200$ 那几条同理。</p>
+<p>两个设计上的教训，比数字本身值钱：</p>
+<li><b>阈值不能按"实测值 + 一点点"定</b>。种子虽然固定，但 numpy 的 <code>default_rng</code> 序列、<code>rng.choice</code> 的算法都属于实现细节，允许你的正确实现和答案实现给出不同的抽样。阈值必须显著大于统计噪声，否则它会变成一次抛硬币。</li><li><b>每条"分布类"判据都配一条"布尔类"判据</b>。候选集恰好是前 k 名（<code>support</code> 是否等于那个集合）这种检验不受抽样噪声影响，它抓的是结构性错误；L1 抓的是加权错误。两个一起才完整。</li></ol></section><section class="sec" id="sec-3" data-stage="s07"><h2>3. 已给你的代码：<code>_softmax</code>、<code>MASK</code>、<code>entropy</code>、<code>temperature_sweep</code></h2><p>配套单项快测 <code>python webapp/checks.py GIV-5</code>（现在就该是绿的：它测给你的部分；只有 <code>temperature_sweep</code> 那半会提到 TODO-31）。</p>
+<h4 id="sec-3-1">3.1 <code>_softmax</code>：减最大值那一步不是风格，是必需</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code>m = np.<span class="bi">max</span>(logits); e = np.exp(logits - m); <span class="kw">return</span> e / np.<span class="bi">sum</span>(e)</code></pre></figure>
+<p>$\exp(900)$ 在 float64 里是 <code>inf</code>（上限约 $1.8\times10^{308}$，即 $\exp(887)$），于是 <code>inf/inf = nan</code>，整条管线后面全是 nan。减最大值之后最大的指数项是 $e^0=1$，其余 $\le 1$，永不溢出，而且：</p>
+<p>$$\frac{e^{z_i-m}}{\sum_j e^{z_j-m}}=\frac{e^{z_i}e^{-m}}{e^{-m}\sum_j e^{z_j}}=p_i$$</p>
+<p><b>平移不变</b>是它的数学内容 —— 单项 <code>GIV-5</code> 用 <code>z</code> 和 <code>z-500</code> 两个输入验同一个结果，还用全负分数（<code>[-50,-40,0]</code>）验"减完之后有没有偷偷 clamp"。注意这一版是对<b>一维向量</b>做的（<code>np.max</code> 不带轴），因为采样只看一个位置；阶段 4 的 <code>_softmax_rows</code> 是它的按行版本。</p>
+<h4 id="sec-3-2">3.2 <code>MASK = -1.0e18</code>：够大、但没有 <code>inf</code></h4>
+<p>和 <code>attention.NEG_INF</code> 同一个理由。$\exp(-10^{18}-\text{有限值})$ 在浮点里<b>精确等于 0</b>，所以被掩掉的候选概率是 0、归一化后仍是 0，不会冒出 <code>nan</code>，也不需要任何清理步骤。为什么不用 <code>-inf</code>：<code>-inf - (-inf) = nan</code>，而 <code>_softmax</code> 里那个减最大值恰好会做这件事 —— 一整行都是 <code>-inf</code> 时（全被掩掉）立刻炸。用有限大负数时同一情形的表现是"每项都等于 max → <code>exp(0)=1</code> → 均匀分布"，不崩，但<b>结果荒谬</b>（词表里所有词等概率）—— 这正是 §5 那个并列坑的最终症状。</p>
+<h4 id="sec-3-3">3.3 <code>entropy</code>：把"温度改形状"变成一个可比的数</h4>
+<p>$$H(p)=-\sum_i p_i\log p_i,\qquad H\le\ln V$$</p>
+<p>实现里 <code>q = q[q &gt; 0]</code> 那一行是必须的：$0\log 0$ 数学上定义为 0，但 <code>0 * np.log(0)</code> 给 <code>nan</code>（$\log 0=-\infty$）。三个已知值用来自查（判据也是这么查的）：均匀 8 项 → $\ln 8=2.079$，one-hot → $0$，二选一 → $\ln 2=0.693$。</p>
+<h4 id="sec-3-4">3.4 <code>temperature_sweep</code>：为什么每档温度重新派一颗子 rng</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code>sub = np.random.default_rng(rng.integers(<span class="num">1</span> &lt;&lt; <span class="num">31</span>))</code></pre></figure>
+<p>它调 <code>sample_next</code>（TODO-31），所以在写完之前点它会打印"那一半待 TODO-31"，而 <code>GIV-5</code> 特意兜住这个 <code>NotImplementedError</code> 让其余四件事先能验（它自己那条"温度越高用词越宽"就是这么测的：各档温度下<b>出现过的不同 id 数</b>应当随温度不减）。这里的写法值得学：<b>从父 rng 派生</b>而不是复用同一颗 —— 各温度档的抽样序列互相独立（否则"温度高的那档用了温度低剩下的随机数"，两档不可比），而整张表在给定父种子时仍可复现（单项 <code>TODO-31</code> 里那条"同 seed 同结果"靠的就是同一个模式）。</p></section><section class="sec" id="sec-4" data-stage="s07"><h2>4. TODO-28：<code>apply_penalty</code></h2><div class="sec-act"><button data-check="TODO-28">跑 TODO-28 的单项检查</button><button data-edit="TODO-28">跳到编辑器</button><a class="sec-jump" href="/?stage=s07">在测评台里打开 →</a></div><p><b>契约</b>：<code>apply_penalty(logits, seen, penalty=1.0) -&gt; np.ndarray</code>，返回<b>新数组</b>，形状一维、dtype float64。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>out = np.array(logits, dtype=np.float64, copy=True).reshape(-1)     ← copy，不是 asarray
+短路：seen 为空 / penalty == 1.0 → 原样交出
+idx = np.unique(seen 转 int64)；筛掉 idx&lt;0 与 idx&gt;=V
+pos = out[idx] &gt; 0
+out[idx[pos]] /= penalty        # 好的被压低
+out[idx[~pos]] *= penalty       # 差的被推得更差</code></pre></figure>
+<p>三个必须做对的细节，每个都有一条判据或单项检查盯着：</p>
+<li><b>返回新数组</b>。<code>np.asarray(x, dtype=np.float64)</code> 在 <code>x</code> 本来就是 float64 时交回的是<b>视图</b>，<code>reshape(-1)</code> 也还是视图，于是就地 <code>/=</code> 会把模型刚算出来的那一行 logits 改掉 —— 而 <code>generate</code> 传进来的正是 <code>logits[0, -1]</code>，它是整块 <code>(B,T,V)</code> 数组的一个切片：改它就等于改那块数组。判据两头都查：<code>np.array_equal(z, orig)</code>（入参逐比特没动）<b>且</b> <code>out is not z</code>（不是同一个对象）。</li><li><b><code>np.unique</code> 去重</b>（§2.5 的 presence 语义）。</li><li><b>筛掉越界 id，包括负数</b>。越界是真实情况：<code>generate</code> 传进来的 <code>seen</code> 是整段序列的 id，换了 tokenizer 就会超出词表；不筛是 <code>IndexError</code>。但<b>负数不会 IndexError</b> —— numpy 的负索引合法，<code>-2</code> 会命中倒数第二个词，于是"惩罚刚生成的词"变成"惩罚词表里倒数第二个词"，一个都不报错的错误。判据 <code>越界 id 被安全忽略</code> 特意同时塞进 <code>V+5</code> 和 <code>-2</code> 两个。</li></ol>
+<p><code>penalty == 1.0</code> 的短路除了省时间，更是语义：<b>默认值必须真的什么都不做</b>。判据 <code>penalty=1 等于不惩罚</code> 在 $T=0$ 那条路上查它（如果写成"照样除一遍"，浮点上仍然等值，倒是不会红 —— 但 <code>seen</code> 里有重复时你就得指望 <code>unique</code> 兜住）。</p>
+<p>顺带一个边界：分界线是 <code>&gt; 0</code> 还是 <code>&gt;= 0</code> 无所谓，因为 $0/\rho=0$ 且 $0\cdot\rho=0$。单项检查 <code>TODO-28</code> 的输入 <code>[2.0, -1.0, 0.5, 0.0, 3.0]</code>（<code>seen=[0,1,3]</code>，$\rho=2$）期望 <code>[1.0, -2.0, 0.5, 0.0, 3.0]</code>，那个 0 号位就是让你确认自己没写反两支。</p>
+<details class="answer"><summary>参考答案 · TODO-28 <code>apply_penalty</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    out = np.array(logits, dtype=np.float64, copy=<span class="kw">True</span>).reshape(-<span class="num">1</span>)
+    <span class="kw">if</span> <span class="kw">not</span> seen <span class="kw">or</span> penalty == <span class="num">1.0</span>:
+        <span class="kw">return</span> out
+    idx = np.unique(np.asarray(seen, dtype=np.int64))
+    idx = idx[(idx &gt;= <span class="num">0</span>) &amp; (idx &lt; out.size)]
+    <span class="kw">if</span> idx.size == <span class="num">0</span>:
+        <span class="kw">return</span> out
+    pos = out[idx] &gt; <span class="num">0</span>
+    out[idx[pos]] /= penalty
+    out[idx[~pos]] *= penalty
+    <span class="kw">return</span> out</code></pre></figure>
+<p><code>np.array(..., copy=True)</code> 一行同时解决 dtype、摊平和"绝不返回视图"三件事 —— 比 <code>np.asarray(...).reshape(-1).copy()</code> 更省事，也少一步出错机会。 注意 <code>if not seen</code> 依赖 <code>seen</code> 是 list 或 None（判据和 <code>GPT.generate</code> 都传 list：<code>ids.reshape(-1).tolist()</code>）。如果你想让它也吃 ndarray，写 <code>if seen is None or len(seen) == 0</code>。 <code>out[idx[pos]] /= penalty</code> 是"布尔掩码索引 + 就地写"，这里改的是<b>自己的副本</b>，安全。</p></div></details></section><section class="sec" id="sec-5" data-stage="s07"><h2>5. TODO-29：<code>keep_top_k</code></h2><div class="sec-act"><button data-check="TODO-29">跑 TODO-29 的单项检查</button><button data-edit="TODO-29">跳到编辑器</button><a class="sec-jump" href="/?stage=s07">在测评台里打开 →</a></div><p><b>契约</b>：<code>keep_top_k(logits, k) -&gt; np.ndarray</code>，形状和 dtype 与入参一致（float64），落选的格子写成 <code>MASK</code>。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>z = np.asarray(logits, dtype=np.float64)
+短路：not k / k &lt;= 0 / k &gt;= z.size → 返回 z.copy()
+cutoff = np.partition(z, -k)[-k]          # 第 k 大的**值**
+return np.where(z &lt; cutoff, MASK, z)</code></pre></figure>
+<p>三个坑，按危险程度排：</p>
+<li><b>比较用 <code>&lt;</code>，不是 <code>&lt;=</code></b>。恰好等于 <code>cutoff</code> 的那一格要<b>保留</b>。写成 <code>&lt;=</code> 时，如果最高分有两个并列，它们会<b>双双被掩掉</b> → 整行都是 MASK → <code>_softmax</code> 里每项都等于 max → <code>exp(0)=1</code> → <b>均匀分布</b>。它不崩、不报错、NaN 也没有，只是任何词都可能被抽出来（§3.2）。判据为此专门备了两份输入：<code>keep_top_k([1.0,1.0,0.0], 1)</code> 期望前两个都活着，以及单项检查里那份 <code>[0.1,5,2,5,-3,4]</code>（两个并列的 5）。附带结论：并列时留下的候选<b>可以多于 k 个</b> —— 这是正确行为，别为了"凑够 k 个"去加二次筛选。</li><li><b>掩成 MASK 而不是删元素</b>（§2.3）。删了以后返回的数组长度不再是 $V$，<code>sample_next</code> 里那句 <code>rng.choice(probs.size, p=probs)</code> 会把<b>压缩后的位置</b>当成词表下标交出去 —— 判据 <code>top_k=k 的候选集恰好前 k 名</code> 当场就看到 <code>{0, 1}</code> 这种不该出现的集合，单项 <code>TODO-29</code> 的 <code>shape_ok</code> 也会红。更糟的是它不会崩：你会拿到"长度对不上但每个数都像概率"的东西，而这类形状错误在阶段 3/4 已经反复见过。</li><li><b><code>np.partition</code> 而不是 <code>argsort</code></b>。前者是选择算法，平均 $O(V)$；后者 $O(V\log V)$。$V=22$ 时毫无差别，$V=8192$、每生成一个 token 调一次时差一个量级。更重要的是 <code>argsort</code> 之后还要把位置映射回去（谁原来是第几列），多两步就多两个出错机会。<code>np.partition(z, -k)</code> 把数组重排成"第 $-k$ 位是第 k 大的值，它右边都比它大"，所以 <code>[-k]</code> 就取到边界值本身（<code>[-k:]</code> 取到那 k 个，但我们只要边界）。</li></ol>
+<p><code>k &gt;= V</code> 时原样返回值得多想一秒：那时"最高的 k 个"就是全部，切一刀和切 0 刀等价；不短路的话 <code>np.partition(z, -k)</code> 在 <code>-k &lt; -V</code> 时是越界索引。判据用 <code>keep_top_k(Z, V+3)</code> 查这条。</p>
+<details class="answer"><summary>参考答案 · TODO-29 <code>keep_top_k</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    z = np.asarray(logits, dtype=np.float64)
+    <span class="kw">if</span> <span class="kw">not</span> k <span class="kw">or</span> k &lt;= <span class="num">0</span> <span class="kw">or</span> k &gt;= z.size:
+        <span class="kw">return</span> z.copy()
+    cutoff = np.partition(z, -<span class="bi">int</span>(k))[-<span class="bi">int</span>(k)]
+    <span class="kw">return</span> np.where(z &lt; cutoff, MASK, z)</code></pre></figure>
+<p><code>not k</code> 挡掉 <code>0</code> 和 <code>None</code>，<code>k &lt;= 0</code> 挡掉负数（<code>k=-3</code> 时 <code>np.partition(z, -int(k))</code> 是合法的"第 4 小"分区，于是你留下 $V-3$ 个候选而不是 3 个 —— 静默的灾难，所以要挡）。 <code>int(k)</code>：判据可能传 numpy 整数或 <code>np.int64</code>，<code>-int(k)</code> 保证索引是 Python 整数。 短路那支为什么还要 <code>.copy()</code>：<code>np.asarray</code> 在 dtype 已对时给视图，返回视图等于把 §4 那个"别把入参交出去"的约定从后门破掉。<code>np.where</code> 那支本来就返回新数组，两支行为一致才好推理。</p></div></details></section><section class="sec" id="sec-6" data-stage="s07"><h2>6. TODO-30：<code>keep_top_p</code></h2><div class="sec-act"><button data-check="TODO-30">跑 TODO-30 的单项检查</button><button data-edit="TODO-30">跳到编辑器</button><a class="sec-jump" href="/?stage=s07">在测评台里打开 →</a></div><p><b>契约</b>：<code>keep_top_p(probs, p) -&gt; np.ndarray</code>，输入<b>概率</b>、输出<b>概率</b>（和为 1，非核内格子为 0）。</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>q = np.array(probs, dtype=np.float64, copy=True).reshape(-1)
+短路：p &gt;= 1.0 或 q.size &lt;= 1 → 返回 q / q.sum()
+order  = np.argsort(q)[::-1]          # 概率**降序**的下标
+cum    = np.cumsum(q[order])          # 到这一格**为止**的累计
+before = cum - q[order]               # 轮到这一格**之前**的累计
+take   = before &lt; p                   # 还没攒够就继续收
+take 全空时只留 order[0]              # p &lt;= 0 的兜底
+其余置 0，再除以新的和</code></pre></figure>
+<p>四条判据对应四个点：</p>
+<li><b><code>before &lt; p</code> 而不是 <code>cum &lt;= p</code></b>（§2.4）。手算一遍最快：<code>q = [0.5, 0.3, 0.15, 0.04, 0.01]</code>，<code>p = 0.8</code> → <code>cum = [0.5, 0.8, 0.95, ...]</code>、<code>before = [0, 0.5, 0.8, ...]</code> → <code>take = [T, T, F, ...]</code> → 核 = 前两名，覆盖 0.8，归一化 <code>[0.625, 0.375, 0, 0, 0]</code>（单项 <code>TODO-30</code> 期望的就是这两个数）。换成 <code>cum &lt;= p</code> 在 <code>p=0.6</code> 时：<code>take=[T,F,...]</code> → 只留 0.5，<b>没覆盖到 0.6</b>。判据把 $p\in\{0.5,0.8,0.95\}$ 三档的覆盖都算了一遍：<code>0.620 / 0.823 / 0.963</code>，全都 <code>≥ p</code>。</li><li><b>核必须是概率降序的前缀</b>（判据里那句 <code>ok_prefix</code>）。这一条专抓"忘了 <code>[::-1]</code>"：<code>np.argsort</code> 给的是<b>升序</b>，直接 <code>cumsum</code> 就是从最小的概率开始收，攒到 0.8 时你留下的是长尾里的一堆小词 —— 覆盖对了、前缀错了，所以判据两条一起查。</li><li><b>兜底不能省</b>。<code>p &lt;= 0</code> 时 <code>take</code> 全 False → 全 0 → <code>0/0</code> → nan，nan 一路传到 <code>rng.choice</code> 才 <code>ValueError</code>（隔了两层）。<code>p&lt;=0</code> 看起来是"不可能有人这么设"，但它是 <code>sample_next(..., top_p=0)</code> 的真实路径 —— 单项检查里 <code>keep_top_p(p, 0.4)</code>（第一名 0.5 已经 ≥ 0.4）也走同一段代码：<code>take</code> 只有第一位 True，输出 one-hot。</li><li><b><code>p &gt;= 1</code> 要短路</b>。此时 nucleus 是整个词表，任何多余的除法都会引入 $10^{-16}$ 级别的数值差 —— 判据 <code>top_p=1 不改变分布</code> 用的是 1e-12 的逐位比较。短路支里那次 <code>/q.sum()</code> 保留：调用者给的可能没严格归一化。</li><li>顺带那个 <code>q.size &lt;= 1</code> 守卫：空分布（有人把一个空切片传进来）时 <code>take[0] = True</code> 会 IndexError，而"只有一个词的词表"本来也没有可切的 —— 角落情形值得一行守卫。</li></ul>
+<p>为什么在<b>概率</b>上切而不在分数上切，§2.4 说过，这里补一个可见的现象：同一刀 <code>p=0.8</code> 切在分数上，$T$ 从 0.3 变到 2.5 时留下的候选集几乎不变（分数量纲整体缩放，但阈值是绝对值）；切在概率上，候选数会随陡缓自适应 —— <b>后者才是 nucleus 想要的行为</b>。</p>
+<details class="answer"><summary>参考答案 · TODO-30 <code>keep_top_p</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    q = np.array(probs, dtype=np.float64, copy=<span class="kw">True</span>).reshape(-<span class="num">1</span>)
+    <span class="kw">if</span> p &gt;= <span class="num">1.0</span> <span class="kw">or</span> q.size &lt;= <span class="num">1</span>:
+        s = q.<span class="bi">sum</span>()
+        <span class="kw">return</span> q / s <span class="kw">if</span> s &gt; <span class="num">0</span> <span class="kw">else</span> q
+    order = np.argsort(q)[::-<span class="num">1</span>]
+    cum = np.cumsum(q[order])
+    before = cum - q[order]                  <span class="com"># 轮到这一格**之前**攒下的质量</span>
+    take = before &lt; <span class="bi">max</span>(<span class="bi">float</span>(p), <span class="num">0.0</span>)        <span class="com"># 还没攒够 p 就继续收，攒够了就停</span>
+    <span class="kw">if</span> <span class="kw">not</span> take.<span class="bi">any</span>():
+        take[<span class="num">0</span>] = <span class="kw">True</span>                        <span class="com"># p&lt;=0 也要留一个候选，否则 0/0</span>
+    mask = np.zeros_like(q)
+    mask[order[take]] = <span class="num">1.0</span>
+    q = q * mask
+    s = q.<span class="bi">sum</span>()
+    <span class="kw">return</span> q / s <span class="kw">if</span> s &gt; <span class="num">0</span> <span class="kw">else</span> q</code></pre></figure>
+<p><code>max(float(p), 0.0)</code> 把负 <code>p</code> 折成 0，配合下一行的 <code>take[0] = True</code>：无论 <code>p</code> 多小，<b>至少留一个</b>。这两个是同一件事的两层保险，缺一层都会在某条你没想到的输入上变成 nan。 最后 <code>if s &gt; 0 else q</code>：整行都是 0（<code>probs</code> 传错了）时不要返回 nan，返回全 0 会让 <code>rng.choice</code> 当场报"probabilities do not sum to 1"—— 报错位置离根因更近。</p></div></details></section><section class="sec" id="sec-7" data-stage="s07"><h2>7. TODO-31：<code>sample_next</code></h2><div class="sec-act"><button data-check="TODO-31">跑 TODO-31 的单项检查</button><button data-edit="TODO-31">跳到编辑器</button><a class="sec-jump" href="/?stage=s07">在测评台里打开 →</a></div><p><b>契约</b>：<code>sample_next(logits, rng, temperature=1.0, top_k=0, top_p=1.0, seen=None, penalty=1.0) -&gt; int</code>。它是 §2.6 那条管线本身，五行：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>z = np.asarray(logits, dtype=np.float64).reshape(-1).copy()
+if penalty != 1.0 and seen: z = apply_penalty(z, seen, penalty)
+if temperature &lt;= 0: return int(np.argmax(z))            # 贪心：不经过任何随机
+probs = _softmax(keep_top_k(z / temperature, top_k))
+return int(rng.choice(probs.size, p=keep_top_p(probs, top_p)))</code></pre></figure>
+<p>四个点，每个都有一条判据：</p>
+<li><b>贪心在惩罚之后、在除温度之前</b>（§2.6 第一条）。$T=0$ 的定义是"取最大的<b>分数</b>"，而惩罚改的正是分数 —— 顺序对了，<code>TODO-31</code> 那条 <code>seen=[best], penalty=8.0, temperature=0</code> 才会交出<b>第二个</b>词。</li><li><b><code>rng</code> 是参数，不是内部 <code>default_rng()</code></b>。同一段文本能复现，靠的是"调用方决定种子"。内部新建的话，同样参数调两次会给不同结果 —— 单项 <code>TODO-31</code> 的"同 seed 同结果"和判据 <code>temperature=0 时两个不同种子输出完全相同</code>（$T=0$ 时 <code>rng</code> 根本不该被碰）两头夹住它。</li><li><b>温度在 softmax 之前</b>（§2.2）。<code>z / temperature</code> 写在 <code>_softmax(...)</code> 的括号里面，而不是 <code>probs / temperature</code>。这一条的症状最像"我的实现有 bug 但 loss 正常"：$T$ 开到 2.0 输出仍然单调。</li><li><b><code>rng.choice(n, p=probs)</code> 要求 <code>p</code> 非负、长度等于 <code>n</code>、和为 1</b>：前一条与最后一条由 <code>keep_top_p</code> 保证，等长靠 <code>n=probs.size</code>（别写 <code>len(logits)</code>，万一中途摊平过）。不要再自己除一次和 —— §2.6 最后一条。</li></ol>
+<p>返回 <code>int(...)</code> 是契约的一部分：判据要把它直接当索引喂给 <code>tok.decode</code> 和 <code>np.bincount</code>，numpy 标量能用但 <code>generate</code> 里拼 list 时会把类型搞成一锅粥。</p>
+<p>写完之后 <code>python webapp/checks.py TODO-31</code> 一次查七件事：贪心（两个种子都 = argmax）、同 seed 可复现、<code>top_k=1</code> 恒为 argmax、惩罚在贪心之前生效、4000 次抽样的经验分布与 softmax 的 L1 ≤ 0.14、返回的 id 在 <code>[0,V)</code>、不改入参数组。</p>
+<p><code>rng.choice(n, p=probs)</code> 把「按概率抽样」整个藏进了 numpy。下面这张图把它摊开：温度滑杆改 p， 转盘扇区面积就是概率、扇区边界就是累积值，点 🎲 抽一次把 $[0,1)$ 的落点画在转盘上； 旁边直方图累积经验频率，白线是理论 p、须是 $\pm2\sigma$，还叠了一条 $1/\sqrt{N}$ 的包络 —— 判据里「4000 次抽样的经验分布与 softmax 的 L1 ≤ 0.14」说的就是这条包络。 图里三个错法开关（累积边界写反 / p 没归一 / 用 argmax 代替抽样）各自会让哪一格露馅，切一下就知道。</p>
+<div class="fig" data-fig="samplewheel" role="img" aria-label="可视化：samplewheel"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-31 <code>sample_next</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    z = np.asarray(logits, dtype=np.float64).reshape(-<span class="num">1</span>).copy()
+    <span class="kw">if</span> penalty != <span class="num">1.0</span> <span class="kw">and</span> seen:
+        z = apply_penalty(z, seen, penalty)
+    <span class="kw">if</span> temperature &lt;= <span class="num">0</span>:
+        <span class="kw">return</span> <span class="bi">int</span>(np.argmax(z))              <span class="com"># 贪心：完全确定性，不加任何随机</span>
+    z = z / temperature
+    z = keep_top_k(z, top_k)
+    probs = _softmax(z)
+    probs = keep_top_p(probs, top_p)
+    <span class="kw">return</span> <span class="bi">int</span>(rng.choice(probs.size, p=probs))</code></pre></figure>
+<p>入口那句 <code>.copy()</code> 在这里其实不是必需的（<code>apply_penalty</code> 返回新数组、<code>z / temperature</code> 也是新数组），但它让"这条管线绝不改动调用者的 logits"这件事<b>不依赖下游怎么写</b> —— 判据 <code>sample_next 不改入参数组</code> 查的就是整条管线的这个性质，用一次 copy 换来"以后随便就地改"的自由，值得。 <code>probs.size</code> 而不是 <code>len(logits)</code>：入参可能是 <code>(V,1)</code> 或 <code>(1,V)</code> 的切片（<code>generate</code> 传的是 <code>logits[0, -1]</code>，一维；但你在 notebook 里很可能传 <code>logits[:, -1]</code>）。摊平之后只有一个正确的长度。</p></div></details></section><section class="sec" id="sec-8" data-stage="s07"><h2>8. 端到端：<code>GPT.generate</code> 怎么把采样用起来</h2><p><code>generate</code> 是给你的（阶段 5 §3.5 已经说过它刻意没有 KV cache）。它的五行主体决定了这一章最后八条判据的形状（下面说的"第 N 条"按 §9 的编号数）：</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>ids = np.asarray(prompt_ids).reshape(<span class="num">1</span>, -<span class="num">1</span>)
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(max_new_tokens):
+    <span class="kw">if</span> ids.shape[<span class="num">1</span>] &gt;= self.cfg.ctx:
+        ids = ids[:, -self.cfg.ctx + <span class="num">1</span>:]        <span class="com"># 滑窗：丢最老的一个</span>
+    logits = self.forward(ids)                  <span class="com"># 整段重算，O(n²)</span>
+    nxt = sample_next(logits[<span class="num">0</span>, -<span class="num">1</span>], rng, temperature, top_k, top_p,
+                      seen=ids.reshape(-<span class="num">1</span>).tolist(), penalty=repetition_penalty)
+    ids = np.concatenate([ids, np.array([[nxt]], dtype=ids.dtype)], axis=<span class="num">1</span>)
+<span class="kw">return</span> ids.reshape(-<span class="num">1</span>).tolist()</code></pre></figure>
+<p>读五件事：</p>
+<li><b>返回的是"prompt + 新 token"一整串</b>，所以判据一律用 <code>g[len(prompt):]</code> 切出新写的部分。词表下标可能越界的线索就在这里：新 token 直接来自 <code>sample_next</code> 的 <code>int</code>，而 prompt 是你喂进来的。</li><li><b>滑窗</b>：<code>&gt;= ctx</code> 时先丢最老的一个再往前长，所以序列总长永不超过 <code>ctx</code>。判据 <code>prompt 比 ctx 长时走滑窗而不是崩掉</code> 喂 39 个 token（<code>ctx=32</code>）、让它写 5 个，期望<b>输出长度正好 32</b>：第 1 步把 39 截成 31 再加回 1 个 = 32，之后每步都是"丢一个、长一个"，稳定在 32。不截断的话 <code>GPT.forward</code> 里那句 <code>assert T &lt;= ctx</code> 会当场拦住 —— 拦得住，但那就不是生成而是崩了。</li><li><b><code>seen</code> 传的是整段 ids</b>（截断后的），所以惩罚的范围随滑窗移动：太老的 token 会"恢复自由"。这也是 TODO-28 里那句"越界 id 要筛掉"的真实来源 —— <code>seen</code> 里可能带着换过 tokenizer 之前的老 id。</li><li><b><code>seed</code> → <code>rng = np.random.default_rng(seed)</code></b>，一颗 rng 贯穿整段生成。这就是判据能用 <code>{generate(..., seed=s) for s in range(24)}</code> 来数"多少种可能"的原因：<code>s</code> 是<b>独立实验</b>的编号，不是同一句里的第几个词。</li><li><b>$T=0$ 时 <code>rng</code> 一次都不被调</b>，所以两个不同种子的贪心输出必然逐 token 相同（判据第 24 条）。同理 <code>top_k=1</code> 时分布退化成 one-hot，采样和贪心等价（第 25 条）—— 注意前提是<b>没有并列</b>：真模型的 logits 是连续浮点，几乎不可能并列，而 §5 说的并列行为在这种子上会给出"两个候选"，那也是正确的。</li></ul>
+<p>判据后段那台模型：语料是四句小诗（<code>the cat sat on the mat .</code> / <code>the dog ran in the park .</code> / <code>the bird sang at the dawn .</code> / <code>the fish swam by the rock .</code>）各写三遍、整体再重复三遍，963 字符 / 36 行 / 词表 22，<code>d_model=48</code>、2 层、<code>ctx=32</code>，训 300 步、末段 loss 0.145（$\ln V=3.091$）。喂 <code>"the cat sat on the "</code>，让它写 10 个字符：真值取<b>语料里最后一次出现</b>的那个位置（<code>'mat .\nthe '</code>），所以"逐字符一致率"这个数是有唯一答案的。阈值给 0.70 而不是 1.00，是因为换一行、换一台机器，第 10 个字符可能就不对了 —— 0.70 允许最后一个字符不对，同时排除"完全没学到"。</p>
+<p>其余四条多样性判据合起来说一句话：<b>采样确实在抽签</b>。$T=0$ 时 24 个种子只有 1 种可能（第 26 条，反面基线）；$T=2.0$ + <code>top_k=8</code> 时 24 个种子要有 ≥ 3 种不同首字符（第 27 条）、10 个种子要写出 ≥ 5 种不同续写（第 28 条）。为什么阈值这么低？因为它测的是"有没有随机性"，不是"写得好不好" —— 那是没有判据能替你决定的部分。</p>
+<p>最后一条软提示：<code>重复惩罚换来更多样的字符分布</code>（<code>penalty=1.6</code> 的 20 个字符里不同字符数 ≥ 不加惩罚时）。它被列成软判据而不是硬判据，正是因为 20 个字符的样本量太小、方向感不等于结论。<b>这条边界你要带走</b>：样本不够时，正确的做法是降低断言强度，而不是降低阈值。</p></section><section class="sec" id="sec-9" data-stage="s07"><h2>9. 验收判据逐条解读</h2><p><code>python stages/s07_generate.py</code>：30 条硬判据 + 1 条软提示，五组。前四组都在合成的 12 个分数上做（<code>V=12</code>，$\arg\max=7$，<code>n=6000</code> 或 <code>1200</code>）。</p>
+<p><b>温度组（5 条）</b></p>
+<table><thead><tr><th>判据</th><th>阈值</th><th>查的是</th></tr></thead><tbody><tr><td>温度越高熵越大</td><td>五档温度的熵严格递增</td><td>§2.2 的单调性。注意这条<b>不经过</b> <code>sample_next</code>（只走 <code>_softmax</code> + <code>keep_top_k</code>），所以 TODO-31 写错时它照样绿 —— 下面几条才测组装</td></tr><tr><td>经验熵也跟着温度上升</td><td>$H(T{=}0.3)\le H(T{=}2.5)$</td><td>从<b>抽样频率</b>算的熵，不是公式 —— 采样真的按分布走</td></tr><tr><td><code>temperature=0</code> 就是贪心</td><td>三个种子的结果集合 == <code>{argmax}</code></td><td>§7 第 1、2 点：贪心岔口 + <code>rng</code> 不参与</td></tr><tr><td>$T=10^{-3}$ 仍在赌最高分</td><td>等于 argmax</td><td>§2.2 的下溢极限；顺带抓住"T 很小就乱抽"的实现</td></tr><tr><td>抽样频率 ≈ softmax 概率</td><td>L1 ≤ 0.14（$n=6000$，$3\sigma$）</td><td>§2.7：整条管线的分布正确性（阈值不能更紧）</td></tr></tbody></table>
+<p><b>top-k 组（6 条）</b></p>
+<table><thead><tr><th>判据</th><th>阈值</th><th>查的是</th></tr></thead><tbody><tr><td><code>top_k=2/3/6</code> 候选集恰好前 k 名</td><td><code>support(经验频率) == 前 k 名下标</code>（三条）</td><td>§2.3 + §5 坑 2（删元素会让下标体系崩掉）</td></tr><tr><td>升温不引入新候选</td><td>$T=4$、$k=2$ 时集合仍是前 2 名</td><td>§2.3 第 2 点：温度与 k 可交换</td></tr><tr><td><code>k=0</code> 或 <code>k&gt;=V</code> 时不剪枝</td><td>逐位等于入参</td><td>§5 的短路（写成"照切"会退化成均匀分布）</td></tr><tr><td>并列的最高分都保留</td><td><code>[1,1,0]</code>、<code>k=1</code> → 前两个都活着</td><td>§5 坑 1：<code>&lt;</code> 不是 <code>&lt;=</code></td></tr></tbody></table>
+<p><b>top-p 组（6 条）</b></p>
+<table><thead><tr><th>判据</th><th>阈值</th><th>查的是</th></tr></thead><tbody><tr><td><code>top_p=0.5/0.8/0.95</code> 的核覆盖 ≥ p 的质量</td><td>和为 1、原分布里覆盖 <code>≥ p</code>、是概率降序前缀（三条）</td><td>§6：<code>before &lt; p</code>、<code>[::-1]</code>、归一化</td></tr><tr><td><code>top_p=1</code> 不改变分布</td><td>逐位 <code>atol 1e-12</code></td><td>§6 的短路支（多余的除法会引入 $10^{-16}$）</td></tr><tr><td>极端 one-hot 时不冒出 nan</td><td>全有限、和为 1、核只有一个下标</td><td>§6 的兜底（<code>0/0</code> → nan → <code>rng.choice</code> 才炸）</td></tr><tr><td>按 top-p 抽样后仍与归一化核一致</td><td>L1 ≤ 0.14（$n=1200$）</td><td>§7 第 4 点：<code>rng.choice</code> 收到的是那个核</td></tr></tbody></table>
+<p><b>惩罚组（5 条）</b></p>
+<table><thead><tr><th>判据</th><th>阈值</th><th>查的是</th></tr></thead><tbody><tr><td>惩罚不修改调用者的 logits</td><td>入参逐比特相同 <b>且</b> <code>out is not z</code></td><td>§4 坑 1（视图就地改）</td></tr><tr><td>正分除 / 负分乘</td><td>两个等式精确到 <code>1e-12</code></td><td>§2.5 的不对称；统一除会红</td></tr><tr><td>被罚词经验频率明显下降</td><td><code>f_pen3 &lt;= 0.75 × f_pen1</code></td><td>端到端效果（0.627 → 0.080），同一批随机数</td></tr><tr><td><code>penalty=1</code> 等于不惩罚</td><td>$T=0$ 时仍是 argmax</td><td>§4 的短路语义</td></tr><tr><td>越界 id 被安全忽略</td><td>逐位等于入参</td><td>§4 坑 3：<code>V+5</code> <b>和</b> <code>-2</code>（负索引不会报错）</td></tr></tbody></table>
+<p><b>端到端组（8 条）</b></p>
+<table><thead><tr><th>判据</th><th>阈值</th><th>查的是</th></tr></thead><tbody><tr><td>贪心续写与原文逐字符一致率</td><td>≥ 0.70</td><td>模型 + <code>generate</code> + 贪心岔口一起（阶段 5 的机器真的能写东西）</td></tr><tr><td>$T=0$ 时两个不同种子输出完全相同</td><td>逐 token 相同</td><td>§8 的 <code>rng</code> 语义</td></tr><tr><td><code>top_k=1</code> 与贪心等价</td><td>逐 token 相同</td><td>§5 + §7：退化情形</td></tr><tr><td>贪心：24 个种子只有 1 种可能</td><td>集合大小 == 1</td><td>多样性的<b>反面基线</b>，没有它下一条无意义</td></tr><tr><td>$T=2.0$ 时 24 个种子的不同首字符数</td><td>≥ 3</td><td>§2.2：温度把分差抹平后老二老三开口</td></tr><tr><td>十个种子的不同续写数（$T=2.0$）</td><td>≥ 5</td><td>整段有随机性，不只是第一个词</td></tr><tr><td>生成的 token 都能被 tokenizer 解回文本</td><td>每个 id 在 <code>[0,V)</code></td><td>§7 返回 <code>int</code> + §5 坑 2 的下标体系</td></tr><tr><td>prompt 比 <code>ctx</code> 长时走滑窗而不是崩掉</td><td><code>len == ctx</code></td><td>§8 的滑窗</td></tr><tr><td><i>软：惩罚换来更多样的字符分布</i></td><td>不同字符数不降</td><td>样本只有 20 个字符，只给方向感（§8 末）</td></tr></tbody></table></section><section class="sec" id="sec-10" data-stage="s07"><h2>10. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>病因</th><th>去处</th></tr></thead><tbody><tr><td><code>ValueError: probabilities do not sum to 1</code></td><td><code>keep_top_p</code> 归一化后你又除了一次；或 nan 传进来了</td><td>§2.6 末条、§6 兜底</td></tr><tr><td><code>ValueError: a and p must have same size</code></td><td><code>keep_top_k</code> 删元素而不是掩 MASK，<code>rng.choice</code> 的长度对不上</td><td>§5 坑 2</td></tr><tr><td>$T$ 开到 2.0 输出仍然只有一个词</td><td>温度写在 softmax 之后（除以 $T$ 再归一化等于没做）</td><td>§2.2 第 2 点</td></tr><tr><td>输出经常是词表里最冷僻的那个词</td><td>全行被掩成 MASK → softmax 给均匀分布</td><td>§5 坑 1 + §3.2</td></tr><tr><td><code>top_p=0.8</code> 时核只覆盖 0.62</td><td>用了 <code>cum &lt;= p</code>（跨过阈值那一格被踢掉）</td><td>§6 第一条，手算那个例子</td></tr><tr><td>核里全是长尾小词</td><td>忘了 <code>[::-1]</code>，<code>argsort</code> 升序</td><td>§6 第二条（判据 <code>前缀</code> 专抓它）</td></tr><tr><td>同一批 forward 连跑两次，第二次输出变了</td><td><code>apply_penalty</code> 就地改了模型那一行 logits</td><td>§4 坑 1</td></tr><tr><td>换了 tokenizer 以后偶尔惩罚打在奇怪的词上</td><td><code>seen</code> 里负 id 没筛（负索引合法、不报错）</td><td>§4 坑 3</td></tr><tr><td>同一段 prompt、同一个 seed 两次跑出不同结果</td><td><code>sample_next</code> 内部新建 rng</td><td>§7 第 2 点</td></tr><tr><td><code>temperature=0</code> 时崩，报 nan 或 inf</td><td>没有贪心岔口，直接除 <code>T=0</code></td><td>§7 第 1、2 点</td></tr><tr><td>反复出现同一个词，加 <code>repetition_penalty</code> 没用</td><td>惩罚写在贪心岔口<b>之后</b></td><td>§2.6 第一条</td></tr><tr><td><code>top_k=1</code> 与贪心不等价</td><td>并列时 <code>&lt;=</code> 把两个都掩掉 → 均匀；或短路条件写成 <code>k &gt; 1</code></td><td>§5 坑 1</td></tr><tr><td><code>IndexError</code> 在 <code>np.partition(z, -k)</code></td><td><code>k &gt;= V</code> 没短路</td><td>§5 末段</td></tr><tr><td>单项 <code>GIV-5</code> 变红</td><td>你顺手改了 <code>_softmax</code> / <code>entropy</code>（那是给你的代码）</td><td>§3；拿 <code>solutions/minigpt/sampler.py</code> 对拍那一半</td></tr><tr><td>加了惩罚却没效果</td><td><code>seen</code> 传了标量：<code>not 0</code> 直接短路（id 0 正好是换行符），惩罚静默失效</td><td>§4：<code>generate</code> 传的是 <b>list</b>，你自己试的时候包一层 <code>[…]</code></td></tr></tbody></table></section><section class="sec" id="sec-11" data-stage="s07"><h2>11. 自查题</h2><li>为什么 <code>np.asarray(logits, dtype=np.float64).reshape(-1)</code> 可能给回一个<b>视图</b>？给出一个具体条件（dtype 是什么时），以及 <code>apply_penalty</code> 就地写之后谁会遭殃。</li><li>惩罚为什么正分除、负分乘？如果 <code>z_i = -4.8</code>、$\rho=2.5$，两种写法各自给什么数，softmax 之后它的排名怎么变？</li><li><code>keep_top_k</code> 与温度的顺序为什么<b>可以</b>交换？<code>_softmax</code> 与温度为什么<b>不可</b>以交换？请用一条公式各回答一次。</li><li>手算一遍：<code>q = [0.5, 0.3, 0.15, 0.04, 0.01]</code>、<code>p = 0.6</code>，<code>before &lt; p</code> 和 <code>cum &lt;= p</code> 各留下哪些下标、覆盖多少质量？哪一个满足"nucleus 覆盖 ≥ 60%"这句话？</li><li>判据里为什么每条分布类检验（L1 ≤ 0.14）都配一条布尔类检验（候选集 == 前 k 名）？各自能抓到对方抓不到的哪一类错误？</li><li><code>temperature=0</code> 时 <code>rng</code> 一次都不该被调用。说出两条会因此变红的判据，并解释为什么"贪心也带一点随机"是很糟的设计。</li><li>判据 <code>贪心：24 个种子只有 1 种可能</code> 是多样性判据的<b>反面基线</b>。如果去掉它，剩下哪一条会失去意义，为什么？</li><li>把 <code>seen</code> 从"整段序列"改成"最后 32 个 id"（现在就是这样），会让重复惩罚产生什么随长度变化的行为？如果要修掉，你会改成什么（提示：frequency penalty，§2.5）？</li></ol></section><section class="sec" id="sec-12" data-stage="s07"><h2>12. 下一步</h2><p>阶段 7 交付以后，你就有了一台<b>能训、能存、能说话</b>的完整小 GPT。剩下的两件事都在阶段 8（还没发布）：</p>
+<li><b>速度</b>：<code>GPT.generate</code> 现在每生成一个 token 都把整段重跑一遍，$O(n^2)$。KV cache 把它降到 $O(n)$ —— 那时你会主动想回来读 §8 这段滑窗代码。</li><li><b>规模</b>：字符级 22 词表 → BPE 4096/8192。<code>tokenizer.py</code> 的协议已经留好（阶段 5 §9），而 <code>data/corpus.txt</code> 那种自撰语料要换成真数据，<code>checkpoint.py</code> 的格式一个字都不用改。</li></ul>
+<p>想继续深挖采样本身，<code>docs/advanced-cpp-roadmap.md §6</code> 的 M6 里程碑给的验收是："生成 200 token 不重复、无乱码、速度 ≥ 150 tok/s"。到那一步你大概会需要 frequency penalty、no-repeat-ngram、以及 beam search 之类的东西 —— 它们的骨架就是你这章写的那四个开关。</p></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>

@@ -1,0 +1,3241 @@
+{
+  "revision": 3,
+  "updated": "2026-11-19",
+  "batches": [
+    {
+      "id": "example",
+      "title": "已制作的样例"
+    },
+    {
+      "id": "first",
+      "title": "第一批 · 已确认范围"
+    },
+    {
+      "id": "later",
+      "title": "后续 · 保留待补"
+    },
+    {
+      "id": "added",
+      "title": "追加 · 内容与测评完善"
+    },
+    {
+      "id": "audit-part-01",
+      "title": "第一部分 · 整体架构 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-02",
+      "title": "第二部分 · NumPy 与张量 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-03",
+      "title": "第三部分 · 标量网络 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-04",
+      "title": "第四部分 · 完整基础层 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-05",
+      "title": "第五部分 · 概率与损失 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-06",
+      "title": "第六部分 · 注意力与 Transformer · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-07",
+      "title": "第七部分 · 组装 GPT · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-08",
+      "title": "第八部分 · 优化与训练 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-part-09",
+      "title": "第九部分 · 生成与保存 · 学习逻辑待执行"
+    },
+    {
+      "id": "audit-optional",
+      "title": "拓展 · 典型错误修复 · 学习逻辑待执行"
+    }
+  ],
+  "items": [
+    {
+      "id": "index-selection",
+      "batch": "example",
+      "title": "按编号取行，再保留前 k 列",
+      "status": "review",
+      "lessons": [
+        "index"
+      ],
+      "criteria": [
+        "X、ids、k 都作为明确输入展示。",
+        "按 ids 顺序从来源行复制到目标行，重复编号也显示重复取行。",
+        "标出保留范围 [0,k)，显示截列过程，再形成输出。"
+      ],
+      "evidence": [
+        "webapp/index-animation.js"
+      ],
+      "verification": "已核对单步、自动播放和重播；5 项索引参考实现测评通过。"
+    },
+    {
+      "id": "reduce-broadcast",
+      "batch": "first",
+      "title": "归约与广播：哪些位置被合并、哪些值被复用",
+      "status": "review",
+      "lessons": [
+        "axes",
+        "reduce",
+        "broadcast"
+      ],
+      "criteria": [
+        "明确标出 axis、keepdims；任务固定的条件也单独展示。",
+        "先框出沿轴归约的元素组，再演示收拢到输出；同时显示维度保留或消失。",
+        "偏置沿末轴对齐，演示它在所有前置位置的逻辑复用；反向将这些来源归并，不能暗示产生独立参数。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js"
+      ],
+      "verification": "全部坐标映射对照公开预期通过；浏览器核对去均值、完整拆头、Embedding 查表与跨 batch 重复编号梯度。"
+    },
+    {
+      "id": "reshape-transpose",
+      "batch": "first",
+      "title": "reshape 与 transpose：跟踪同一元素的坐标",
+      "status": "review",
+      "lessons": [
+        "reshape",
+        "transpose"
+      ],
+      "criteria": [
+        "目标形状、轴排列明确展示。",
+        "从 (b,t,c) 跟踪到 (b*T+t,c) 或 (b,c,t)，保留全部 batch。",
+        "显示中间位置映射，而非只切换初态和终态；明确图中移动表示坐标映射，不等于复制内存。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js"
+      ],
+      "verification": "全部坐标映射对照公开预期通过；浏览器核对去均值、完整拆头、Embedding 查表与跨 batch 重复编号梯度。"
+    },
+    {
+      "id": "heads-merge",
+      "batch": "first",
+      "title": "拆头与合头：特征分组、换轴、逆向还原",
+      "status": "review",
+      "lessons": [
+        "heads",
+        "att_merge"
+      ],
+      "criteria": [
+        "头数 H 为输入；展示每头宽度 d=C/H，并测 H=2、3、4。",
+        "依次显示 (B,T,C) → (B,T,H,d) → (B,H,T,d)，全部 batch/head 可见。",
+        "合头先逆向换轴，再拼接特征；能沿坐标找回来源，不能直接 reshape 跳过换轴。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js"
+      ],
+      "verification": "全部坐标映射对照公开预期通过；浏览器核对去均值、完整拆头、Embedding 查表与跨 batch 重复编号梯度。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "embedding-scatter",
+      "batch": "first",
+      "title": "Embedding 与梯度散射：从哪一行取，回到哪一行",
+      "status": "review",
+      "lessons": [
+        "layer_embedding",
+        "scatter"
+      ],
+      "criteria": [
+        "明确 ids、词表矩阵、上游梯度及词表大小/特征宽度的含义。",
+        "编号指向词表行，再演示该行进入对应 batch/token 位置；重复编号仍指向同一参数行。",
+        "反向让所有位置的梯度回到各自词表行，显示重复编号的合流；整数编号不求导。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js"
+      ],
+      "verification": "全部坐标映射对照公开预期通过；浏览器核对去均值、完整拆头、Embedding 查表与跨 batch 重复编号梯度。 2026-11-15：保留原坐标过程演示，行下标文案改为行索引；Codex预览实际核对11/12步，编号1的三处梯度跨batch汇总为[18,21,24]。状态仍review。 2026-11-15用户已认可其中Embedding来源/梯度回行演示，单独记为embedding-process-demo-accepted；scatter部分仍待验收。"
+    },
+    {
+      "id": "attention-mask",
+      "batch": "later",
+      "title": "注意力：因果掩码的生成与逐行读取",
+      "status": "review",
+      "lessons": [
+        "att_scores",
+        "att_probs",
+        "att_weighted",
+        "t_attention"
+      ],
+      "criteria": [
+        "区分 query、key、value，明确缩放维度和因果规则。",
+        "从未遮挡分数出发，逐步标出禁止读取的未来位置，再生成行概率。",
+        "概率连接到被读取的 V；多个 batch/head 和完整反向路径保留。"
+      ],
+      "evidence": [
+        "webapp/understanding.js",
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py",
+        "tests/test_transformer_course.py"
+      ],
+      "verification": "主任务同一组 Q/K/V 分阶段显示原始分数、因果掩码、行概率与读取 V，保留梯度回流视图；三个分步练习分别展示坐标来源。覆盖全部 batch/head，网页核对掩码和概率，样例数值及梯度回归通过；待学习者验收。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "loss-selection",
+      "batch": "later",
+      "title": "交叉熵：标签选中哪个概率，损失如何汇总",
+      "status": "review",
+      "lessons": [
+        "t_loss"
+      ],
+      "criteria": [
+        "targets 显式指向各 batch/token 的类别。",
+        "演示从类别轴取正确类别的 log 概率，再汇总全部 B*T 个位置求均值。",
+        "反向的 p−one_hot 与平均系数有明确来源。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "逐位置归一化、按目标取负对数、对全部 B×T 位置平均、逐类别反向；公开样例坐标及公式解析通过，网页核对首步，待学习者验收。 本轮主界面改为紧凑标签选择/全位置平均/标量上游来源视图，旧process-animations数值方案不再初始化；见macro-sources-part-05。"
+    },
+    {
+      "id": "windows-generation",
+      "batch": "later",
+      "title": "文本窗口与生成：截取、移位、追加",
+      "status": "review",
+      "lessons": [
+        "t_data",
+        "t_generate"
+      ],
+      "criteria": [
+        "窗口起点、长度、上下文上限都是有名字的条件。",
+        "演示输入窗口与右移一位标签的来源。",
+        "生成按截取上下文→取末位置预测→采样→追加→窗口移动展示。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "按公开样例逐字符编码与按起点生成输入/目标；生成逐轮截取窗口、调用预测并追加公开采样编号，完整保留 batch 和原提示。计算坐标与公式回归、网页首步检查通过；待学习者验收。"
+    },
+    {
+      "id": "named-config",
+      "batch": "later",
+      "title": "样例条件：构造参数具名，移除无关输入",
+      "status": "review",
+      "lessons": [
+        "t_mha",
+        "t_block",
+        "t_gpt",
+        "t_generate"
+      ],
+      "criteria": [
+        "init 中的词表大小、宽度、头数、层数等按名字展示，不伪装成匿名一维张量。",
+        "生成样例只展示实际使用的输入与条件，移除未使用的 targets、lr。",
+        "其他章节检查同类隐含常数和匿名配置，并记录处理范围。"
+      ],
+      "evidence": [],
+      "verification": "浏览器确认生成样例具名显示 V/C/H/hidden/layers/context/seed，不再显示无关 targets、lr。"
+    },
+    {
+      "id": "math-typesetting",
+      "batch": "added",
+      "title": "正式公式排版与离线资源",
+      "status": "review",
+      "lessons": [
+        "layer_linear",
+        "t_softmax",
+        "t_attention",
+        "t_optim"
+      ],
+      "criteria": [
+        "脚本、样式及字体全部随项目离线提供。",
+        "全课程定义与推导使用正式分式、求和、上下标；长推导分行。",
+        "代码框保持 Python；动画公式与所选来源同步，课程重建不丢失。"
+      ],
+      "evidence": [
+        "scripts/course_math.py",
+        "webapp/math-renderer.js"
+      ],
+      "verification": "全部公式严格解析通过；浏览器核对三类 Linear 梯度、注意力多 batch/head 公式；脚本、字体本地加载。"
+    },
+    {
+      "id": "learner-contracts",
+      "batch": "added",
+      "title": "逐页任务、变量与实际构建台阶",
+      "status": "review",
+      "lessons": [
+        "reduce",
+        "mean_backward",
+        "center_backward",
+        "t_data",
+        "rebuild_gpt"
+      ],
+      "criteria": [
+        "每页明确本次交付、输入输出、是否写反向及固定条件。",
+        "修正 Embedding/GELU/独立 GPT 的范围矛盾；reduce 只讲本次去均值前向。",
+        "补齐均值/中心化反向、恢复、连续 RNG、注意力 dV/dS 六个普通实现练习。"
+      ],
+      "evidence": [
+        "scripts/refine_course.py",
+        "scripts/build_bridges.py",
+        "docs/能力覆盖对照.md",
+        "scripts/concise_course.py",
+        "webapp/app.js",
+        "webapp/workbench.css"
+      ],
+      "verification": "全部 56 页按入口、变量、计算、输出精简；测评紧凑列表实测约缩短一半，展开保留完整数据。代码、用例和依赖保持原值，等待学习者验收。"
+    },
+    {
+      "id": "assessment-reuse",
+      "batch": "added",
+      "title": "测评与最终复用：类型、缓存和个人参数管理",
+      "status": "review",
+      "lessons": [
+        "shape",
+        "copy",
+        "infrastructure",
+        "layer_linear",
+        "t_gpt"
+      ],
+      "criteria": [
+        "形状浮点返回值不应通过；拆头验证 H=2、3、4。",
+        "前向后修改调用方输入，反向仍按原始缓存计算。",
+        "个人 Parameter/Module 真正用于后续测评、本地模型和训练实验，类型检查不能漏掉个人参数。"
+      ],
+      "evidence": [
+        "exercises/learner_core.py",
+        "exercises/_assessment.py",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "个人 Parameter 进入 GPT 且被梯度检查识别；缓存引用错误与浮点形状错误被拒绝；网页和本地隔离回归通过。"
+    },
+    {
+      "id": "optional-scalar-foundation",
+      "batch": "later",
+      "title": "按需补基础：标量反向与自动微分选修入口",
+      "status": "todo",
+      "lessons": [
+        "layer_scale",
+        "layer_linear"
+      ],
+      "criteria": [
+        "第一次手写张量反向前提供按需补基础入口，不设为强制前置。",
+        "选修顺序：标量链式法则与梯度累加 → 计算图遍历 → 张量乘法/归约/广播反向。",
+        "末尾能返回张量反向主线；标量章节仍按原约定暂缓，当前仅记录待办。"
+      ],
+      "evidence": [],
+      "verification": "已记录侧聊确认的后续事项；未实施新的标量课程。"
+    },
+    {
+      "id": "mean-backward-animation",
+      "batch": "first",
+      "title": "均值反向：上游梯度分回特征",
+      "status": "review",
+      "lessons": [
+        "mean_backward"
+      ],
+      "criteria": [
+        "显示 G、C、G/C 与完整 dX。",
+        "逐位置展示均分和广播，保留全部 batch/token。",
+        "说明 μ 是均值，G 是损失对 μ 的梯度，通过链式法则推到 G/C。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js"
+      ],
+      "verification": "补全 μ、G 与链式法则的中间步骤；课程重建和公式解析检查通过，待用户验收。"
+    },
+    {
+      "id": "remaining-animation-audit",
+      "batch": "later",
+      "title": "其余章节的过程演示补全",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "逐章核对变量来源、中间操作和输出；优先补反向传播与 GPT 核心流程。",
+        "为确实需要过程演示的章节制作逐步或自动动画，保留所有前置维度。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "webapp/understanding.js",
+        "tests/test_course_refinement.py",
+        "tests/test_transformer_course.py"
+      ],
+      "verification": "所列章节已逐项补充过程展示或连接对应演示；自动数值检查与部分浏览器流程检查通过，全部展示等待学习者验收。"
+    },
+    {
+      "id": "python-editor-highlighting",
+      "batch": "added",
+      "title": "Python 代码高亮与括号补全",
+      "status": "review",
+      "lessons": [
+        "index"
+      ],
+      "criteria": [
+        "代码关键字、字符串、注释和数字有语法高亮。",
+        "输入括号或引号时成对插入，支持选区包裹、跳过右侧符号和成对删除。",
+        "草稿、测评和编辑框尺寸保持可用，资源可离线加载。",
+        "行首 Backspace 按四列缩进位置回退；普通字符、选区和成对括号删除正常。",
+        "读取本地文件按用户要求直接覆盖网页草稿，不弹确认。"
+      ],
+      "evidence": [
+        "webapp/python-editor.js",
+        "webapp/vendor/highlight/python-highlight.js",
+        "tests/test_python_editor.cjs"
+      ],
+      "verification": "缩进退格及既有成对括号删除已修复；5 项编辑器交互逻辑回归通过，等待学习者验收。"
+    },
+    {
+      "id": "center-backward-animation",
+      "batch": "later",
+      "title": "去均值反向：直接与均值路径汇合",
+      "status": "review",
+      "lessons": [
+        "center_backward"
+      ],
+      "criteria": [
+        "展示 G 沿特征轴求均值。",
+        "均值路径按负号广播回每个特征，再与直接路径逐位置合流。",
+        "保留全部 batch/token，并展示同一公开样例完整结果。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "全部公开用例的逐位置来源与最终输出数值回归通过；待学习者验收。"
+    },
+    {
+      "id": "attention-backward-bridges",
+      "batch": "later",
+      "title": "注意力反向：dV 汇合与 dS 行内耦合",
+      "status": "review",
+      "lessons": [
+        "att_value_backward",
+        "att_score_backward"
+      ],
+      "criteria": [
+        "将各 query 的 A×G 逐次汇总到对应 dV 行。",
+        "展示同一 query 行内的 sum(A*dA)、扣除和逐位乘 A。",
+        "显示全部 batch/head/query，最终输出与公开样例一致。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "全部公开用例数值、坐标与公式解析回归通过；浏览器核对两个任务的多 batch/head 展示，待学习者验收。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "shared-embedding-path",
+      "batch": "later",
+      "title": "GPT 共享词表：查表与输出头两路梯度",
+      "status": "review",
+      "lessons": [
+        "t_gpt",
+        "rebuild_gpt"
+      ],
+      "criteria": [
+        "清晰标出同一个词表参数被输入查表与输出头复用。",
+        "按前向、输出头梯度、模型回流、查表散射、两路合并逐步展示。",
+        "展示实际公开样例的 batch/token 和张量形状；参数只登记一次。"
+      ],
+      "evidence": [
+        "webapp/understanding.js",
+        "webapp/workbench.css"
+      ],
+      "verification": "共享参数前向、后向分步展示；浏览器核对两条路径及公式显示，现有 GPT 共享梯度回归通过；待学习者验收。"
+    },
+    {
+      "id": "shape-restore-copy-process",
+      "batch": "later",
+      "title": "轴长度、形状恢复与独立副本",
+      "status": "review",
+      "lessons": [
+        "shape",
+        "restore",
+        "copy"
+      ],
+      "criteria": [
+        "逐轴展示形状中每个长度的来源。",
+        "将二维位置表按目标形状逐行恢复，保留全部前置轴。",
+        "先复制整个输入，再修改副本并保留原数组。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "公开样例逐坐标恢复和输出对照通过；浏览器核对多 batch 位置恢复，待学习者验收。"
+    },
+    {
+      "id": "multihead-shape-flow",
+      "batch": "later",
+      "title": "多头注意力：QKV 分头、合头与反向",
+      "status": "review",
+      "lessons": [
+        "t_mha"
+      ],
+      "criteria": [
+        "按公开样例展示 QKV 投影、拆头、注意力、合头及输出形状。",
+        "按相反顺序展示三路梯度还原与拼接。",
+        "保留全部 batch/token/head；不将形状示意冒充个人模型数值。"
+      ],
+      "evidence": [
+        "webapp/understanding.js"
+      ],
+      "verification": "网页核对多 batch/head 的前向拆头及公式；待学习者验收。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "sampling-process",
+      "batch": "later",
+      "title": "采样：温度、top-k 与概率",
+      "status": "review",
+      "lessons": [
+        "t_sample"
+      ],
+      "criteria": [
+        "逐 batch 展示温度缩放、top-k、归一化。",
+        "明确种子与采样结果来源；不伪装成浏览器重新运行 NumPy RNG。",
+        "覆盖公开样例的两条输入与完整类别。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "公开用例坐标和公式检查通过；待学习者验收。"
+    },
+    {
+      "id": "layernorm-path",
+      "batch": "later",
+      "title": "LayerNorm：中心化、缩放与反向汇合",
+      "status": "review",
+      "lessons": [
+        "t_layernorm"
+      ],
+      "criteria": [
+        "逐 token 展示均值、中心化、逆标准差和归一化。",
+        "展示反向两项均值、输入梯度和跨位置参数梯度累计。",
+        "保留所有 batch/token；数值与公开样例一致。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "所有普通公开用例的 Y、dX、w.grad、b.grad 均逐坐标对照通过；网页核对首步，待学习者验收。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "dropout-mask-flow",
+      "batch": "later",
+      "title": "Dropout：前向和反向复用掩码",
+      "status": "review",
+      "lessons": [
+        "t_dropout"
+      ],
+      "criteria": [
+        "展示训练/评估条件和公开样例掩码来源。",
+        "前向 X 和反向 G 使用同一个缓存掩码。",
+        "保留所有 batch/token/特征；说明不在浏览器重新采样。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "训练、评估及 p=0 等公开用例的 Y/dX 均逐坐标对照通过；待学习者验收。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "rng-state-flow",
+      "batch": "later",
+      "title": "随机数：种子与连续状态",
+      "status": "review",
+      "lessons": [
+        "random",
+        "random_sequence"
+      ],
+      "criteria": [
+        "说明 seed 创建初始状态及连续采样推进状态。",
+        "展示公开样本所有维度，并明确浏览器不重新实现 NumPy RNG。"
+      ],
+      "evidence": [
+        "webapp/understanding.js"
+      ],
+      "verification": "基于公开样例的状态路径已实现，待学习者验收。"
+    },
+    {
+      "id": "rebuild-reuse-flow",
+      "batch": "later",
+      "title": "独立重建：复用 Linear 与残差梯度演示",
+      "status": "review",
+      "lessons": [
+        "rebuild_linear",
+        "rebuild_block"
+      ],
+      "criteria": [
+        "复用同样例的 Linear 权重与输入梯度来源。",
+        "展示独立 Block 两次残差的梯度合流。"
+      ],
+      "evidence": [
+        "webapp/understanding.js"
+      ],
+      "verification": "独立任务连接现有来源演示，原测评不变；待学习者验收。 2026-11-15：独立Linear已补完整构造、初始化函数接入、可选偏置、全部前置维度、缓存副本、三条就地推导和OI题面/末尾速查。原8项保留，新增独立构造与实际双实例串联，参考及网页接口10/10；只代表当前实现可交付，后续Block/GPT的独立Linear导入链尚未迁移。 本轮仅独立Linear接入固定八矩阵视图，Block残差展示留待Part06复核。 2026-11-16：本项Part06范围改为整体固定来源图/布局片段/残差合流；保留完整批次和头，点选排除未来路径；其他Part及原状态保持。"
+    },
+    {
+      "id": "optimizer-step-flow",
+      "batch": "later",
+      "title": "优化器：裁剪、状态与连续更新",
+      "status": "review",
+      "lessons": [
+        "t_optim"
+      ],
+      "criteria": [
+        "展示全部参数的全局梯度范数与同一裁剪比例。",
+        "逐步展示 m/v 状态推进和每个参数更新。",
+        "数值和所有公开用例一致。"
+      ],
+      "evidence": [
+        "webapp/understanding.js",
+        "tests/test_transformer_course.py"
+      ],
+      "verification": "四组公开优化器用例的参数、m/v、范数与步数逐项对照通过；网页核对裁剪阶段，待学习者验收。"
+    },
+    {
+      "id": "parameter-sharing-flow",
+      "batch": "later",
+      "title": "Parameter / Module：共享与去重",
+      "status": "todo",
+      "lessons": [
+        "infrastructure"
+      ],
+      "criteria": [
+        "逐步展示对象树中的访问、递归进入和返回，跟踪 found 与 seen。",
+        "展示共享对象被跳过、梯度清零与参数值保持原值。"
+      ],
+      "evidence": [
+        "webapp/understanding.js"
+      ],
+      "verification": "已移除只切换文字的旧演示；如后续制作，需展示真实遍历和状态变化。"
+    },
+    {
+      "id": "training-workflow",
+      "batch": "later",
+      "title": "训练循环与综合任务：完整一步",
+      "status": "review",
+      "lessons": [
+        "t_train",
+        "t_project"
+      ],
+      "criteria": [
+        "展示清零、前向、损失、反向、裁剪、更新的先后。",
+        "区分跨步保留的优化器状态和更新前损失。",
+        "展示公开样例的全部 batch 输入和目标。"
+      ],
+      "evidence": [
+        "webapp/understanding.js"
+      ],
+      "verification": "按公开样例分别展示训练循环和综合更新；浏览器核对入口，待学习者验收。"
+    },
+    {
+      "id": "checkpoint-workflow",
+      "batch": "later",
+      "title": "检查点：保存、恢复与续训对照",
+      "status": "review",
+      "lessons": [
+        "t_checkpoint"
+      ],
+      "criteria": [
+        "展示同一步的参数、优化器与随机状态保存和恢复。",
+        "展示保存后的参照更新与恢复后的再次更新比较。",
+        "标明公开样例固定配置及清零旧梯度。"
+      ],
+      "evidence": [
+        "webapp/understanding.js"
+      ],
+      "verification": "按公开用例步骤展示保存与续训对照；浏览器核对入口，待学习者验收。"
+    },
+    {
+      "id": "learner-explanation-public-interface",
+      "batch": "added",
+      "title": "公共接口与初始化：从职责、过程到实现",
+      "status": "accepted",
+      "lessons": [
+        "infrastructure",
+        "initialization"
+      ],
+      "criteria": [
+        "先完整讲明对象、输入、过程与输出，再提供接口、输入格式、输出格式、状态变化清晰的题目。",
+        "Parameter/Module 实现直接用于 miniGPT；初始化应用题对应基础层和 GPT 的真实规则。",
+        "同一公开参数共享样例贯穿讲解和题面；所有示例代码默认折叠，深入方差推导保留在拓展。"
+      ],
+      "evidence": [
+        "scripts/learner_layout.py",
+        "scripts/parameter_lesson.py",
+        "webapp/app.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "当前初始化任务已改为基础权重初始化代码题，配套讲解、真实样例和测评；公共接口部分维持已有版本。等待学习者验收。 用户于 2026-11-14 根据“公共接口与初始化”模块截图明确验收通过。"
+    },
+    {
+      "id": "learner-explanation-followup",
+      "batch": "later",
+      "title": "后续章节：按学习者视角补清对象和计算过程",
+      "status": "accepted",
+      "lessons": [],
+      "criteria": [
+        "先解释对象或变量的职责及来源，再用具体例子展示中间步骤和输出。",
+        "涉及遍历、共享或梯度的任务写清执行顺序、分支与合并，不只列术语和结果。",
+        "保留必要的公式推导，核对与实际接口和测评一致；按课程顺序逐章核查。",
+        "以面对学习者提问的方式完整讲清，所有示例和参考代码默认折叠。",
+        "精简冗余，不删理解所必需的例子、步骤与推导；用户认可的回答按原意与顺序完整呈现。",
+        "正文先讲清对象、输入和全过程，题面随后按 OI 风格组织，实现接口、输入输出和状态变化逐项明确。",
+        "每题实现 miniGPT 的真实模块，或训练当前学习必要的语法/知识应用；标出具体用途。",
+        "对照讲解与题面，保证实现所需操作已讲过；不引入未定义符号或突然增加要求。",
+        "变量、属性、函数调用、数组与形状使用行内代码；完整示例代码默认折叠。",
+        "参考代码与编辑器使用一致高亮；只为正文未讲解的框架代码补注释，使用原编辑框。"
+      ],
+      "evidence": [],
+      "verification": "已记录后续审查，待本次内容通过学习者验收后继续。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "remaining-formula-typesetting",
+      "batch": "later",
+      "title": "后续章节：清理纯文本公式残留",
+      "status": "todo",
+      "lessons": [],
+      "criteria": [
+        "检查正文、题面、选项和测评解释中的根号、分式、上下标与分布表达。",
+        "使用现有本地 KaTeX 行内或独立公式排版，代码和变量标识保持代码样式。",
+        "只改显示，保持题干选项原始数据、答案和成绩版本；本轮只处理 initialization。",
+        "数学对象优先用 LaTeX；正文小型数值矩阵用紧凑带括号矩阵，避免全宽表格；保留必要自然语言解释。"
+      ],
+      "evidence": [],
+      "verification": "当前初始化页已处理；其他章节尚未修改。"
+    },
+    {
+      "id": "initialization-formula-typesetting",
+      "batch": "added",
+      "title": "初始化：正文与题面公式排版",
+      "status": "review",
+      "lessons": [
+        "initialization"
+      ],
+      "criteria": [
+        "正文、题面、选项与解释中的根号、分式及正态分布使用正式公式排版。",
+        "保持测评原始文本、答案、成绩版本与其他章节内容。"
+      ],
+      "evidence": [
+        "scripts/learner_layout.py",
+        "webapp/app.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "初始化样例 Z/W 已改为完整四行三列 LaTeX 矩阵，并显示缩放关系及同一元素来源；保持数值和测评，等待用户验收。"
+    },
+    {
+      "id": "logic-part-01-overview",
+      "batch": "audit-part-01",
+      "part": "part-01",
+      "title": "Part 01 · 概念预览与实际交付的边界",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "map",
+        "architecture"
+      ],
+      "finding": "map 的两题是编号到向量、优化器更新；architecture 直接列出 Pre-Norm/RMSNorm/GELU、QKV 和残差反向，这些尚未学习。概念预览可以保留，不能把列过名称等同于已掌握。",
+      "action": "概览主线讲文本→编号→向量→分数→训练/生成；高级变体只作带去向的预览，原始 Transformer 对照放拓展。",
+      "criteria": [
+        "两道概念任务保留合理的识别用途，不为概览强加随机编码题。",
+        "每个测评答案都能由本页具体例子推出，不要求预先掌握后续层的算法。",
+        "明确 B/T/C/V，图中同一 token 的编号、向量和预测位置连续可追踪。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：map 的两题是编号到向量、优化器更新；architecture 直接列出 Pre-Norm/RMSNorm/GELU、QKV 和残差反向，这些尚未学习。概念预览可以保留，不能把列过名称等同于已掌握。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-02-array-basics",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "Part 02 · 数组与索引先讲语法再出题",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "shape",
+        "axes",
+        "index"
+      ],
+      "finding": "axes、index 正文为空，依赖任务表、公式和过程展示；shape 的交付是形状数组，标题中的数组创建和类型转换并非独立可观察产物。",
+      "action": "先教数组/shape/axis/索引语法，再给用途明确的小题，保留当前清楚的 ids、k 含义。",
+      "criteria": [
+        "说明 shape 题是形状识别的语法应用，测评只要求可观察的返回值。",
+        "axis 归约与 ids 重复取行、截前 k 列均先有完整例子。",
+        "题面明确 NumPy 返回类型、索引起点、k 范围及保持输入原值。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：axes、index 正文为空，依赖任务表、公式和过程展示；shape 的交付是形状数组，标题中的数组创建和类型转换并非独立可观察产物。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-02-broadcast-reduce",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "Part 02 · 广播到去均值的前置链",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "broadcast",
+        "reduce"
+      ],
+      "finding": "广播已排在去均值之前，但正文主要是规则和公式；(N,1) 的广播、keepdims 与 Python/NumPy 实际操作还需从完整例子衔接。",
+      "action": "把按列加偏置和每行减均值的来源对应清楚，再给实现题。",
+      "criteria": [
+        "沿 X→μ(N,1)→Y(N,C) 演算，N 与 C 取不同值。",
+        "学员在题前会使用 mean、axis、keepdims 和数组减法。",
+        "说明该技能用于 Linear 偏置和归一化，保留输入与输出形状检查。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：广播已排在去均值之前，但正文主要是规则和公式；(N,1) 的广播、keepdims 与 Python/NumPy 实际操作还需从完整例子衔接。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-02-gradient-bridges",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "Part 02 · 数组反向先连接已会的链式法则",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "mean_backward",
+        "center_backward"
+      ],
+      "finding": "两题已有真实手写实现和链式法则推导；mean_backward 突然从二维前向进入多 batch/token 的 G，部分正文为空，仍需把前向对象、G 来源及广播操作连续连接。",
+      "action": "保留必要推导，以同一前向例子引出 G，再解释反向目标和完整前置维度。",
+      "criteria": [
+        "区分给定上游 G 与需要返回 dX，不要求先实现损失层。",
+        "先展示均值梯度均分，再展示去均值两路合流。",
+        "标明是归一化必需的知识练习，完整输入/输出与公开测评相符。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：两题已有真实手写实现和链式法则推导；mean_backward 突然从二维前向进入多 batch/token 的 G，部分正文为空，仍需把前向对象、G 来源及广播操作连续连接。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-02-shape-path",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "Part 02 · 标题、交付与高维形状一致",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "matmul",
+        "reshape",
+        "restore",
+        "transpose",
+        "heads"
+      ],
+      "finding": "reshape 标题称合并与恢复，但只交付展平，restore 才恢复；transpose 标题含批量矩阵乘法，题目只交换轴；heads 标题含还原，实际只拆头。",
+      "action": "收束每题标题与实现入口，同时串起后续 Linear/注意力使用路径。",
+      "criteria": [
+        "矩阵乘法、reshape、恢复、transpose、拆头分别标清本题产物。",
+        "先教 @、-1、轴排列和 C/H 的含义，再给题。",
+        "保留 B>1 和完整 head/token，说明为何直接 reshape 不能替代换轴。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：reshape 标题称合并与恢复，但只交付展平，restore 才恢复；transpose 标题含批量矩阵乘法，题目只交换轴；heads 标题含还原，实际只拆头。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-02-copy-scatter",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "Part 02 · 副本与重复索引的练习用途",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "copy",
+        "scatter"
+      ],
+      "finding": "copy 用固定 -99 观测独立副本，属于必要语法练习；scatter 是 Embedding 反向准备，但高级索引临时数组与重复回写的差异只用短句说明。",
+      "action": "明确语法练习用途，连续演示原数组/副本及重复编号梯度的变化。",
+      "criteria": [
+        "-99 说明为观测副本的例值，不虚称模型计算。",
+        "讲清引用、视图和 copy，在题前知道哪些值会改变。",
+        "先比较一次普通索引与重复索引，再教 add.at 或等价循环。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：copy 用固定 -99 观测独立副本，属于必要语法练习；scatter 是 Embedding 反向准备，但高级索引临时数组与重复回写的差异只用短句说明。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-02-random",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "Part 02 · RNG 练习连接真实初始化",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "random",
+        "random_sequence"
+      ],
+      "finding": "已有四项/题的真实实现检查，但 seed、Generator 和连续状态的知识与 Part 04 的初始化交付没有连成闭环。",
+      "action": "保留标准正态和连续状态练习，在两题结束处明确将用同一个 RNG 初始化多份权重。",
+      "criteria": [
+        "区分创建 RNG 与继续使用 RNG，使用连续两次采样例子。",
+        "补 shape 元组和 standard_normal 的必要语法说明。",
+        "后续初始化题接受传入 RNG，不在函数内反复重置种子。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：已有四项/题的真实实现检查，但 seed、Generator 和连续状态的知识与 Part 04 的初始化交付没有连成闭环。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-03-paused",
+      "batch": "audit-part-03",
+      "part": "part-03",
+      "title": "Part 03 · 标量网络继续暂缓",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [],
+      "finding": "第三部分已 paused，用户已掌握基础 FP/BP；旧清单仍有标量自动微分待办。",
+      "action": "维持暂缓，按需链接已有标量知识，不能在执行其他 part 时顺带扩写本章。",
+      "criteria": [
+        "仅用户明确要求才执行本部分。",
+        "其余部分解释张量操作和局部导数即可，不强制重学自动微分。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：第三部分已 paused，用户已掌握基础 FP/BP；旧清单仍有标量自动微分待办。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-04-module-python",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part 04 · 对象遍历和给定辅助代码讲完整",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "infrastructure"
+      ],
+      "finding": "学习者已实际误解 vars(value).items() 中 name、child 为 Module 的两个成员；正文仅简短描述属性遍历，__call__ 与 *args 此前也未讲清。",
+      "action": "加入属性字典→items 键值对→解包→递归访问的完整例子，保留已认可的五部分解释。",
+      "criteria": [
+        "三个属性示例展示每轮 name/child，不假定对象固定有两个属性。",
+        "self、类实例、继承及 __call__ 的必要用法在实现前可理解。",
+        "只为尚未讲解的框架部分注释，保留单编辑框与折叠参考实现。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：学习者已实际误解 vars(value).items() 中 name、child 为 Module 的两个成员；正文仅简短描述属性遍历，__call__ 与 *args 此前也未讲清。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "logic-part-04-initialize-code",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part 04 · 初始化必须由学习者实现并接入模型",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "initialization",
+        "layer_linear",
+        "rebuild_linear"
+      ],
+      "finding": "initialization.kind=concept，仅两项选择题，没有 starter/file；参考实现含 initialize，而 learner_core 仍从 foundation_core 导入 initialize。",
+      "action": "新增或迁移为 initialize(shape,rng) 编程交付，提供 OI 题面、骨架、真实 Python 测评，并接到个人 Linear。",
+      "criteria": [
+        "检查输出形状、float64、缩放值、不同 C/D 和非默认 RNG。",
+        "检查连续使用同一 RNG，拒绝硬编码样例或内部重置种子。",
+        "网页 RUNNER、本地导入、依赖指纹和最终模型实际使用个人初始化实现。",
+        "保留旧选择题成绩；新增实现标准单独版本化，不因文案排版使旧记录失效。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "exercises/learner_core.py",
+        "exercises/foundation_core.py",
+        "webapp/pilot_server.py",
+        "scripts/learner_layout.py",
+        "scripts/initialization_lesson.py",
+        "exercises/_initialization_checks.py",
+        "tests/test_initialization.py"
+      ],
+      "depends_on": [],
+      "verification": "当前任务已改为 initialize(shape,rng=None) 代码题，6 项真实用例，网页/本地及 Linear 依赖已接通；旧选择题记录兼容保留。初始化 7、精修 12、Transformer 11、学习演进 6 项回归通过；基础原 9 项及临时 HTTP 单项通过，实际运行网站接口参考代码 6/6。待学习者验收。"
+    },
+    {
+      "id": "logic-part-04-initialization-order",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part 04 · 基础初始化不混入未学的 GPT 配置",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "initialization"
+      ],
+      "finding": "正文 1–3 讲基础 Linear 初始化，第 4 节立即要求理解 GPT 的 0.02、Block、残差分支和出口缩放；这些对象在 Part 06 才实现。",
+      "action": "本节只闭环基础初始化；把 GPT 专用初始化的教学及实现验收移至 Part 07，Part 04 只保留用途去向。",
+      "criteria": [
+        "学完本节能独立完成基础初始化，不需要先学 Block 或残差出口。",
+        "迁移 GPT 的规则、样例、题目和参考代码一起处理，避免只删正文却仍考高级规则。",
+        "Part 07 对应条目负责接收并落实迁入内容。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/learner_layout.py"
+      ],
+      "depends_on": [],
+      "verification": "当前任务标题、主文、题面、参考实现和必做测评已收束为基础 Linear 初始化。旧高级选择题仅作为历史记录保留；Part 07 的 GPT 专用配置讲解与构造任务仍为 todo，本轮未修改。"
+    },
+    {
+      "id": "logic-part-04-constructors",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part 04 · 从填前后向到完整构造的闭环",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "layer_scale",
+        "layer_linear",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_mlp",
+        "rebuild_linear"
+      ],
+      "finding": "Scale/Linear/Embedding/RMSNorm/MLP 的 __init__ 都预先给出；只存在独立 Linear 构造题，Embedding/RMSNorm/MLP 没有后续独立构造交付。",
+      "action": "按前后向台阶逐步放开构造器，在本 part 或最终整合明确由学习者补写核心参数/子模块创建。",
+      "criteria": [
+        "给定构造器有教学用途说明，不把前后向通过等同于整层独立完成。",
+        "Embedding/RMSNorm/MLP 的参数形状、初值、子层创建由学习者实际实现并测试。",
+        "衔接个人 initialize；构造代码只在必要时作为提示或折叠参考。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/independent_linear_lesson.py",
+        "tests/test_independent_linear_lesson.py",
+        "tests/test_source_map.cjs"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：Scale/Linear/Embedding/RMSNorm/MLP 的 __init__ 都预先给出；只存在独立 Linear 构造题，Embedding/RMSNorm/MLP 没有后续独立构造交付。 本轮仅记录，尚未修改。 2026-11-14：当前 Scale/Linear 已明确给定构造器的行为与教学台阶，Linear 关联后续独立构造任务；其他层构造交付仍未处理，整体继续 todo。 2026-11-15：Embedding已补__init__待填及独立构造测评（review），个人文件/已有草稿不自动替换；RMSNorm/MLP及其余独立构造闭环仍todo。 2026-11-15激活与归一化局部完成并单列review；RMSNorm构造/两条输入路径、GELU逐元素解释及来源对象图已实现，其余MLP/独立Linear等待指定。 2026-11-15 MLP已补完整构造/OI题面/反向串联/公式速查/对象复用测评，单列review；独立Linear与跨Part个人实现复用仍保留待办。 2026-11-15：独立Linear已补完整构造、初始化函数接入、可选偏置、全部前置维度、缓存副本、三条就地推导和OI题面/末尾速查。原8项保留，新增独立构造与实际双实例串联，参考及网页接口10/10；只代表当前实现可交付，后续Block/GPT的独立Linear导入链尚未迁移。"
+    },
+    {
+      "id": "logic-part-04-layer-teaching",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part 04 · 完整基础层先讲职责再讲公式",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "layer_scale",
+        "linear",
+        "layer_linear",
+        "layer_embedding",
+        "layer_gelu",
+        "layer_rmsnorm",
+        "layer_mlp"
+      ],
+      "finding": "部分正文只有缓存句子或公式，首次完整层已同时要求缓存、输入梯度、参数梯度和清零；Embedding 的整数输入及 Norm/MLP 位置语义需要可操作的解释。",
+      "action": "每层按职责→输入→前向→缓存→反向产物→状态变化讲清，再用真实模块题验收。",
+      "criteria": [
+        "Linear 保留完整前置轴，分别解释 dX、dW、db 的来源和累加轴。",
+        "Embedding 连接前面的取行/散射；GELU 解释逐元素非线性，RMSNorm 先解释均方与缩放。",
+        "MLP 按子层 forward 顺序和 backward 逆序走同一样例，未来变体放拓展。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：部分正文只有缓存句子或公式，首次完整层已同时要求缓存、输入梯度、参数梯度和清零；Embedding 的整数输入及 Norm/MLP 位置语义需要可操作的解释。 本轮仅记录，尚未修改。 2026-11-14：Scale 与 Linear 的三项已按职责、输入、计算、缓存和梯度来源调整，见 learner-explanation-scale-linear（review）。Embedding/GELU/RMSNorm/MLP 尚未调整，整体继续 todo。 2026-11-15：layer_embedding完整讲解与OI题面已精修，见learner-explanation-embedding（review）；GELU/RMSNorm/MLP仍待调整。 2026-11-15激活与归一化局部完成并单列review；RMSNorm构造/两条输入路径、GELU逐元素解释及来源对象图已实现，其余MLP/独立Linear等待指定。 2026-11-15 MLP已补完整构造/OI题面/反向串联/公式速查/对象复用测评，单列review；独立Linear与跨Part个人实现复用仍保留待办。"
+    },
+    {
+      "id": "logic-part-04-independent-linear",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part04 · 单一个人Linear及其真实复用",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "rebuild_linear"
+      ],
+      "finding": "rebuild_linear.next_use 指向 rebuild_block，但 rebuild_block 的依赖仍是 layer_linear；独立 Linear 未进入最终独立 GPT 的显式依赖。",
+      "action": "主线只使用layer_linear；构造交付/测评合入原类，重复题保留可选历史。后续继续复用同一份个人类。",
+      "criteria": [
+        "主线Linear的构造、前后向在同一份个人文件完成；已有实现保留。",
+        "综合分支和现有后续MLP/MHA/Block/GPT依赖沿用layer_linear，避免两个同功能类分叉。",
+        "历史rebuild_linear代码与成绩保留，新的分支类在Part06接收，不提前宣称已直接接入。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/build_independence.py"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：rebuild_linear.next_use 指向 rebuild_block，但 rebuild_block 的依赖仍是 layer_linear；独立 Linear 未进入最终独立 GPT 的显式依赖。 本轮仅记录，尚未修改。 2026-11-15：独立Linear已补完整构造、初始化函数接入、可选偏置、全部前置维度、缓存副本、三条就地推导和OI题面/末尾速查。原8项保留，新增独立构造与实际双实例串联，参考及网页接口10/10；只代表当前实现可交付，后续Block/GPT的独立Linear导入链尚未迁移。 next_use改为contrast，与实际状态一致；跨Part接线未完成，继续todo。 本次结构复核：重复Linear不适合作Part04综合收尾，改造方案见logic-part-04-capstone-reuse；后续优先复用同一份个人层，避免再维护独立副本，仍todo。 本轮已将构造/双实例检查合入layer_linear（10项、版本3），rebuild_linear原接口/文件/成绩保留并移至可选历史，新foundation_capstone真实复用当前个人子层。"
+    },
+    {
+      "id": "logic-part-05-softmax",
+      "batch": "audit-part-05",
+      "part": "part-05",
+      "title": "Part 05 · 先解释分数到分布，再写稳定 Softmax",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_softmax"
+      ],
+      "finding": "正文开头是减最大值、指数化、归一化，标题同时使用向量雅可比积；容易从术语和公式直接跳进实现。",
+      "action": "先展示一行分数如何得到每行和为 1 的概率，再说明缓存和上游梯度的行内耦合。",
+      "criteria": [
+        "解释指数、逐行求和、广播除法和减最大值的操作；稳定性证明放拓展。",
+        "先教概率间的相互影响，再给已有完整 backward 实现题。",
+        "保留多 batch/token 和不同类数，公式与 NumPy 轴操作逐项对应。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part45_lessons.py",
+        "tests/test_part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_probability_views.cjs"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：正文开头是减最大值、指数化、归一化，标题同时使用向量雅可比积；容易从术语和公式直接跳进实现。 本轮仅记录，尚未修改。 本轮按新标准实现先讲清对象/输入/过程/输出，再给OI题面、状态、动手清单和公式速查；必要推导就地，完整代码默认折叠。参考与实际网页接口通过，浏览器讲解验收仍由用户完成。"
+    },
+    {
+      "id": "logic-part-05-loss",
+      "batch": "audit-part-05",
+      "part": "part-05",
+      "title": "Part 05 · 交叉熵的标签选择与梯度接口",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_loss"
+      ],
+      "finding": "正文直接使用 logp、LogSumExp、take_along_axis；前面只做过二维取行，未完整教三维按标签取类别以及零维损失。",
+      "action": "沿 logits、整数 targets、正确类 log 概率、位置平均和标量上游 g 走一遍。",
+      "criteria": [
+        "先教 take_along_axis 所需索引轴与形状，或给等价清楚索引方式。",
+        "题前明确 forward 的零维 loss、backward(g) 的同形 logits 梯度及 targets 不求导。",
+        "说明训练只在损失处平均一次，检查非单位 g 和不同 B/T/V。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part45_lessons.py",
+        "tests/test_part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_probability_views.cjs"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：正文直接使用 logp、LogSumExp、take_along_axis；前面只做过二维取行，未完整教三维按标签取类别以及零维损失。 本轮仅记录，尚未修改。 本轮按新标准实现先讲清对象/输入/过程/输出，再给OI题面、状态、动手清单和公式速查；必要推导就地，完整代码默认折叠。参考与实际网页接口通过，浏览器讲解验收仍由用户完成。"
+    },
+    {
+      "id": "logic-part-06-attention-front",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Part06 · 完整核心内的四步前向",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_attention"
+      ],
+      "finding": "att_scores 已解释 QKV，后面多个台阶正文为空；掩码一项主要写先屏蔽再 Softmax，仍需同一样例串联坐标与信息来源。",
+      "action": "先展示完整QKV到输出，再在同一页依次解释打分、掩码、概率和读取；同一份类中实现。",
+      "criteria": [
+        "明确 query/key/value、两条 token 轴和保留的 batch/head。",
+        "在题前教负无穷、布尔掩码、换最后两轴以及加权读取。",
+        "台阶均为完整 AttentionCore/MHA 的必要操作，不设无关数值题。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "webapp/module-views.js"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。"
+    },
+    {
+      "id": "logic-part-06-attention-back",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Part06 · 完整核心内的逆序反向",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_attention"
+      ],
+      "finding": "两道反向台阶已有代码测评；完整 AttentionCore 又首次出现 dA、dQ/dK 组合，正文主要直接给公式。",
+      "action": "保留当前公式，增加 Y→V/A→S→Q/K 的来源说明，完整任务再组装这些计算。",
+      "criteria": [
+        "区分台阶只返回 dV/dS 和完整 backward 返回 dQ,dK,dV 的顺序。",
+        "说明缩放与掩码怎样作用于反向，覆盖因果/非因果 Tq/Tk。",
+        "动画若保留，必须追踪实际来源与合流，不仅切换公式标题。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "webapp/module-views.js"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。"
+    },
+    {
+      "id": "logic-part-06-mha-block",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Part 06 · 头、投影、子模块与残差的构造",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "t_mha",
+        "t_block"
+      ],
+      "finding": "MHA 构造器已创建 qkv/proj/core，Block 已创建两个 Norm、Attention 和 MLP；独立 Block 补了构造，但 MHA 没有独立构造交付。",
+      "action": "在已学个人子层基础上补齐MHA构造、解释残差与梯度合流，沿用唯一layer_linear并接收MLPBranch，减少Block重复重写。",
+      "criteria": [
+        "学习者亲自创建并验证 qkv、proj、core，清楚 C、3C、H、d。",
+        "Block 每条残差明确前向分叉和反向合流，不仅呈现雅可比表达。",
+        "独立 Block 实际使用约定的个人子模块，验证参数收集、缓存实例和维度。",
+        "接收Part04的单一layer_linear及foundation_capstone交付：网页dependencies、本地import、MLP/MHA/Block内部Linear来源应一致；用类/实例身份及不同宽度的真实前后向确认最终调用个人独立类。保留旧代码/成绩和明确迁移说明，未完成前不宣称最终复用。",
+        "审查重复实现的新增能力：优先沿用同一份个人代码，组装只写新增组合部分；保留有价值的综合/迁移测评，不把同一算法换文件再写作为必修目标。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/build_independence.py",
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "webapp/module-views.js"
+      ],
+      "depends_on": [
+        "logic-part-04-independent-linear"
+      ],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。"
+    },
+    {
+      "id": "logic-part-06-architecture-boundary",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Part 06 · RMSNorm 主线与 Dropout/LayerNorm 对照分清",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "t_dropout",
+        "t_layernorm"
+      ],
+      "finding": "t_gpt 的实际依赖不含 Dropout/LayerNorm，二者却作为主线必做；LayerNorm 正文说上一节 causal=False 的 core，实际上一任务为 Dropout。",
+      "action": "按既定 RMSNorm miniGPT 架构明确两者为对照/选修用途，或在另一个明确配置中接入；修复失效的上一节引用。",
+      "criteria": [
+        "不为使用某层而无说明地切换主线架构。",
+        "需要实现的对照层有独立清楚的题面及用处；主线完成条件与可选内容一致。",
+        "Dropout 先讲训练/评估与掩码，LayerNorm 先连接已学均值/去均值，再给反向。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "webapp/module-views.js"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。"
+    },
+    {
+      "id": "logic-part-07-gpt-init",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "Part 07 · 接收并实现 GPT 专用初始化",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "t_gpt"
+      ],
+      "finding": "GPT 的 __init__ 已给出两张表、Block 堆叠、二维权重重采样和两条出口缩放；讲义引用规则，普通题只实现前后向。",
+      "action": "通过第七部分完整衔接任务，为原模块增加可选初始化配置；GPT提供配置，各层构造时只初始化自己的参数。",
+      "criteria": [
+        "讲清原地改写数组与只初始化一次；前向不重复缩小权重。",
+        "显示单一 RNG 依序采样、Norm/偏置保留默认值和两个具体出口。",
+        "验证种子、参数顺序、缩放对象及重复 forward 权重不变。",
+        "与 Part 04 的移出条目对应，迁移后既无重复考查也无知识缺口。",
+        "GPT不再搜索Block内部出口；注意力与MLP各自给出口Linear传入初始化系数，检查真实个人类型与行为。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/learner_layout.py",
+        "scripts/part07_lessons.py",
+        "exercises/_gpt_contract_checks.py",
+        "tests/test_part07_lessons.py",
+        "docs/第七部分精修记录.md"
+      ],
+      "depends_on": [
+        "logic-part-04-initialization-order"
+      ],
+      "verification": "2026-11-17：数据先行、完整GPT随后；已实现整体用途、连续前后向、就地前向公式、核心总结、OI题末任务与公式、个人模块复用和构造TODO。原4/6项保留并各补2项行为检查；单一语义随机顺序、真实个人ffn出口、共享两路和状态均验证。源码/重建/严格公式、网页RUNNER和真实分模块导入、侧边栏检查通过；仅两个精确匹配的旧空模板备份后同步，未改其他个人实现或成绩。等待用户验收。 2026-11-17模块化修订：新衔接任务t_init_upgrade在GPT前，旧课仅增加升级入口。GPT不再重新赋值内部参数，原数值8项保留，新增一次采样项共9项；尚未填写的个人接口不由参考代补。详见初始化接口升级说明。"
+    },
+    {
+      "id": "logic-part-07-gpt-flow",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "Part 07 · GPT 组装与共享表两路梯度",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_gpt"
+      ],
+      "finding": "讲义从 ids/位置相加直接到共享头与参数梯度；完整模型构造责任、位置索引广播与两路共享梯度仍需连成一次可操作流程。",
+      "action": "沿一组多 batch/token 经过两张表、Blocks、Norm 和输出头，再按逆序返回。",
+      "criteria": [
+        "先教位置 arange 和 batch 广播，再要求写对应代码。",
+        "指出共享是同一 Parameter，输出头转置与未查表行也有梯度的原因可追踪。",
+        "列出需要保存的缓存、backward 返回 None 与各参数 grad 的变化。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part07_lessons.py",
+        "exercises/_gpt_contract_checks.py",
+        "tests/test_part07_lessons.py",
+        "docs/第七部分精修记录.md"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-17：数据先行、完整GPT随后；已实现整体用途、连续前后向、就地前向公式、核心总结、OI题末任务与公式、个人模块复用和构造TODO。原4/6项保留并各补2项行为检查；单一语义随机顺序、真实个人ffn出口、共享两路和状态均验证。源码/重建/严格公式、网页RUNNER和真实分模块导入、侧边栏检查通过；仅两个精确匹配的旧空模板备份后同步，未改其他个人实现或成绩。等待用户验收。"
+    },
+    {
+      "id": "logic-part-07-data",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "Part 07 · 文本、词表与移位批次补语法衔接",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_data"
+      ],
+      "finding": "tokenize/make_batch 已有编码实现和四项测评；正文主要从现成 ids 开始，sorted(set(text))、字典映射和反向解码在后续程序使用，说明仍不完整。",
+      "action": "从含重复字符/空格/换行的小文本建立词表，再编码、取窗口和右移标签；明确后续训练如何使用。",
+      "criteria": [
+        "讲清字符串/排序去重/字典查表及整数数组的必要操作。",
+        "用两个起点和最后合法起点演示 X/targets 对齐，词表仅在约定语料上建立。",
+        "GPT 接受编号，训练接收批次，生成最后解码；数据流在题前可复述。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part07_lessons.py",
+        "exercises/_gpt_contract_checks.py",
+        "tests/test_part07_lessons.py",
+        "docs/第七部分精修记录.md"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-17：数据先行、完整GPT随后；已实现整体用途、连续前后向、就地前向公式、核心总结、OI题末任务与公式、个人模块复用和构造TODO。原4/6项保留并各补2项行为检查；单一语义随机顺序、真实个人ffn出口、共享两路和状态均验证。源码/重建/严格公式、网页RUNNER和真实分模块导入、侧边栏检查通过；仅两个精确匹配的旧空模板备份后同步，未改其他个人实现或成绩。等待用户验收。"
+    },
+    {
+      "id": "logic-part-08-optimizer",
+      "batch": "audit-part-08",
+      "part": "part-08",
+      "title": "Part 08 · 优化器状态需要自己建立",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "t_optim"
+      ],
+      "finding": "AdamW.__init__ 已创建 params/m/v/t，本题只留 clip_grad 和 step；未发现后续独立 AdamW 构造题。",
+      "action": "先展示参数、梯度、状态、步数的一次与连续两次更新，再补齐状态创建的学习者实现。",
+      "criteria": [
+        "学生创建同形 m/v 与单一步数，理解它们跨步保留。",
+        "先解释统一范数裁剪，再解释逐元素更新；衰减分组是本项目约定。",
+        "检查真实训练路径中的全局裁剪、共享参数仅更新一次、连续状态及空/零梯度。",
+        "先核对实际训练与后续组装的调用及上游保证，测评覆盖组装依赖的行为。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part08_lessons.py",
+        "tests/test_part08_lessons.py"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-18：裁剪与优化器统一由 Module.parameters() 提供唯一参数。行为测评通过上游取参并覆盖迭代器、多形状梯度、连续更新和状态，已取消重复输入列表要求。 裁剪现直接使用模型返回的列表，优化器仍持有独立列表。17项检查通过。 AdamW 测评直接传入模型参数列表，允许保存同一个列表，覆盖参数引用和顺序、共享权重更新及跨步状态。"
+    },
+    {
+      "id": "logic-part-08-train-focus",
+      "batch": "audit-part-08",
+      "part": "part-08",
+      "title": "Part 08 · 固定批次训练先闭环再扩展",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_train"
+      ],
+      "finding": "固定批次 train 是真实实现题，但正文同时引入 micro-batch 加权、独立评估和 warmup/cosine，后两者没有本题实现交付。",
+      "action": "主线先完成一次/多次固定批次训练；高级累计和调度放明确拓展，评估说明输入、输出与缓存时机。",
+      "criteria": [
+        "一张流程对应清零、前向、损失、反向、裁剪、更新及更新前 loss。",
+        "优化器在循环外创建，传入 model/批次与返回 loss 数组明确。",
+        "主文不把未来拓展写成当前必做，必要公式与已有测评一致。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part08_lessons.py",
+        "tests/test_part08_lessons.py"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-18：固定批次六阶段连续流程、对象与配置来源、更新前损失、缓存时机、零步边界已完善；高级累计/调度移至拓展。原4项数值/训练/评估用例保留，新增2项行为检查。"
+    },
+    {
+      "id": "logic-part-08-training-reuse",
+      "batch": "later",
+      "part": "part-09",
+      "title": "个人英文训练程序与网页实验室",
+      "status": "todo",
+      "priority": "P1",
+      "lessons": [
+        "t_train",
+        "t_generate",
+        "t_checkpoint"
+      ],
+      "remind_after": "t_generate",
+      "finding": "现有实验室和本地 run_gpt 分别由平台组织训练。固定批次练习 train 每次调用创建优化器，抽出单步更新后，调用方就可以换批次并保留同一个优化器。",
+      "action": "完成 Part09 后，由学习者实现 train_my_gpt.py，把英文语料、个人组件、检查点和生成接成一个程序，再让网页实验室调用同一个入口。",
+      "criteria": [
+        "训练、验证、提示词和生成示例统一用英文。先用简单英文短句验收完整流程，提示词中的词表外字符要定位清楚。",
+        "从已有个人 train 提取单步更新，共用一份实现。学习者实现训练、续训和生成入口，直接调用个人的 make_batch、单步更新、generate 和课程提供的检查点接口。",
+        "同一语料从检查点恢复权重、优化器和抽样状态。连训 5 步与先训 3 步、重开后再训 2 步的结果一致。",
+        "本地命令行与网页调用同一份个人程序。网页收集输入并展示累计步数、损失曲线、检查点和续写。",
+        "同一检查点可生成多条提示词的续写，生成期间权重保持原值。对话任务可使用同一程序新开实验。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "exercises/_transformer_lab.py",
+        "exercises/run_gpt.py",
+        "scripts/part08_lessons.py",
+        "tests/test_part08_lessons.py"
+      ],
+      "depends_on": [],
+      "verification": "训练实验室已提供扩展英文词汇库和同模型多开头续写。续写开头默认一条，最多三条，每条单独逐字符回放及显示实际采样概率。侧边预览实跑三条并验证添加上限、刷新恢复和独立步进。训练诊断按前向、反向、更新解释三张图，标出裁剪阈值和触发步数，实际更新用百分比显示。语料和分组参数使用全站常驻可折叠栏，实跑验证跨课程保留状态及运行期间编辑只影响下一次实验。参数按训练接口限制，验证来源在侧栏可见。侧边预览验证数值边界、随语料变化的上限、换语料后自动退出样例验证及续写成功。成果交付保留输入输出、清单和折叠参考程序，个人程序及网页调用仍待实现。"
+    },
+    {
+      "id": "logic-part-09-generation",
+      "batch": "audit-part-09",
+      "part": "part-09",
+      "title": "Part 09 · 采样与窗口生成先演算再实现",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_sample",
+        "t_generate"
+      ],
+      "finding": "已有真实实现与随机/滑窗检查，但采样并列规则直接给 stable argsort；生成正文主要是位置/缓存限制，核心取末位置和追加的语法依赖短表。",
+      "action": "沿分数→温度→top-k→概率→编号，再完整走两步窗口截取、末位置预测和追加。",
+      "criteria": [
+        "解释 argsort、切片、choice 和 concatenate 的必要用法以及 RNG 由谁持有。",
+        "说明训练输入和生成前缀的区别、context 和返回原提示的约定。",
+        "KV cache 留拓展，保留多 batch 且实际模型参数/梯度不被生成更改。",
+        "生成演示固定展示提示、窗口、分数、抽样概率、采样记录和完整序列。按轮揭晓编号，先高亮真实 top-k 候选，再标出按概率抽中的编号及追加位置。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part09_lessons.py"
+      ],
+      "depends_on": [],
+      "verification": "生成演示用公开样例同一参考模型和种子计算末位分数。自动检查五轮的固定布局、top-k、抽样概率、揭晓时机与追加结果。侧边预览确认六张表同时可见且无横向溢出，第 0 轮只填首列，进入下一轮时清空分数与概率。"
+    },
+    {
+      "id": "logic-part-09-checkpoint",
+      "batch": "audit-part-09",
+      "part": "part-09",
+      "title": "Part 09 · 检查点要先教状态如何存取",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_checkpoint"
+      ],
+      "finding": "已有两个函数 TODO 和五项恢复测评，但讲义直接要求数组/JSON/NPZ/allow_pickle=False；初学者尚未得到这些序列化操作的完整说明。",
+      "action": "先列一个模型和优化器的状态清单，展示文件中的数组与元数据，再做保存→继续→恢复→重做的验收。",
+      "criteria": [
+        "说明 path、参数顺序、形状、m/v/t、超参和 RNG 状态的读写方式。",
+        "用必要语法例子教 save/load 操作，给出的支持代码只注释未讲解部分。",
+        "区分本函数保存内容和 CLI 另存的词表、模型配置、数据进度；不把局部恢复称完整训练档案。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "scripts/part09_lessons.py"
+      ],
+      "depends_on": [],
+      "verification": "2026-11-18：按用户要求改为提供检查点工具，网页说明两个接口及调用方法。已用本地文件核对权重、AdamW 历史、步数和随机状态的保存及恢复。"
+    },
+    {
+      "id": "logic-part-09-project-delivery",
+      "batch": "audit-part-09",
+      "part": "part-09",
+      "title": "Part 09 · 实验室成果交付与分项检查",
+      "status": "review",
+      "priority": "P2",
+      "lessons": [
+        "t_checkpoint",
+        "t_project"
+      ],
+      "finding": "旧项目题只写一次更新，附带多项独立检查。阶段进度反映课程测评，完整交付需要同一份个人程序跑通训练、续训和生成。",
+      "action": "把阶段进度移到训练实验室的成果交付区。原训练单步与分项检查作为可回看的历史练习。",
+      "criteria": [
+        "Part09 从检查点页直接进入训练实验室，阶段进度集中放在实验室开头。",
+        "实验室显示当前版本的课题通过状态，并标明课程提供的检查点工具。交付状态与课程进度各自对应实际证据。",
+        "历史练习沿用原任务 ID、代码、用例及成绩版本。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "webapp/laboratory.js",
+        "scripts/part09_lessons.py"
+      ],
+      "depends_on": [],
+      "verification": "侧边预览确认检查点页可直达训练实验室。实验室顶部八个进度环同排且没有横向溢出，成果交付区显示个人程序状态。生成前后的历史任务接口、用例和测评版本一致。"
+    },
+    {
+      "id": "logic-part-09-independent-closure",
+      "batch": "audit-part-09",
+      "part": "part-09",
+      "title": "Part 09 · 最终独立实现的全部路径复核",
+      "status": "review",
+      "priority": "P1",
+      "lessons": [
+        "rebuild_gpt"
+      ],
+      "finding": "独立 GPT 的 __init__/forward/backward 均需写且有 16 项检查；但依赖仍包含 layer_linear，缺少 rebuild_linear，多种子层与 AdamW 构造仍来自预填代码，initialize 仍为支持函数。",
+      "action": "沿单一个人实现建立核心接口清单，保留有价值的综合/迁移验收，增量组装最终模型，避免另建相同层要求重写。",
+      "criteria": [
+        "核心参数管理、初始化、各层构造、前后向、优化器和训练步骤都能找到学习者实现与对应检查。",
+        "通过类型/来源及新尺寸运行验证真正复用同一份个人 Linear/Block/GPT，平台测评/绘图辅助可保持提供。",
+        "改变接口或标准时保留历史个人文件与成绩，说明依赖迁移和必须重测的范围。",
+        "在完成整条链之前，不用单页 16 项通过宣称所有核心代码已独立完成。",
+        "接收Part04的单一layer_linear及foundation_capstone交付：网页dependencies、本地import、MLP/MHA/Block内部Linear来源应一致；用类/实例身份及不同宽度的真实前后向确认最终调用个人独立类。保留旧代码/成绩和明确迁移说明，未完成前不宣称最终复用。",
+        "审查重复实现的新增能力：优先沿用同一份个人代码，组装只写新增组合部分；保留有价值的综合/迁移测评，不把同一算法换文件再写作为必修目标。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json",
+        "exercises/learner_core.py",
+        "scripts/build_independence.py",
+        "scripts/part09_lessons.py"
+      ],
+      "depends_on": [
+        "logic-part-04-initialize-code",
+        "logic-part-04-constructors",
+        "logic-part-04-independent-linear",
+        "logic-part-06-mha-block",
+        "logic-part-08-optimizer",
+        "logic-part-08-training-reuse"
+      ],
+      "verification": "2026-11-18：独立重写保留为选修，复用已升级的个人子层。保留原16项并增加3项来自第七部分的构造、初始化来源与反向复用检查；网页和真实本地导入均通过。"
+    },
+    {
+      "id": "lab-english-context-dialogue",
+      "batch": "later",
+      "part": "part-09",
+      "title": "训练实验室 · 英文对话与上下文记忆",
+      "status": "todo",
+      "lessons": [
+        "t_generate",
+        "t_project"
+      ],
+      "finding": "训练实验室现在从头训练一个新模型并续写本次输入的提示词。英文对话实验需要用同一份已训练模型比较不同上下文。",
+      "action": "在 Part09 之后的训练实验室加入全英文的颜色问答实验。先用个人程序训练并保存，再从同一检查点生成成对答案。",
+      "criteria": [
+        "训练和验证语料、提示词、生成样例均为英文。按完整对话切分数据，留出未参与训练的人名与颜色组合用于最终对照。",
+        "同一检查点和生成设置下，两边使用相同问句，只改前文所选颜色。并排显示预期答案与模型实际续写。",
+        "上下文窗口覆盖完整提示。用固定生成设置报告留出样例的成对答对比例，两边都答对才计为一组通过。",
+        "第一版验收颜色问答。先选一种颜色、后来改选另一种的对照留作后续进阶。"
+      ],
+      "depends_on": [
+        "logic-part-08-training-reuse"
+      ]
+    },
+    {
+      "id": "logic-optional-repairs",
+      "batch": "audit-optional",
+      "part": "optional",
+      "title": "拓展 · 修错任务继续独立于主线",
+      "status": "todo",
+      "priority": "P2",
+      "lessons": [
+        "fix_bias",
+        "fix_heads",
+        "fix_residual",
+        "fix_shared",
+        "fix_clear"
+      ],
+      "finding": "五题按设计提供可运行但错误的代码，这属于排错题；不能用“骨架已有代码”把它们计为缺少学习者实现，也不能用修错题替代主线构造任务。",
+      "action": "维持独立拓展，题前指出错误行为、输入输出与相关主线，随所属知识完成后按需做。",
+      "criteria": [
+        "偏置、合头、残差、共享表、清零各自关联对应主线，主线不依赖修错完成。",
+        "排错提示和参考答案默认折叠，完整函数中继承的未来拓展不重复堆入题面。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "docs/课程逻辑审查事实.json"
+      ],
+      "depends_on": [],
+      "verification": "已静态核对：五题按设计提供可运行但错误的代码，这属于排错题；不能用“骨架已有代码”把它们计为缺少学习者实现，也不能用修错题替代主线构造任务。 本轮仅记录，尚未修改。"
+    },
+    {
+      "id": "learner-explanation-scale-linear",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Scale 与 Linear：从职责和梯度来源到实现",
+      "status": "accepted",
+      "lessons": [
+        "layer_scale",
+        "linear",
+        "layer_linear"
+      ],
+      "criteria": [
+        "Scale 说明共享标量、输入副本、上游梯度、返回输入梯度与参数梯度累加。",
+        "Linear 前向先讲完整三维输入及展平位置的对应关系，再给接口、输入输出与状态变化明确的实现题。",
+        "完整 Linear 分别解释 dX、dW、db 的来源、收缩轴和缓存，按同一公开样例追踪三条反向路径。",
+        "前向练习只展示前向；移除 Scale 切文字伪动画；保留完整层的梯度来源演示。",
+        "个人代码、原用例、参考实现、骨架及成绩版本保持；构造器后续独立交付仍保留待办。"
+      ],
+      "evidence": [
+        "scripts/scale_linear_lessons.py",
+        "scripts/learner_layout.py",
+        "webapp/understanding.js",
+        "webapp/app.js"
+      ],
+      "verification": "精修 12、初始化 7、基础课程 9 项及获准重跑的 HTTP 单项通过；严格 KaTeX、重建一致性、样例数值、清单引用和 JS 语法通过。实际网站返回 200，catalog 已加载三题新内容；已请求 Codex 右侧面板预览（queued）。未进行逐项浏览器视觉验收，等待学习者验收。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "sidebar-scrollbar-polish",
+      "batch": "added",
+      "title": "学习目录滚动条视觉优化",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "侧栏使用细滚动条、透明轨道与低对比度灰绿色滑块。",
+        "支持悬停和键盘焦点增强颜色，兼容标准及 WebKit 滚动条样式。",
+        "隐藏支持自定义样式的浏览器滚动箭头，保持目录与课程数据不变。"
+      ],
+      "evidence": [
+        "webapp/workbench.css"
+      ],
+      "verification": "已核对选择器仅作用于左侧目录，标准与 WebKit 样式均已提供；未进行真实浏览器视觉验收。 用户随后选择顶部树状目录；旧侧栏已撤下，细滚动条样式用于新目录面板，后续以 top-course-outline 验收。",
+      "superseded_by": "top-course-outline"
+    },
+    {
+      "id": "top-course-outline",
+      "batch": "added",
+      "title": "顶部可折叠课程目录与统一入口",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "顶部显示目录按钮和当前学习位置；正文保持居中单列。",
+        "目录按部分、模块、任务分级折叠，保留完成与讲解状态，打开时展开并定位当前任务。",
+        "选中任务、关闭按钮、Esc 或点击面板外部可关闭；提供键盘焦点与展开状态。",
+        "完善清单、模型地图和通用拓展集中在顶部，分别打开独立面板。",
+        "页末提供上一任务和下一任务，不改个人代码、草稿、成绩或测评标准。"
+      ],
+      "evidence": [
+        "webapp/course-navigation.js",
+        "webapp/pilot.html",
+        "webapp/workbench.css",
+        "webapp/learning-tools.js",
+        "webapp/app.js",
+        "tests/test_course_navigation.cjs",
+        "webapp/pilot_server.py"
+      ],
+      "verification": "导航 3 项自动检查与课程精修 12 项通过；JS 语法通过。未进行真实浏览器视觉和键盘交互验收。 新增静态脚本白名单并重载本项目服务；未进行用户桌面操作。 清除同项目重复旧服务后，实际 /course-navigation.js 返回 200，响应与源文件逐字节一致；视觉效果仍待验收。 用户要求合并顶部两栏：现为单条60px导航，保留品牌、目录、当前位置，三项全局入口收纳到学习工具菜单；窄屏保留标志并省略长站名。导航3项与HTML唯一性检查通过，视觉效果待验收。"
+    },
+    {
+      "id": "scale-derivation-inline",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Scale：推导紧跟对应反向计算",
+      "status": "review",
+      "lessons": [
+        "layer_scale"
+      ],
+      "criteria": [
+        "先定义上游 G，再在输入梯度讲解处展开局部导数和链式法则。",
+        "参数梯度处解释共享来源、局部导数和跨全部位置求和。",
+        "必要推导在梯度累计与代码职责之前出现，取消末尾重复块。"
+      ],
+      "evidence": [
+        "scripts/scale_linear_lessons.py",
+        "scripts/course_math.py"
+      ],
+      "verification": "仅修改 Scale body/derivation，其余任务、接口、代码和测评不变；待用户验收。"
+    },
+    {
+      "id": "derivation-placement-part04",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "Part 04 · 推导贴近运算，避免中断学习顺序",
+      "status": "review",
+      "lessons": [
+        "layer_linear",
+        "layer_rmsnorm",
+        "layer_mlp",
+        "rebuild_linear"
+      ],
+      "criteria": [
+        "Linear 将逐元素定义与三条链式法则分别并入对应梯度讲解，放在状态累计之前；保留必要推导与维度说明。",
+        "RMSNorm 按前向→直接和间接反向路径→缓存/实现排列，将 LayerNorm 对照移入拓展。",
+        "MLP 先展示有名字的前向中间量，再说明缓存、逆序反向及返回值；独立 Linear 在对应任务执行时同步检查。"
+      ],
+      "evidence": [
+        "scripts/scale_linear_lessons.py",
+        "webapp/foundations.json",
+        "scripts/independent_linear_lesson.py",
+        "tests/test_independent_linear_lesson.py",
+        "tests/test_source_map.cjs"
+      ],
+      "verification": "结构扫描全部56任务并重点阅读8节相关正文与推导；这些条目仅登记，尚未修改后续章节。 2026-11-15：layer_linear 已单独按七步就地推导实现，见 linear-layer-gradient-clarity（review）；其余三题继续待做，本项仍todo。 2026-11-15激活与归一化局部完成并单列review；RMSNorm构造/两条输入路径、GELU逐元素解释及来源对象图已实现，其余MLP/独立Linear等待指定。 2026-11-15 MLP已补完整构造/OI题面/反向串联/公式速查/对象复用测评，单列review；独立Linear与跨Part个人实现复用仍保留待办。 2026-11-15：独立Linear已补完整构造、初始化函数接入、可选偏置、全部前置维度、缓存副本、三条就地推导和OI题面/末尾速查。原8项保留，新增独立构造与实际双实例串联，参考及网页接口10/10；只代表当前实现可交付，后续Block/GPT的独立Linear导入链尚未迁移。"
+    },
+    {
+      "id": "derivation-placement-part06",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Part 06 · 注意力先完成前向定义",
+      "status": "review",
+      "lessons": [
+        "t_attention"
+      ],
+      "criteria": [
+        "注意力按分数→掩码→Softmax→读取 V 完成前向，再逆序推导 dV/dA/dS/dQ/dK；缩放原因等拓展不打断主链。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "webapp/module-views.js"
+      ],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。"
+    },
+    {
+      "id": "derivation-placement-part05",
+      "batch": "audit-part-05",
+      "part": "part-05",
+      "title": "Part 05 · 交叉熵先定义概率再索引",
+      "status": "review",
+      "lessons": [
+        "t_loss"
+      ],
+      "criteria": [
+        "交叉熵先说明 logits/targets 和稳定 log 概率，再讲按标签取值和平均，最后紧接反向来源。"
+      ],
+      "evidence": [
+        "webapp/foundations.json",
+        "scripts/part45_lessons.py",
+        "tests/test_part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_probability_views.cjs"
+      ],
+      "verification": "正文先提 logp 索引后在推导区定义概率；仅记录，按对应 part 执行。 本轮按新标准实现先讲清对象/输入/过程/输出，再给OI题面、状态、动手清单和公式速查；必要推导就地，完整代码默认折叠。参考与实际网页接口通过，浏览器讲解验收仍由用户完成。"
+    },
+    {
+      "id": "linear-forward-step-clarity",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Linear 前向：按三维样例串联展平、计算和恢复",
+      "status": "review",
+      "lessons": [
+        "linear"
+      ],
+      "criteria": [
+        "讲清 B/T/C/D、输入和权重行列的意义，用 q 作为序列下标避免与偏置 b 混淆。",
+        "沿相同 B=2,T=3 的公开样例展示六行来源和完整 X2；公式紧跟相应步骤。",
+        "说明 reshape 的 -1、原始形状切片和 * 参数展开，再给实现题。",
+        "前向理解题只检查前向；旧反向理解记录使用原存储键保留，代码测评/个人文件不变。"
+      ],
+      "evidence": [
+        "scripts/linear_forward_lesson.py",
+        "scripts/scale_linear_lessons.py",
+        "scripts/course_math.py",
+        "webapp/learning-tools.js"
+      ],
+      "verification": "课程精修12项通过，包含严格KaTeX和重建一致性；未进行真实浏览器视觉验收。状态为review，不代表用户已认可。 2026-11-15：按用户反馈，将前向检查第三题的“第4行”改为“行索引为4”，明确行索引、序列和token均从0开始；选项与正确答案保持。"
+    },
+    {
+      "id": "linear-layer-gradient-clarity",
+      "batch": "added",
+      "part": "part-04",
+      "title": "完整 Linear：三类梯度推导与实现对应",
+      "status": "review",
+      "lessons": [
+        "layer_linear"
+      ],
+      "criteria": [
+        "按对象/前向与缓存/上游定义/输入梯度/权重梯度/偏置梯度/状态收尾顺序讲清完整层。",
+        "各梯度就地给出局部导数、链式法则、求和轴与矩阵形状；转置解释贴近对应公式。",
+        "保留完整B=2,T=3样例与现有来源演示；区分返回的dX和对象累计的W.grad/b.grad。",
+        "接口、八项代码测评、参考、骨架及个人文件不变，后续独立Linear任务不提前修改。"
+      ],
+      "evidence": [
+        "scripts/linear_layer_lesson.py",
+        "scripts/scale_linear_lessons.py",
+        "scripts/course_math.py"
+      ],
+      "verification": "精修11项通过（含严格KaTeX、重建一致性）；真实页面函数结合当前样例组件的独立生成检查通过；参考实现八项用例全部通过。另一项旧测试VM漏载新增exampleSections导致失败，未改主程序界面或该测试。未进行浏览器视觉验收。"
+    },
+    {
+      "id": "fold-examples-and-demonstrations",
+      "batch": "added",
+      "title": "样例输入输出与过程演示独立折叠",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "所有含样例的任务都可独立收起样例输入输出与理解检查/过程演示，默认展开。",
+        "讲解、题目要求和代码编辑区保持原样；没有演示内容时隐藏空的折叠入口。",
+        "同一次页面访问中按任务记住折叠状态；来回切换任务可恢复，不写入个人代码或成绩。",
+        "从失败测评跳转查看来源时自动展开演示区域，原有演示、理解题与代码高亮继续可用。"
+      ],
+      "evidence": [
+        "webapp/app.js",
+        "webapp/workbench.css",
+        "webapp/learning-tools.js",
+        "tests/test_course_refinement.py"
+      ],
+      "verification": "独立无界面临时浏览器验证样例/演示分别收起展开、折叠后的高度、任务往返状态、旧版任务与概念页通过。课程精修12项和JS语法通过；学习者尚未验收。"
+    },
+    {
+      "id": "learner-explanation-embedding",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Embedding 查表：完整讲解、三方法交付与散射梯度",
+      "status": "accepted",
+      "lessons": [
+        "layer_embedding"
+      ],
+      "criteria": [
+        "先讲清词表、编号、V/C/B/T、构造时的参数与零梯度，再沿完整双batch样例解释查行与输出。",
+        "缓存编号副本；局部导数、链式法则、筛选位置和散射累加贴近对应计算，说明整数编号的反向返回值。",
+        "三个方法均由学习者填入，完整框架可本地运行，题面明确接口、输入输出、状态变化及样例来源。",
+        "保留前八项测评，增加独立构造检查；参数注册、实例隔离、初值、小词表尺寸及前向参数复用得到验证。",
+        "现有过程演示保留真实行移动与重复编号合流，行索引从0开始；示例与参考代码默认折叠。",
+        "个人练习和已有草稿保持，原代码成绩在新提交前按旧版本归档，已有旧成绩不会被视为新标准通过。"
+      ],
+      "evidence": [
+        "scripts/embedding_lesson.py",
+        "scripts/learner_layout.py",
+        "scripts/course_math.py",
+        "exercises/_embedding_checks.py",
+        "exercises/_assessment.py",
+        "webapp/app.js",
+        "webapp/process-animations.js",
+        "tests/test_embedding_lesson.py"
+      ],
+      "verification": "Embedding专项8项、精修12项、导航3项和编辑器5项通过；本地完整文件与实际网站接口9/9。核对其他55任务、原八用例、参考与个人文件保持。获用户明确许可后，仅在Codex内预览检查公式零解析错误、三方法待填框架与11/12步的跨batch行1汇总[18,21,24]；等待用户验收。 用户于2026-11-15根据Embedding查表模块截图明确确认整节验收成功（现有测评9/9通过），本次标记不修改代码或成绩。"
+    },
+    {
+      "id": "fold-inline-lesson-examples",
+      "batch": "added",
+      "title": "正文样例走读统一支持折叠",
+      "status": "review",
+      "lessons": [
+        "infrastructure",
+        "initialization",
+        "layer_embedding"
+      ],
+      "criteria": [
+        "正文独立样例/示例走读标题变为可展开收起的摘要，保留全部内容及下一个知识点边界。",
+        "与样例输入输出、过程演示使用一致折叠样式；默认展开，同次页面会话按任务记住状态。",
+        "已在折叠框中的样例不重复包裹，不改讲解正文源、测评或个人记录。"
+      ],
+      "evidence": [
+        "webapp/app.js"
+      ],
+      "verification": "JS语法、课程精修12项通过；按正文标题识别独立样例块，覆盖截图中的Embedding双batch样例。未进行浏览器视觉验收。"
+    },
+    {
+      "id": "macro-source-map-foundation",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Scale / Linear / Embedding：整体数据流与点选来源",
+      "status": "todo",
+      "lessons": [
+        "layer_scale",
+        "linear",
+        "layer_linear",
+        "layer_embedding"
+      ],
+      "criteria": [
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。",
+        "先展示对象、完整形状和方向，点选绿色目标后同时高亮全部来源与求和轴；保留每个 batch/token 的原坐标。",
+        "Linear 前向对应 X2 行、W 列和偏置；反向明确 dX2=G2×Wᵀ、dW=X2ᵀ×G2、db 沿全部位置求和，并标注转置前后的轴和形状。",
+        "Embedding 前向按编号取整行；反向将跨 batch 的所有重复编号上游行合入同一词表梯度行，展示未使用行的零贡献。",
+        "Scale 输入梯度逐格对应，标量参数梯度包含所有位置和特征；数值与逐项算术默认折叠，可选核对。",
+        "前向练习不提前要求反向，无偏置模式不虚构偏置；代码、用例、成绩版本和个人文件保持。"
+      ],
+      "evidence": [
+        "webapp/source-map.js",
+        "webapp/source-map.css",
+        "webapp/app.js",
+        "webapp/learning-tools.js",
+        "webapp/pilot.html",
+        "webapp/pilot_server.py",
+        "tests/test_source_map.cjs",
+        ".check-tmp/linear-source-map.jpg",
+        ".check-tmp/embedding-source-map.jpg"
+      ],
+      "verification": "来源关系4项、导航3项、课程精修12项通过；Linear所有目标按高亮来源重建真实样例并严格解析公式。授权的Codex内预览核对dX/dW/db、Scale全部24格及Embedding三路跨batch合流，零公式解析错误、数值默认折叠。课程JSON哈希保持，等待用户验收。 用户复核指出现有行列来源图未讲清反向公式来源，尚未满足意图；按2026-11-15新认可的同图路径推导标准重新待做，历史测试通过不代表验收。"
+    },
+    {
+      "id": "footer-next-task-primary",
+      "batch": "added",
+      "title": "页末下一任务突出为主按钮",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "下一任务使用实心绿色主按钮，上一任务使用轻量次按钮。",
+        "保留任务顺序、首页/末页边界和原跳转行为；不改变测评通过状态。"
+      ],
+      "evidence": [
+        "webapp/course-navigation.js",
+        "webapp/workbench.css",
+        "tests/test_course_navigation.cjs"
+      ],
+      "verification": "导航3项通过；Codex内实际页面计算样式为下一任务rgb(56,108,85)、上一任务透明。等待用户验收。"
+    },
+    {
+      "id": "macro-sources-part-01",
+      "batch": "audit-part-01",
+      "part": "part-01",
+      "title": "整体架构：对象与位置贯通图",
+      "status": "todo",
+      "lessons": [
+        "map",
+        "architecture"
+      ],
+      "criteria": [
+        "同一文本位置贯通编号、向量、分数和下一token；先解释对象与方向，再点选追踪来源。",
+        "训练和生成分开展示；不把高级模块名字当成已经掌握的算法。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js"
+      ],
+      "verification": "仅登记新展示标准，未修改本组内容；用户指定对应Part后执行。"
+    },
+    {
+      "id": "macro-sources-part-02",
+      "batch": "audit-part-02",
+      "part": "part-02",
+      "title": "NumPy 与张量：操作轴与完整位置来源",
+      "status": "todo",
+      "lessons": [
+        "shape",
+        "axes",
+        "index",
+        "broadcast",
+        "reduce",
+        "mean_backward",
+        "center_backward",
+        "matmul",
+        "reshape",
+        "restore",
+        "transpose",
+        "heads",
+        "copy",
+        "scatter",
+        "random",
+        "random_sequence"
+      ],
+      "criteria": [
+        "索引显式展示ids和k及选择过程；归约、广播、展平、恢复、换轴和拆头均可点选目标追踪原坐标。",
+        "数组反向连接前向对象与上游来源，保留B>1/T>1；数值核对折叠，随机与副本用状态/引用关系展示。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js"
+      ],
+      "verification": "仅登记新展示标准，未修改本组内容；用户指定对应Part后执行。"
+    },
+    {
+      "id": "macro-sources-part-03",
+      "batch": "audit-part-03",
+      "part": "part-03",
+      "title": "标量网络：恢复学习后再应用来源展示标准",
+      "status": "todo",
+      "lessons": [],
+      "criteria": [
+        "本部分继续暂缓；只有用户恢复后才安排内容或演示。",
+        "届时以计算图的局部导数和分叉合流为对象，数值算术作为可选核对。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js"
+      ],
+      "verification": "继续暂缓，未执行。"
+    },
+    {
+      "id": "macro-sources-part-04",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "title": "其余基础层：GELU / RMSNorm / MLP 与独立 Linear 来源",
+      "status": "review",
+      "lessons": [
+        "layer_gelu",
+        "layer_rmsnorm",
+        "layer_mlp",
+        "rebuild_linear"
+      ],
+      "criteria": [
+        "GELU区分逐格映射与局部导数；RMSNorm区分token内统计、逐特征缩放和共享参数跨位置汇总。",
+        "MLP展示子层前向与逆序反向；独立Linear接入正确行列来源图，同时保留构造交付。",
+        "本轮四任务已单列review；本条只登记其余任务，不回写已验收公共接口与初始化内容。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js",
+        "scripts/independent_linear_lesson.py",
+        "tests/test_independent_linear_lesson.py",
+        "tests/test_source_map.cjs"
+      ],
+      "verification": "仅登记新展示标准，未修改本组内容；用户指定对应Part后执行。 2026-11-15激活与归一化局部完成并单列review；RMSNorm构造/两条输入路径、GELU逐元素解释及来源对象图已实现，其余MLP/独立Linear等待指定。 2026-11-15 MLP已补完整构造/OI题面/反向串联/公式速查/对象复用测评，单列review；独立Linear与跨Part个人实现复用仍保留待办。 2026-11-15：独立Linear已补完整构造、初始化函数接入、可选偏置、全部前置维度、缓存副本、三条就地推导和OI题面/末尾速查。原8项保留，新增独立构造与实际双实例串联，参考及网页接口10/10；只代表当前实现可交付，后续Block/GPT的独立Linear导入链尚未迁移。"
+    },
+    {
+      "id": "macro-sources-part-05",
+      "batch": "audit-part-05",
+      "part": "part-05",
+      "title": "概率与损失：行内耦合与标签来源",
+      "status": "review",
+      "lessons": [
+        "t_softmax",
+        "t_loss"
+      ],
+      "criteria": [
+        "默认先展示完整张量的前向/反向步骤与归约/广播关系，保留全部batch/token。",
+        "Softmax整体解释逐行归一化和行内上游汇总；交叉熵整体解释标签选择、全位置平均与完整梯度回传。",
+        "单位置与类别核对默认折叠，只作可选下钻，不能代替整体来源。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js",
+        "scripts/part45_lessons.py",
+        "tests/test_part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_probability_views.cjs",
+        ".check-tmp/softmax-whole-tensor.jpg",
+        ".check-tmp/loss-whole-tensor.jpg"
+      ],
+      "verification": "仅登记新展示标准，未修改本组内容；用户指定对应Part后执行。 本轮按新标准实现先讲清对象/输入/过程/输出，再给OI题面、状态、动手清单和公式速查；必要推导就地，完整代码默认折叠。参考与实际网页接口通过，浏览器讲解验收仍由用户完成。 用户指出默认仍过于微观，本轮改为四种完整张量流程和全部位置对应表；原单位置核对移至默认收起details，数值评测不变。 侧边栏最终检查全部六位置、两列四步整体布局、单位置核对默认关闭、零公式错误；仅展示变化，未改评测或个人数据。 用户否定逐行公式表作为演示；本轮损失前向换成真实矩阵选择/取负/平均图，其余符号表移入默认收起对照，旧表截图不作为新方案验收证据。"
+    },
+    {
+      "id": "macro-sources-part-06",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "注意力与 Transformer：收缩轴、分叉与合流",
+      "status": "review",
+      "lessons": [
+        "att_scores",
+        "att_probs",
+        "att_weighted",
+        "att_merge",
+        "att_value_backward",
+        "att_score_backward",
+        "t_attention",
+        "t_mha",
+        "t_block",
+        "t_dropout",
+        "t_layernorm",
+        "rebuild_block"
+      ],
+      "criteria": [
+        "Q/K/V、得分、掩码、概率、加权值、拆合头逐段贯通；点选输出显示全部相关来源与正确转置。",
+        "反向展示dQ/dK/dV及共享投影来源，残差展示直连/分支梯度相加，保留完整B/H/T轴。",
+        "Dropout用同一掩码前后对应，LayerNorm区分token内统计与参数汇总。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js",
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "webapp/module-views.js"
+      ],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。 2026-11-16补充：整体意图与两种权重的解释已整合到核心页；独立batch/head仅展示一个可切换切片，四份实际数据及完整形状保留。正文及注意力全部反向分项、MHA逆布局、两次残差就地附对应前向函数。严格数学/生成12组、来源/模块8项及侧边栏检查通过，待用户验收；代码/用例/版本/个人数据未改。"
+    },
+    {
+      "id": "macro-sources-part-07",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "组装 GPT：共享表与整网路径",
+      "status": "review",
+      "lessons": [
+        "t_gpt",
+        "t_data"
+      ],
+      "criteria": [
+        "输入编号、位置编号、各Block、norm、输出分数按完整形状衔接；共享词表两路梯度以正文公式与调用说明核对。",
+        "数据批次追踪文本位置到输入/右移标签；GPT专用初始化在对象已学后展示，不提前跨Part改课。",
+        "保留数据窗口来源展示和完整前向静态流程；用户否定的共享词表三栏字母图已删除，不重新引入。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js",
+        "scripts/part07_lessons.py",
+        "exercises/_gpt_contract_checks.py",
+        "tests/test_part07_lessons.py",
+        "docs/第七部分精修记录.md"
+      ],
+      "verification": "2026-11-17：数据先行、完整GPT随后；已实现整体用途、连续前后向、就地前向公式、核心总结、OI题末任务与公式、个人模块复用和构造TODO。原4/6项保留并各补2项行为检查；单一语义随机顺序、真实个人ffn出口、共享两路和状态均验证。源码/重建/严格公式、网页RUNNER和真实分模块导入、侧边栏检查通过；仅两个精确匹配的旧空模板备份后同步，未改其他个人实现或成绩。等待用户验收。 2026-11-17用户反馈无用：已删除共享词表三栏图及挂载入口；保留已讲清的正文/公式和完整前向总结图。"
+    },
+    {
+      "id": "macro-sources-part-08",
+      "batch": "audit-part-08",
+      "part": "part-08",
+      "title": "优化与训练：参数与优化器状态流",
+      "status": "review",
+      "lessons": [
+        "t_optim",
+        "t_train"
+      ],
+      "criteria": [
+        "完整展示清零、前向、loss、反向、裁剪、更新的方向及每步保存的状态。",
+        "点选参数或AdamW状态追踪梯度、历史矩和步数来源；图像用于展示训练变化，数值步骤可选。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js",
+        "scripts/part08_lessons.py",
+        "tests/test_part08_lessons.py"
+      ],
+      "verification": "2026-11-18：用固定全局状态关系和原生折叠追踪m/v/t与data连续两步；训练六阶段流程同时标明调用与状态去向，去掉旧微观自动演算挂载。数值核对可选，未以重复同形矩阵填充。侧边栏已检查折叠/公式/单列与训练流程，状态待用户验收。"
+    },
+    {
+      "id": "macro-sources-part-09",
+      "batch": "audit-part-09",
+      "part": "part-09",
+      "title": "生成与保存：上下文、抽样与恢复来源",
+      "status": "review",
+      "lessons": [
+        "t_sample",
+        "t_generate",
+        "t_checkpoint",
+        "t_project",
+        "rebuild_gpt"
+      ],
+      "criteria": [
+        "生成追踪截取上下文、末位置分数、温度/top-k、概率、抽样与追加；保留批次与随机状态。",
+        "保存恢复追踪参数与元数据的对应；综合训练/生成按真实个人实现执行路径展示。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js",
+        "scripts/part09_lessons.py"
+      ],
+      "verification": "2026-11-18：采样与生成的整批示例、检查点键与状态对应、项目训练调用按真实流程呈现。重复的旧综合动图由可折叠讲解替代。"
+    },
+    {
+      "id": "macro-sources-optional",
+      "batch": "audit-optional",
+      "part": "optional",
+      "title": "错误修复拓展：来源图按需复用",
+      "status": "todo",
+      "lessons": [
+        "fix_bias",
+        "fix_heads",
+        "fix_residual",
+        "fix_shared",
+        "fix_clear"
+      ],
+      "criteria": [
+        "仅在用户执行拓展时复用相关主线来源图；明确错误影响的轴、分叉或共享关系。",
+        "保持拓展地位，主线不插入错误修复题；避免只换文字的动画。",
+        "矩阵运算优先固定展示相关矩阵，任意格子可点选核对对应区域；讲解以整个矩阵的导数、共享及求和关系为主，不强制逐步连线/播放或具体数值推算。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "webapp/source-map.js"
+      ],
+      "verification": "仅登记新展示标准，未修改本组内容；用户指定对应Part后执行。"
+    },
+    {
+      "id": "linear-weight-forward-backward-path",
+      "batch": "added",
+      "part": "part-04",
+      "title": "移除 Linear 五步连线方案，改由矩阵总览替代",
+      "status": "review",
+      "lessons": [
+        "layer_linear"
+      ],
+      "criteria": [
+        "旧五步连线、移动圆点与播放控件已经移除。",
+        "后续以 linear-fixed-matrix-overview 的固定矩阵方案验收，不重新执行旧交互方案。"
+      ],
+      "evidence": [
+        "webapp/source-map.js",
+        "webapp/source-map.css",
+        ".check-tmp/linear-weight-path.jpg"
+      ],
+      "verification": "来源关系4项与导航3项回归通过，JS语法通过。Codex内本地预览检查五步、默认/切换权重、六路前向及反向、原坐标、汇总与最终公式、返回和重播；自动播放可推进至第五步，严格公式渲染零错误。用户尚未验收。 用户否定此交互设计；2026-11-15已移除该五步连线/播放界面，改为linear-fixed-matrix-overview，历史检查不代表验收。本条作为被替代的原方案保留。"
+    },
+    {
+      "id": "linear-fixed-matrix-overview",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Linear：固定矩阵总览、任意格子关联与整矩阵推导",
+      "status": "review",
+      "lessons": [
+        "layer_linear"
+      ],
+      "criteria": [
+        "X2、W、b、Y2、dX2、dW、db、G2固定展示，任意矩阵的格子都能点选，其他矩阵保留；无偏置实例省去b/db。",
+        "默认解释整张dW：前向输出对权重的局部导数为输入；每个位置的输入行与上游行两两配对形成C×D贡献表，再按共享参数跨位置相加，连接X2ᵀG2。",
+        "提供整个Y/dW/dX/db解释，格子点选只高亮相关前向影响与梯度区域，保留B=2/T=3全部六个位置。",
+        "移除五步连线、播放、圆点动画及旧数值动画折叠；正文与题面、练习和成绩不变。"
+      ],
+      "evidence": [
+        "webapp/source-map.js",
+        "webapp/source-map.css",
+        "tests/test_source_map.cjs",
+        ".check-tmp/linear-matrix-overview.jpg",
+        ".check-tmp/linear-matrix-reason.jpg"
+      ],
+      "verification": "来源关系及导航9项回归通过；Codex内预览核对八矩阵固定、W[2,3]六位置对应、dX/db/G点选、恢复整矩阵说明；全部检查公式零解析错误，无旧播放控件。课程JSON哈希保持，等待用户验收。"
+    },
+    {
+      "id": "embedding-process-demo-accepted",
+      "batch": "added",
+      "part": "part-04",
+      "title": "Embedding 来源与梯度回行演示：用户已验收",
+      "status": "accepted",
+      "lessons": [
+        "layer_embedding"
+      ],
+      "criteria": [
+        "用户截图中的ids、各batch完整上游G与词表梯度并排展示，来源与去向清楚。",
+        "编号决定词表行；重复编号的贡献汇入同一行累加，整数编号不求导。",
+        "具体数值不是必需，颜色、符号或位置标识能区分来源及对应关系即可。"
+      ],
+      "evidence": [
+        "webapp/process-animations.js"
+      ],
+      "verification": "2026-11-15用户针对所附“看来源怎样到达输出”Embedding演示明确肯定。验收仅覆盖该演示，未扩大为整节讲解、scatter任务或Linear方案验收。"
+    },
+    {
+      "id": "pager-grading-state-colors",
+      "batch": "added",
+      "title": "下一任务按钮区分测评前后状态",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "当前任务未通过、未测评或代码修改后，下一任务按钮为浅蓝色。",
+        "当前版本代码全部通过后，下一任务按钮为绿色；两种状态均强于上一任务。",
+        "使用既有测评状态判断，不修改跳转、代码、成绩与验收标准。"
+      ],
+      "evidence": [
+        "webapp/course-navigation.js",
+        "webapp/workbench.css",
+        "tests/test_course_navigation.cjs"
+      ],
+      "verification": "导航3项及JS语法检查通过，覆盖通过与修改待重测两种状态；视觉效果待用户验收。"
+    },
+    {
+      "id": "learner-explanation-activation-norm",
+      "batch": "added",
+      "part": "part-04",
+      "title": "激活与归一化：GELU 与 RMSNorm 完整讲解、实现与来源",
+      "status": "accepted",
+      "lessons": [
+        "layer_gelu",
+        "layer_rmsnorm"
+      ],
+      "criteria": [
+        "GELU先说明逐元素非线性与无参数，再解释u/t及乘积两条路径；必要导数贴近计算，前后向同形。",
+        "RMSNorm先解释逐token均方、逆均方根和共享逐特征缩放；完整推导直接/统计量路径、输入梯度和参数梯度不同归约轴；LayerNorm对照移到拓展。",
+        "两题提供OI风格接口、输入输出、状态和样例说明，代码与参考继续折叠高亮；RMSNorm构造/前向/反向均由学习者实现。",
+        "GELU使用函数曲线、切线和导数曲线解释输出与梯度变化；RMSNorm展示行内统计与跨位置参数归约，按各自难点选择形式。",
+        "GELU原9项与RMSNorm原8项保留，增加独立构造第9项；个人文件、草稿和既有成绩保持，新标准按既有版本机制提示重测。"
+      ],
+      "evidence": [
+        "scripts/activation_norm_lessons.py",
+        "scripts/learner_layout.py",
+        "scripts/course_math.py",
+        "webapp/source-map.js",
+        "exercises/_rmsnorm_checks.py",
+        "exercises/_assessment.py",
+        "tests/test_activation_norm_lessons.py"
+      ],
+      "verification": "专项4项、课程精修12项（含严格KaTeX/重建一致性）、来源和导航9项通过；真实网站接口两课分别9/9。Codex内预览核对7/12个对象、GELU单格及RMSNorm整行/跨batch列选择，公式零解析错误。后台核实旧69544/41148后统一重载60464。等待用户验收。 用户否定初版GELU七张同形表；已删除并改为gelu-curve-refinement中的曲线方案，初版检查不代表有教学价值。RMSNorm继续待验收。 用户2026-11-15明确要求验收“激活与归一化”章节，记录为accepted；本轮RMSNorm展示修正单列review，不代表MLP验收或代码成绩。"
+    },
+    {
+      "id": "gelu-curve-refinement",
+      "batch": "added",
+      "part": "part-04",
+      "title": "GELU：函数曲线、局部斜率与两条导数路径",
+      "status": "accepted",
+      "lessons": [
+        "layer_gelu"
+      ],
+      "criteria": [
+        "删除七张同形矩阵和同格重复高亮。",
+        "函数曲线与导数曲线联动；改变输入位置可观察切线及梯度反向、缩小、放大。",
+        "两条局部导数路径用不同颜色标明，相加后乘同位置上游；数值核对默认折叠。",
+        "展示形式按知识点选择；不更改题目接口、个人代码和测评标准。"
+      ],
+      "evidence": [
+        "webapp/source-map.js",
+        "webapp/source-map.css",
+        "tests/test_source_map.cjs",
+        ".check-tmp/gelu-curve-refined.jpg"
+      ],
+      "verification": "修正完成后记录。7项来源图回归通过，其中新检查161个输入点的解析导数与中心差分一致；Codex内预览确认旧矩阵为零、双曲线、三种区域说明、键盘滑动0→0.05及零公式错误。待用户验收。 用户2026-11-15明确要求验收“激活与归一化”章节，记录为accepted；本轮RMSNorm展示修正单列review，不代表MLP验收或代码成绩。"
+    },
+    {
+      "id": "activation-norm-task-summary",
+      "batch": "added",
+      "part": "part-04",
+      "title": "GELU/RMSNorm：题面末尾任务清单与公式速查",
+      "status": "accepted",
+      "lessons": [
+        "layer_gelu",
+        "layer_rmsnorm"
+      ],
+      "criteria": [
+        "题面末尾、样例之前列出需要完成的方法与状态动作。",
+        "集中列出前向/反向关键公式；RMSNorm标明特征轴平均和全部前置位置求和。",
+        "保持个人文件、网页草稿、测评标准与参考代码；解释新版骨架与本地旧文件不自动同步。"
+      ],
+      "evidence": [
+        "scripts/activation_norm_lessons.py",
+        ".check-tmp/gelu-task-formula-summary.jpg"
+      ],
+      "verification": "课程精修12项、激活归一化专项4项通过；仅两题learning_page.statement改变。Codex内检查两题新增标题、公式零错误。 用户2026-11-15明确要求验收“激活与归一化”章节，记录为accepted；本轮RMSNorm展示修正单列review，不代表MLP验收或代码成绩。"
+    },
+    {
+      "id": "later-task-summary-standard",
+      "batch": "later",
+      "title": "后续修订题面统一附任务清单与关键公式",
+      "status": "todo",
+      "lessons": [],
+      "criteria": [
+        "用户指定后续Part时，将动手清单和重要公式集中放到各实现题题面末尾。",
+        "按任务实际需要汇总公式、形状和轴，概念任务按需处理，不机械堆放公式。"
+      ],
+      "verification": "仅登记后续标准，本轮只修改GELU与RMSNorm。 本轮foundation_capstone及Part05两题已落实，其他Part仍待按指定执行。"
+    },
+    {
+      "id": "rmsnorm-grouped-source-view",
+      "batch": "added",
+      "part": "part-04",
+      "title": "RMSNorm：分项展示与准确点选贡献",
+      "status": "review",
+      "lessons": [
+        "layer_rmsnorm"
+      ],
+      "criteria": [
+        "前向、输入梯度、参数梯度分组，m/r按原位置对齐为两列，w/dw紧凑展示。",
+        "选单格G时，u和直接输入路径只标同格；统计量输入路径标同token整行；参数梯度仅同特征一项。",
+        "选dw时显示全部batch/token同特征的乘积列来源；直接/间接关系用实线/虚线区分。",
+        "保留完整位置与对应公式，无十二张同形大表同时堆放。"
+      ],
+      "evidence": [
+        "webapp/module-views.js",
+        "webapp/source-map.css",
+        "tests/test_module_views.cjs",
+        ".check-tmp/rmsnorm-grouped.jpg"
+      ],
+      "verification": "模块视图4项测试通过，含单格上游的实际整行梯度响应；Codex内检查G[1,0,0]直接同格/间接整行、dw同特征一项，零公式错误。等待用户验收新展示。"
+    },
+    {
+      "id": "learner-explanation-mlp",
+      "batch": "added",
+      "part": "part-04",
+      "title": "组合为MLP：完整讲解、构造、返回值链与测评",
+      "status": "accepted",
+      "lessons": [
+        "layer_mlp"
+      ],
+      "criteria": [
+        "先解释对象与构造，再具名Z/A前向、子层缓存、逆序反向和各梯度来源；必要公式贴近对应计算。",
+        "OI题面列清接口、输入、输出、状态，末尾附动手清单和关键公式；完整框架可本地运行，所有完整代码默认折叠。",
+        "构造/前向/反向均需填写，复用已有个人子层；保留完整B=2/T=3形状，展示按返回值串联。",
+        "保留原9项，增加第10项独立构造与可追踪子层调用，检验参数注册、不同宽度、顺序/次数/传值与对象复用。",
+        "个人文件/浏览器草稿/成绩保持，新标准版本3按既有机制提示重测。"
+      ],
+      "evidence": [
+        "scripts/mlp_lesson.py",
+        "scripts/learner_layout.py",
+        "scripts/course_math.py",
+        "exercises/_mlp_checks.py",
+        "exercises/_assessment.py",
+        "webapp/module-views.js",
+        "tests/test_mlp_lesson.py",
+        ".check-tmp/mlp-refined.jpg"
+      ],
+      "verification": "MLP专项4项、课程精修12项、激活归一化4项、JS来源/导航/模块视图14项通过。真实网页测评接口10/10（依赖用参考实现作隔离验证）。Codex内检查三个子层及反向链、三方法待填、任务/公式速查和参考折叠，零公式错误；等待用户验收。 用户提供“组合为MLP 1/1完成、讲解待验收”截图并要求验收，确认本模块讲解验收；仅更新本项，不扩大为其他模块或最终模型复用验收。"
+    },
+    {
+      "id": "mlp-inline-typesetting",
+      "batch": "added",
+      "part": "part-04",
+      "title": "MLP正文与交互说明的标识/数学排版修正",
+      "status": "review",
+      "lessons": [
+        "layer_mlp"
+      ],
+      "criteria": [
+        "缓存说明与任务清单中的层属性/方法使用行内code。",
+        "输入、缓存与梯度变量、上下标和tanh函数使用LaTeX；交互说明同步修正。",
+        "排版检查覆盖正文文本节点，不以公式解析通过替代残留检查。"
+      ],
+      "evidence": [
+        "scripts/mlp_lesson.py",
+        "webapp/module-views.js",
+        "tests/test_mlp_lesson.py",
+        ".check-tmp/mlp-cache-typeset.jpg"
+      ],
+      "verification": "精修12项与MLP专项5项通过，增加纯文本残留回归。Codex内确认截图对应段落含4个代码标识和4个行内数学节点，零公式错误；评分/骨架/参考/个人代码保持。"
+    },
+    {
+      "id": "unified-local-web-scaffold",
+      "batch": "added",
+      "title": "网页默认代码与本地统一，空骨架安全同步",
+      "status": "review",
+      "lessons": [
+        "layer_embedding",
+        "layer_gelu",
+        "layer_rmsnorm",
+        "layer_mlp"
+      ],
+      "criteria": [
+        "网页无浏览器草稿时直接显示实时本地代码，不隐式换成另一份教学骨架。",
+        "启用任务更新空骨架后，网页恢复骨架和未填写本地文件来自同一完整模板；先备份旧文件。",
+        "只迁移精确匹配且仍未实现的旧模板；已有实现、部分实现、自定义注释、浏览器草稿和成绩保持。",
+        "课程生成末尾接入同步；其他章节随Part修订应用该标准。"
+      ],
+      "evidence": [
+        "scripts/sync_scaffolds.py",
+        "scripts/course_math.py",
+        "webapp/app.js",
+        "tests/test_scaffold_sync.py",
+        "tests/test_embedding_lesson.py"
+      ],
+      "verification": "同步3项、Embedding8项（含前端加载/草稿保护）、精修12项、MLP5项、激活归一化4项通过，JS语法通过。首次临时目录权限检查失败，改在项目内临时目录后通过。本次同步报告updated=[]，四份个人实现全部保留；未操作浏览器存储或成绩。"
+    },
+    {
+      "id": "learner-explanation-independent-linear",
+      "batch": "added",
+      "part": "part-04",
+      "title": "独立实现基础层：构造、初始化接入、三类梯度与完整交付",
+      "status": "accepted",
+      "lessons": [
+        "rebuild_linear"
+      ],
+      "criteria": [
+        "先讲对象、构造参数/初值、输入/过程/输出；明确当前Parameter、Module、initialize与本题三个待填方法的责任。",
+        "保留全部batch/token和任意前置轴，解释缓存副本、三种梯度的前向影响/局部导数/汇总轴及累加清零。",
+        "OI题面含接口、输入、输出、状态和样例解释；末尾集中动手清单与关键公式，数学与代码标识正式排版，完整代码默认折叠。",
+        "固定相关矩阵并点选来源，不新增装饰动画；四维/无偏置来源正确。原8项保留，新增构造和两个当前个人类串联的实际测评。",
+        "新版完整骨架作为本地与网页统一来源；只迁移精确匹配的旧空模板且先备份，已有个人实现/草稿/成绩保留。",
+        "当前双实例组合与后续Block/GPT接线分开陈述；跨Part接收项继续todo，用户验收前仅review。"
+      ],
+      "evidence": [
+        "scripts/independent_linear_lesson.py",
+        "scripts/learner_layout.py",
+        "scripts/course_math.py",
+        "exercises/_independent_linear_checks.py",
+        "exercises/_assessment.py",
+        "webapp/source-map.js",
+        "webapp/learning-tools.js",
+        "tests/test_independent_linear_lesson.py",
+        "tests/test_source_map.cjs",
+        ".check-tmp/independent-linear-objects.jpg",
+        ".check-tmp/independent-linear-matrices.jpg"
+      ],
+      "verification": "独立Linear专项7项、课程精修12项、JS来源/模块/导航15项通过；真实网站POST参考实现及参考依赖10/10，本地临时完整文件同标准10/10。四维无偏置/重复累计、错误构造及共享缓存拒绝通过。其余55任务原值、旧8用例、已有个人实现保持；未覆盖浏览器草稿或成绩。当前旧空模板已备份后同步，API实时本地代码与网页完整骨架一致。 Codex内本地预览核对讲解标记review、10项测评、三个待填方法、参考默认折叠及零公式错误；W[2,3]关联六处原坐标输入/输出/上游与单格dW，截图已保存。未操作桌面或修改个人草稿/成绩。 本次确认局部精修未解决课程重复及综合覆盖不足；本项review仅保留局部实现证据，章节结构改造另列P1 todo，不代表章节闭环验收。 本题现为可选历史，保留原题验收记录与数据；当前主线收尾见learner-explanation-foundation-capstone。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "logic-part-04-capstone-reuse",
+      "batch": "audit-part-04",
+      "part": "part-04",
+      "priority": "P1",
+      "title": "Part04收尾：复用个人基础层做综合验收，取消必修重复Linear",
+      "status": "review",
+      "lessons": [
+        "rebuild_linear"
+      ],
+      "finding": "末题是从layer_linear复制并清空方法，参考代码及原8用例相同；新增2项仍只覆盖Linear。仅依赖公共接口/初始化，未综合Embedding、GELU、RMSNorm、MLP等；另一份Linear也未进入最终模型调用链。",
+      "action": "调整为真实miniGPT基础分支的增量组装和整套基础层验收，已有实现直接复用；缺少的构造责任增量补齐，避免重写前后向。具体结构与迁移见审查文档，尚未改课。",
+      "criteria": [
+        "说明本题相对已有知识的具体增量、复用的个人文件和后续用途；同一核心层只保留一份主线实现，不以撤去提示充当新知识。",
+        "综合任务只组装已学子层。可用真实Block的RMSNorm到MLP分支，先讲清对象/中间量/前向与逆序反向，再给OI题面及末尾任务和公式速查。",
+        "覆盖表将本Part各能力对应到实际检查；Embedding/Scale按真实用途分别验收，不虚构整网，不提前要求未学损失/优化器/训练循环。",
+        "检查实际导入个人子层、整体输入和各参数梯度、全部非单位batch/token、参数注册、缓存隔离、累计与清零；参考依赖通过不等同于个人实现通过。",
+        "增量补齐未完成的构造责任；已实现方法/个人文件/浏览器草稿/成绩保留。旧重复任务保留历史，新接口与评分明确迁移。网页和本地一致。",
+        "Part06/09沿用同一份个人实现；本轮仅记录接收，不擅自改变其他Part内容或已验收状态。"
+      ],
+      "evidence": [
+        "docs/第四部分学习闭环复核.md",
+        "scripts/build_independence.py",
+        "webapp/foundations.json",
+        "exercises/learner_core.py",
+        "scripts/part45_lessons.py",
+        "tests/test_part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_probability_views.cjs"
+      ],
+      "verification": "已对照第四部分10项、骨架/参考/用例/依赖及生成源；Linear参考和原8项完全相同，当前新增2项仅构造/双实例。另抽查Block参考与6用例相同，独立GPT参考/前6项相同但总16项确有综合增量。仅审查记录，未修改教材、接口、个人代码或成绩。 本轮按新标准实现先讲清对象/输入/过程/输出，再给OI题面、状态、动手清单和公式速查；必要推导就地，完整代码默认折叠。参考与实际网页接口通过，浏览器讲解验收仍由用户完成。"
+    },
+    {
+      "id": "learner-explanation-foundation-capstone",
+      "batch": "added",
+      "part": "part-04",
+      "title": "基础层综合：单一实现、真实分支与全部组件验收",
+      "status": "accepted",
+      "lessons": [
+        "foundation_capstone"
+      ],
+      "criteria": [
+        "只新增RMSNorm→MLP组合，子层从个人原文件导入；旧重复Linear移至可选历史。",
+        "覆盖五个参数及完整高维前后向/缓存/累计/清零；分路径执行本Part组件公开检查。",
+        "解释组合对象和前后向返回值，OI题面/任务清单/公式/完整本地骨架齐全。"
+      ],
+      "evidence": [
+        "scripts/part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_part45_lessons.py",
+        "tests/test_probability_views.cjs",
+        ".check-tmp/foundation-capstone-refined.jpg",
+        ".check-tmp/foundation-capstone-coverage.jpg"
+      ],
+      "verification": "专项测试与网页实际接口12/12；网页RUNNER及临时本地真实import同标准通过，错误组合/个人Embedding失败能被拒绝。 最终Codex内预览确认待验收标记、公式零错误、参考默认折叠及实际交互；截图已保存，未提交个人代码。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "learner-explanation-probability-softmax",
+      "batch": "added",
+      "part": "part-05",
+      "title": "Softmax：归一化过程、行内影响与完整反向",
+      "status": "accepted",
+      "lessons": [
+        "t_softmax"
+      ],
+      "criteria": [
+        "先教分数、概率、稳定归一化与缓存，再推导公共分母的全部影响和上游归约。",
+        "六个完整位置可选；点分数显示本类增加与其他类别减少，反向按这些局部导数收集整行上游。",
+        "OI题面及末尾清单/公式齐全；原6项保留，新增返回值缓存隔离与高维/单类接口检查。"
+      ],
+      "evidence": [
+        "scripts/part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_part45_lessons.py",
+        "tests/test_probability_views.cjs",
+        ".check-tmp/softmax-coupling-refined.jpg"
+      ],
+      "verification": "参考/实际API9/9；方向系数与数值扰动一致，原batch/token全部保留，等待用户验收。 最终Codex内预览确认待验收标记、公式零错误、参考默认折叠及实际交互；截图已保存，未提交个人代码。 默认展示改为整体张量流程，单位置核对降为默认收起的可选内容；仍待用户验收。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "learner-explanation-probability-loss",
+      "batch": "added",
+      "part": "part-05",
+      "title": "交叉熵：稳定对数概率、标签选择与平均梯度",
+      "status": "accepted",
+      "lessons": [
+        "t_loss"
+      ],
+      "criteria": [
+        "先定义稳定log概率，再教标签新增单例轴与take_along_axis，然后全位置平均和零维返回。",
+        "完整推导logsumexp梯度来源、正确类减一、标量上游与只平均一次；整数标签不求导。",
+        "展示全部标签位置与正/负/零上游的梯度，OI题面/清单/公式齐全；原5项保留并加强缓存和上游检查。"
+      ],
+      "evidence": [
+        "scripts/part45_lessons.py",
+        "webapp/module-views.js",
+        "tests/test_part45_lessons.py",
+        "tests/test_probability_views.cjs",
+        ".check-tmp/cross-entropy-refined.jpg"
+      ],
+      "verification": "参考/实际API8/8；图中概率减标签与全位置平均吻合，极端错误类别/4维/单类/非单位上游通过，等待用户验收。 最终Codex内预览确认待验收标记、公式零错误、参考默认折叠及实际交互；截图已保存，未提交个人代码。 默认展示改为整体张量流程，单位置核对降为默认收起的可选内容；仍待用户验收。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "outline-background-progress",
+      "batch": "added",
+      "title": "目录整块标题背景显示章节完成进度",
+      "status": "review",
+      "lessons": [],
+      "criteria": [
+        "章节及模块标题区域从左向右按实际通过比例填充浅绿，保留文字与展开交互。",
+        "0/部分/全部完成及待重测、暂缓正确，暂停章节中性色；不修改成绩或代码。"
+      ],
+      "evidence": [
+        "webapp/course-navigation.js",
+        "webapp/workbench.css",
+        "tests/test_course_navigation.cjs"
+      ],
+      "verification": "导航及概率视图7项通过，0/50/100及暂缓/待重测覆盖；侧边栏确认实际目录背景读取当前进度，预览中的0进度不伪造为已完成。"
+    },
+    {
+      "id": "loss-label-selection-diagram",
+      "batch": "added",
+      "part": "part-05",
+      "title": "交叉熵：标签定位原矩阵、取负与整体平均",
+      "status": "review",
+      "lessons": [
+        "t_loss"
+      ],
+      "criteria": [
+        "同时展示完整两个batch的标签和对数概率矩阵，每行按本行标签选中一格。",
+        "选中源格、取出的负对数概率与整体平均去向可直接看见；点击标签/结果可关联原位置。",
+        "逐位置公式表不再作为主图；保留完整来源，数值仅辅助辨认。"
+      ],
+      "evidence": [
+        "webapp/module-views.js",
+        "webapp/source-map.css",
+        "tests/test_probability_views.cjs",
+        ".check-tmp/loss-label-gather.jpg"
+      ],
+      "verification": "来源展示4项通过，核对24源格/6选中格与实际标签、严格公式。侧边栏点击标签联动标签/源格/结果三处，原公式表不在主界面，零math-error。未修改教材、测评、个人文件或成绩。"
+    },
+    {
+      "id": "learner-explanation-part06",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Part06 · 学会再做题与整体来源展示",
+      "status": "accepted",
+      "lessons": [
+        "att_scores",
+        "att_probs",
+        "att_weighted",
+        "att_merge",
+        "att_value_backward",
+        "att_score_backward",
+        "t_attention",
+        "t_mha",
+        "t_block",
+        "t_dropout",
+        "t_layernorm"
+      ],
+      "criteria": [
+        "先解释对象/输入/完整前向，再给逆序来源推导与OI实现题；题末集中任务清单和关键公式。",
+        "同一组完整QKV数据与B/H/T形状保留；独立batch/head默认一个可切换切片，匹配、屏蔽、读取及三种回流的收缩轴准确，避免重复铺图。",
+        "MHA亲手构造并复用个人模块；唯一Block接收MLPBranch，残差两次合流，旧题保留历史。",
+        "示例/参考默认折叠，高亮；未填写旧骨架先备份后同步，部分实现/草稿/成绩保留。"
+      ],
+      "evidence": [
+        "scripts/part06_lessons.py",
+        "tests/test_part06_lessons.py",
+        "tests/test_attention_views.cjs"
+      ],
+      "verification": "2026-11-16：已按Part06完整精修。九个主线实现步骤保留，Block接入个人MLPBranch；重复Block移历史、两种对照移选修。讲解/OI/末尾清单与公式、构造TODO、统一骨架、整体来源图均接通。68项公开检查、网页/本地执行、后续GPT兼容、严格公式和重建一致性通过；原始用例保留。待用户验收，非个人代码通过记录。 2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。 2026-11-16补充：整体意图与两种权重的解释已整合到核心页；独立batch/head仅展示一个可切换切片，四份实际数据及完整形状保留。正文及注意力全部反向分项、MHA逆布局、两次残差就地附对应前向函数。严格数学/生成12组、来源/模块8项及侧边栏检查通过，待用户验收；代码/用例/版本/个人数据未改。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "module-task-list-layout",
+      "batch": "added",
+      "title": "模块概览与多任务紧凑列表",
+      "status": "review",
+      "lessons": [
+        "att_scores",
+        "att_weighted",
+        "t_attention",
+        "t_mha",
+        "t_block",
+        "t_softmax"
+      ],
+      "criteria": [
+        "模块概览和任务列表合为一个容器；标题、完成数与目标保持紧凑。",
+        "多任务单列排列，序号、标题、代码测评和讲解状态对齐；当前任务清楚突出，末行不拉伸。",
+        "宽屏一行呈现；窄屏长标题完整保留，状态移到标题下方；切换、进度与原成绩含义一致。"
+      ],
+      "evidence": [
+        "webapp/app.js",
+        "webapp/workbench.css",
+        ".check-tmp/module-task-list-refined.jpg"
+      ],
+      "verification": "2026-11-16：侧边栏检查8/2/1任务模块与切换；1280px桌面每行约46px，700/390px DOM排版无溢出，临时尺寸已恢复。390px截图接口未返回画面，桌面实际截图已保存。app.js语法与目录四项回归通过，课程/测评/个人数据未修改；待用户验收。"
+    },
+    {
+      "id": "attention-whole-module-structure",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "第六部分按三个完整模块组织",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ],
+      "criteria": [
+        "主线仅AttentionCore、MultiHeadAttention、Block；先建立整体认识，再在页内讲步骤，构造/前后向同文件完成。",
+        "六个小题移按需选修，原代码/成绩保留；核心/多头不依赖其一两行函数。",
+        "20个原样例进入完整类分项检查，保留原模块检查与必要推导，主线46项。",
+        "完整图默认先显示整体，细节在同一视图查看；规范明确先审结构，不能用测试或清单完成替代教学审查。"
+      ],
+      "evidence": [
+        "scripts/attention_structure.py",
+        "exercises/_attention_component_checks.py",
+        "tests/test_part06_lessons.py",
+        "docs/第六部分精修记录.md"
+      ],
+      "verification": "2026-11-16结构复核：原八个注意力台阶拆得过细，已改三项完整模块；步骤合入同页讲解/整体图/分项检查，主线不依赖小题helper。原小题与成绩保留选修，20组样例在完整类中检查，主线27/11/8共46项。网页/本地/实际HTTP/整体展示通过，待用户验收。 2026-11-16补充：整体意图与两种权重的解释已整合到核心页；独立batch/head仅展示一个可切换切片，四份实际数据及完整形状保留。正文及注意力全部反向分项、MHA逆布局、两次残差就地附对应前向函数。严格数学/生成12组、来源/模块8项及侧边栏检查通过，待用户验收；代码/用例/版本/个人数据未改。"
+    },
+    {
+      "id": "gradient-notation-forward-recall",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "梯度符号说明与原始前向就地对照",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ],
+      "criteria": [
+        "明确标量损失、上游、梯度与局部导数；公式/图示使用∇X表示∂L/∂X，不再采用dX简写；实际代码变量保留。",
+        "每段正文推导和每个反向交互视图紧邻重列对应原始前向函数；注意力读取/Softmax/匹配、多头链和两次残差分别对照，不能要求回前文找。"
+      ],
+      "evidence": [
+        "scripts/attention_structure.py",
+        ".check-tmp/gradient-forward-recall.jpg",
+        "webapp/module-views.js",
+        ".check-tmp/attention-one-slice-forward.jpg"
+      ],
+      "verification": "本章三题已补；公式严格解析/生成一致性等12组通过。侧边栏核心符号说明1处、原始前向对照3处、零公式错误。只改文案，不改代码/用例/版本/个人数据。后续章节按Part应用，待用户验收。 2026-11-16补充：整体意图与两种权重的解释已整合到核心页；独立batch/head仅展示一个可切换切片，四份实际数据及完整形状保留。正文及注意力全部反向分项、MHA逆布局、两次残差就地附对应前向函数。严格数学/生成12组、来源/模块8项及侧边栏检查通过，待用户验收；代码/用例/版本/个人数据未改。"
+    },
+    {
+      "id": "nabla-gradient-notation",
+      "batch": "added",
+      "title": "公式与图示统一使用梯度记号∇X",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block",
+        "layer_linear",
+        "layer_embedding"
+      ],
+      "criteria": [
+        "公式及动态来源图统一使用∇X、∇W等，代码接口/变量与测评保持原样。",
+        "梯度仍定义为损失对相应变量的偏导；保留每段反向旁的前向函数。"
+      ],
+      "verification": "已统一课程生成与动态公式渲染，移除旧dX简写说明；严格公式/生成等12组通过，代码和标准未改。"
+    },
+    {
+      "id": "attention-intuition-single-slice",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "整体读取意图、代表切片与反向前向对照",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ],
+      "criteria": [
+        "先直观解释注意力读取上下文的整体目的、每个步骤用途，以及多头/输出投影/MLP/残差的配合；深层原理不阻塞主线。",
+        "区分训练保存的投影参数与随输入重新计算的注意力比例，保留不同上下文例子与实际qkv.W接线说明。",
+        "重复的独立batch/head只默认展示一个可切换切片，不改变完整输入维度或隐藏共享参数所需的汇总贡献。",
+        "每处反向推导和交互图先列对应前向函数，再列上游与梯度关系，统一LaTeX与∇记号。"
+      ],
+      "evidence": [
+        "AGENTS.md",
+        "docs/项目有效上下文.md",
+        "scripts/attention_structure.py",
+        "webapp/module-views.js",
+        ".check-tmp/attention-intuition-integrated.jpg",
+        ".check-tmp/attention-one-slice-forward.jpg"
+      ],
+      "verification": "2026-11-16补充：整体意图与两种权重的解释已整合到核心页；独立batch/head仅展示一个可切换切片，四份实际数据及完整形状保留。正文及注意力全部反向分项、MHA逆布局、两次残差就地附对应前向函数。严格数学/生成12组、来源/模块8项及侧边栏检查通过，待用户验收；代码/用例/版本/个人数据未改。"
+    },
+    {
+      "id": "part06-module-name-typesetting",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "模块名排版与缩写含义补齐",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ],
+      "criteria": [
+        "模块列表使用清楚的中文用途和完整代码类名，不用未解释缩写与斜杠连串。",
+        "检查正文、题面和任务清单实际文本节点，包括缩写，避免只核公式解析或已知完整类名。"
+      ],
+      "verification": "修正Block末尾任务清单：归一化层RMSNorm、多头注意力层MultiHeadAttention、特征变换分支MLPBranch分别使用行内代码。生成源补充MHA缩写排版；主线三题正文/拓展/题面HTML文本检查无上述模块裸标识遗漏。课程精修12组通过，代码/样例/版本/local_code/依赖保持，未操作个人文件或浏览器存储。",
+      "evidence": [
+        "scripts/part06_lessons.py",
+        "webapp/foundations.json"
+      ]
+    },
+    {
+      "id": "part06-wrapper-learner-rewrite",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "02/03完整讲解：多头外层与双残差Block",
+      "status": "review",
+      "lessons": [
+        "t_mha",
+        "t_block"
+      ],
+      "criteria": [
+        "各节先讲新增能力、输入输出和整体用途，用贯穿例子连接操作，再给完整实现题；避免操作名与形状清单代替讲解。",
+        "多头解释投影后分头、各头保留全序列、三组投影合并存储、拆合轴的元素归属与输出投影作用；三组梯度先拼输出列、后由共享输入合流。",
+        "Block解释两种分支作用、Pre-Norm与原始直连、第二分支接收更新后的表示、持久对象与公开别名；两次逆序合流分别重列对应前向。",
+        "保留OI接口/状态契约，题末集中任务清单和关键公式；公式用LaTeX与∇，代码标识用code，完整代码默认折叠。",
+        "只更新两节内容，不改骨架/标准/版本/个人文件/草稿/成绩；逐节理解审查与工程检查分别记录。"
+      ],
+      "evidence": [
+        "scripts/attention_wrapper_lessons.py",
+        "scripts/attention_structure.py",
+        "AGENTS.md",
+        "docs/项目有效上下文.md",
+        ".check-tmp/mha-learner-explanation.jpg",
+        ".check-tmp/block-learner-explanation.jpg"
+      ],
+      "verification": "2026-11-16：两节先学明白完整重写，各8个页内讲解段，仍是两个完整实现任务。以B=2/T=3/C=4/H=2贯穿多头，Block串起上下文读取、特征加工与两次补充。通读核对输入/步骤连接、投影分列/共享输入、两次直连/分支归属及缓存/别名；侧边栏两页零公式错误/横向溢出，参考折叠。课程精修12组含严格公式和生成一致性通过；全任务代码/骨架/用例/依赖/版本/local_code保持；仅review等待用户验收。"
+    },
+    {
+      "id": "part06-core-summaries",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "三节先学明白末尾的核心总结",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ],
+      "criteria": [
+        "每节详细讲解后、实现题前，以整体公式、一句作用和少量步骤对应收拢核心要素。",
+        "注意力公式含因果掩码并定义其含义；多头公式保留各头读取、同token拼接与含偏置输出投影；Block两行保留Pre-Norm及两次残差。",
+        "保留用户已认可的讲解和题末实现清单，摘要不代替推导，不改代码、测评及个人数据。"
+      ],
+      "evidence": [
+        "scripts/attention_wrapper_lessons.py",
+        "AGENTS.md",
+        "docs/项目有效上下文.md",
+        ".check-tmp/core-module-summary.jpg",
+        ".check-tmp/block-module-summary.jpg"
+      ],
+      "verification": "2026-11-16：三题body末尾各新增一段核心总结。课程精修12组含严格KaTeX/生成一致性通过；侧边栏三页均恰一段总结、零公式错误/横向溢出。快照确认仅三题body变化，所有其他字段保持；未调用骨架同步或写入个人文件/草稿/成绩。待用户验收。"
+    },
+    {
+      "id": "mha-continuous-labelled-layout",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "多头流程连续与布局片段可读性",
+      "status": "review",
+      "lessons": [
+        "t_mha"
+      ],
+      "criteria": [
+        "完整展示投影、分割、拆头轴、换轴、核心、换轴、合轴与输出投影，上一步输出连续传给下一步。",
+        "反向八步倒序，每步就地列出对应前向，恢复布局与投影用途拼接不省略。",
+        "布局用明确token/头身份的两特征片段，前后可点选对应；不以密集下标或重复中间表增加负担。",
+        "默认只展示一个可切换批次；Q/K/V同类拆头仅举Q，两个头仅用于说明必要分组与拼接，不重复独立计算图。"
+      ],
+      "evidence": [
+        "webapp/module-views.js",
+        "webapp/source-map.css",
+        ".check-tmp/mha-labelled-layout.jpg"
+      ],
+      "verification": "2026-11-16：旧MHA三表和不连续链替换为连续八步前/反向切换及两视图片段映射。侧边栏核对前向8步、反向8→1/8处前向对照、单批次两面板、切换批次1及合头后token2/头1两处联动；公式零错误/无页面横向溢出。JS语法与来源/模块8项通过。只改展示及规范记录，课程/代码/骨架/用例/版本/个人数据不改，review待验收。"
+    },
+    {
+      "id": "attention-purpose-head-motivation",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "核心整体功能与多头读取动机",
+      "status": "review",
+      "lessons": [
+        "t_attention",
+        "t_mha"
+      ],
+      "criteria": [
+        "解释输入特征与输出上下文信息的含义，用完整X到Y流程定位核心读取步骤，区分AttentionCore(Q,K,V)与多头外层。",
+        "先解释单头一份位置读取比例、多头多种读取方式，再讲拆头；保留小明/红色的书的直观例子。",
+        "明确各头通过同一损失联合训练，职责由训练形成且不保证差异；保留已有讲解与实现任务。"
+      ],
+      "evidence": [
+        "scripts/attention_wrapper_lessons.py",
+        "AGENTS.md",
+        "docs/项目有效上下文.md",
+        ".check-tmp/attention-purpose-context.jpg"
+      ],
+      "verification": "2026-11-16：核心页新增整体功能及输入输出语义/核心与外层职责，多头页在拆头之前整合已认可的动机说明。精修12组含严格数学/持久生成通过，侧边栏两页零公式错误与页面溢出。逐字段确认仅t_attention/t_mha的body变化，代码/测评/版本/个人数据均保持；review待验收。"
+    },
+    {
+      "id": "learner-owned-module-provenance",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "先修模块来源与组合实现闭环核对",
+      "status": "todo",
+      "lessons": [
+        "t_attention",
+        "t_mha",
+        "t_block",
+        "foundation_capstone"
+      ],
+      "criteria": [
+        "普通运行及测评只复用学习者文件或草稿，不用参考实现替代未完成先修。",
+        "组合包装同样由学习者实现；提供可定位的前置任务，核对来源、当前代码版本和测评状态，不能把文件存在视为亲手完成。",
+        "未完成或来源有疑问的先修清晰定位，保护现有个人代码和历史成绩；新增页面校验另行实现和验证。"
+      ],
+      "verification": "2026-11-17只读核对：app.js普通提交依赖使用draft（浏览器草稿优先，之后local_code），pilot_server缺省读取练习文件，检查到的加载路径未自动取课程reference。此次只说明该路径来源，不证明作者身份或所有先修已完成；可见的先修闭环提示与完整来源核对仍待做。 2026-11-17：Block试点新增三项直接前置的任务入口、文件/草稿来源与当前版本测评状态。仅完成可见定位，不证明作者身份；全链路来源核对仍待做，保留todo。",
+      "evidence": [
+        "webapp/app.js",
+        "webapp/pilot_server.py",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "block-macro-folded-pilot",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Block宏观主线与按节点展开试点",
+      "status": "review",
+      "lessons": [
+        "t_block"
+      ],
+      "criteria": [
+        "默认显示功能、核心公式和两步输入到输出的主线；节点可展开原完整讲解。",
+        "必要推导、原始前向对照、缓存/对象与OI题面全部保留；拆分为对应主线节点、反向与构造折叠区。",
+        "动手前列直接复用的个人模块、原题入口、代码来源和当前测评状态；明确组合由学习者实现，不推断作者身份。",
+        "移除本页重复残差演示，保持单列与紧凑样式；仅试点当前页面，不改变其他任务、个人代码或成绩标准。"
+      ],
+      "verification": "2026-11-17：先学明白重排为整体功能、常显公式、X→读取并加回→X1→加工并加回→Y，两步节点及为什么两残差/逆序反向/构造缓存默认折叠。原8段完整解释保留，MLPBranch回顾与前置链接补齐。12组课程回归、JS语法通过；侧边栏660px下核对两节点展开保留原段、反向三段可展开、来源状态显示，截图block-overview-folds.png/block-overview-route.png。快照确认仅Block body变化；代码/骨架/用例/依赖/版本/local_code保持，未写个人文件/草稿/成绩。",
+      "evidence": [
+        "scripts/block_overview_layout.py",
+        "webapp/app.js",
+        "webapp/source-map.css",
+        "webapp/module-views.js",
+        ".check-tmp/block-overview-route.png"
+      ]
+    },
+    {
+      "id": "block-topic-hierarchy",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Block主线、实现准备与设计补充层级",
+      "status": "review",
+      "lessons": [
+        "t_block"
+      ],
+      "criteria": [
+        "前向和反向作为计算主线明确分区，构造/缓存进入实现准备，局部设计原因轻量呈现。",
+        "保留完整推导、前向对照、源任务入口和核心公式；仅重排当前Block页面。"
+      ],
+      "evidence": [
+        "scripts/block_overview_layout.py",
+        "webapp/source-map.css",
+        ".check-tmp/block-priority-navigation.png"
+      ],
+      "verification": "2026-11-17：两次残差原因改为公式下轻量设计补充，前向/反向/实现准备分区；必要原文保留。12组课程检查含严格公式和生成通过，侧边栏核对标题层级及实际排版；课程快照仅t_block.body改变，其他字段与个人数据保持。"
+    },
+    {
+      "id": "lesson-reading-return",
+      "batch": "added",
+      "title": "前置任务回看与原阅读位置返回",
+      "status": "review",
+      "lessons": [
+        "t_block",
+        "foundation_capstone",
+        "t_gpt",
+        "t_data"
+      ],
+      "criteria": [
+        "浏览器历史覆盖普通切题；页内前置/回看跳转才显示返回来源按钮，目录或页尾下一任务不显示。",
+        "返回恢复主区域滚动和折叠状态，连续回看支持逐层返回；浏览器前进/刷新场景仍有效。",
+        "阅读历史只保存任务、滚动和折叠状态，不改练习、测评或个人文件。"
+      ],
+      "evidence": [
+        "webapp/course-navigation.js",
+        "webapp/app.js",
+        "tests/test_course_navigation.cjs",
+        ".check-tmp/block-return-before.png",
+        ".check-tmp/block-return-restored.png"
+      ],
+      "verification": "2026-11-17：新增原生History API导航及页内sticky返回入口，跳转前记录阅读状态，popstate恢复，pagehide保存供刷新返回。导航7项通过（新增3项覆盖多级返回、前进、无效/同页不造历史、刷新恢复）；侧边栏真实Block展开第二节点→MLPBranch前置题→返回，原位置/展开状态恢复，截图前后位置一致。未提交代码或写入成绩。 2026-11-17：增加显式review导航标记。8项导航回归通过；侧边栏Block→数据→GPT页尾切题无返回提示，GPT正文回看Block才显示返回，点击恢复原阅读位置。草稿/成绩不变。"
+    },
+    {
+      "id": "block-semantic-parameter-check",
+      "batch": "audit-part-06",
+      "part": "part-06",
+      "title": "Block接受等价分支封装与内部命名",
+      "status": "review",
+      "lessons": [
+        "t_block"
+      ],
+      "criteria": [
+        "按实际个人子层身份定位分支，公开ffn及其他合理命名通过，不强制旧norm2/mlp别名。",
+        "梯度按语义角色比较，同时保留全部参数注册、独立实例、真实持久子层调用、数值差分、累计和清零检查。",
+        "网页与本地真实导入均验证；不改个人代码或伪造个人成绩。"
+      ],
+      "evidence": [
+        "exercises/_block_inspection.py",
+        "exercises/_transformer_checks.py",
+        "exercises/_attention_contract_checks.py",
+        "tests/test_part06_lessons.py",
+        "scripts/attention_wrapper_lessons.py"
+      ],
+      "verification": "2026-11-17：修复固定路径比较和强制_ffn/别名；公开ffn和连norm1/attn一起改名的等价封装均通过，缺残差仍拒绝。本地直接导入实际个人Block8/8，隔离网页RUNNER用实际个人文件/依赖8/8；专项9组（含原下游兼容）与精修12组通过。题面别名改可选说明，原数值用例/版本/骨架/参考保留，未写个人文件/草稿/成绩。"
+    },
+    {
+      "id": "learner-explanation-part07",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "Part07 · 从文本到完整预测器：学明白再实现",
+      "status": "accepted",
+      "lessons": [
+        "t_data",
+        "t_gpt"
+      ],
+      "criteria": [
+        "两道完整任务围绕真实数据与模型交付，已有个人层直接复用，不额外拆一两行小题。",
+        "整体功能先于操作，前后向连续，反向就地附前向；公式与题末速查、折叠参考完整。",
+        "数据窗口选择代表行，保留完整原文及真实批次形状；共享词表按正文与公式说明，删除用户否定的三栏来源图。",
+        "所有计算与构造留给学习者，精确旧空模板先备份同步；保留其他实现、草稿和成绩。"
+      ],
+      "evidence": [
+        "scripts/part07_lessons.py",
+        "exercises/_gpt_contract_checks.py",
+        "tests/test_part07_lessons.py",
+        "docs/第七部分精修记录.md"
+      ],
+      "verification": "2026-11-17：已完成并侧边栏检查；Part07专项4组、Part06共享回归9组、课程精修/严格公式12组、导航8项通过。两题公开检查6/8项通过，实际个人依赖GPT8/8。等待用户验收。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "gpt-variable-origins-forward-summary",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "GPT · 变量先交代来源，前向流程收束整体",
+      "status": "review",
+      "lessons": [
+        "t_gpt"
+      ],
+      "criteria": [
+        "先整体用途，再区分输入/配置/持久参数/中间结果，定义后使用，数学名字对应实际对象。",
+        "同一输入贯穿三个前向步骤；准备与主线有层级，步骤可折叠，已有组件BP只交代调用。",
+        "总结始终展示完整前向流程图、整体公式和语义作用，标明同一词表复用；题末清单用于实现核对。",
+        "仅改讲解与展示，不改个人文件、草稿、成绩、测评或版本。",
+        "动手清单按构造/前向/反向分组，每步指明对象、动作和结果；速查包含共享参数全部贡献及对应调用。"
+      ],
+      "evidence": [
+        "scripts/part07_gpt_explanation.py",
+        "scripts/part07_lessons.py",
+        "webapp/source-map.css",
+        "docs/第七部分精修记录.md",
+        ".check-tmp/gpt-forward-summary.png"
+      ],
+      "verification": "2026-11-17：当前GPT页已重组并在侧边栏检查来源、三步折叠与前向流程图；课程重建/严格公式12组通过。其余lesson与所有个人文件保持，参考/骨架/用例/版本不变。原因和自查规则已记录，等待用户验收。 本次补充：清单改为三个方法的有序动作，删除旧兼容路径等工程叙述；速查及调用说明补齐查表梯度的按编号求和、符号/形状及Embedding.backward对应。严格公式与重建检查通过；只改当前题文字，个人文件/骨架/测评/版本均保持。 2026-11-18：按用户认可的预览压缩反向公式速查为一块，包含输出头、Norm/Block逆序调用、位置归约、查表贡献与共享合流；只留二维展平说明和一句读法。仅learning_page修改，严格公式/重建12组通过，个人代码/测评不变。"
+    },
+    {
+      "id": "quiz-visual-separation",
+      "batch": "added",
+      "title": "选择题与可视化分别展示、独立折叠",
+      "status": "review",
+      "lessons": [
+        "t_gpt",
+        "t_attention"
+      ],
+      "criteria": [
+        "选择题只放理解检查独立区域，可视化只放演示区域，各自折叠；没有内容的区域不显示。",
+        "答题结果不自动展开或收起图示，保留原答题存储键与检查规则。",
+        "删除用户否定的GPT共享词表字母表，保留正文及核心前向总结。"
+      ],
+      "evidence": [
+        "webapp/app.js",
+        "webapp/learning-tools.js",
+        "webapp/source-map.js",
+        "webapp/module-views.js",
+        ".check-tmp/gpt-quiz-separated.png"
+      ],
+      "verification": "2026-11-17：已删除图示实现和挂载，分离容器及折叠状态，去掉答题展开图示联动。GPT仅显示选择题、Embedding仅显示可视化、注意力核心两区并列且独立折叠，侧边栏通过。JS语法与课程精修12组通过。个人代码/草稿/成绩和题目规则不变。"
+    },
+    {
+      "id": "learner-explanation-init-upgrade",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "初始化接口升级：复用原模块，构造时各自初始化",
+      "status": "accepted",
+      "lessons": [
+        "t_init_upgrade",
+        "t_gpt"
+      ],
+      "criteria": [
+        "从整网需求说明为什么扩展接口，给出配置来源、职责、随机顺序及旧默认兼容。",
+        "一道衔接任务增量完善六个原文件；GPT只传配置和组装，不拆找权重，不重复初始化。",
+        "检查实际个人模块；六个原接口未升级时明确报错，不注入参考；原实现/草稿/成绩保留。",
+        "题面、任务清单、公式速查、折叠接口/参考、独立检查入口完整，源码生成持久。"
+      ],
+      "evidence": [
+        "scripts/initialization_upgrade.py",
+        "scripts/part07_lessons.py",
+        "exercises/_initialization_upgrade_checks.py",
+        "exercises/t_init_upgrade.py",
+        "tests/test_initialization_upgrade.py",
+        "docs/初始化接口升级说明.md"
+      ],
+      "verification": "2026-11-17：升级5项公开检查，GPT原8项保留另加1项。隔离专项4组、Part07 4组、Part06 9组、课程精修12组、导航8项通过。网页/本地导入与错误实现拒绝通过，侧边栏页面核对；所有既有个人文件哈希保持。待用户实现接口并验收。 2026-11-18修正：新增接口升级页曾遗漏普通文本标识排版。正文、题面和样例说明现按实际文本节点处理类名/接口，跳过已有code与数学节点；系数改为分式。严格公式/重建12组、侧边栏实际呈现通过，代码/测评版本保持。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "initialization-upgrade-web-editor",
+      "batch": "audit-part-07",
+      "part": "part-07",
+      "title": "初始化升级：保留网页内原文件编辑与提交",
+      "status": "review",
+      "lessons": [
+        "t_init_upgrade"
+      ],
+      "criteria": [
+        "同一代码框切换六个原文件，显示当前文件与来源，草稿与原课共用且相互独立。",
+        "保存绑定当前原文件并使用现有备份；读取当前文件，测评采用当前草稿版本。",
+        "不显示无编辑框的残留提示或冗长依赖墙，不恢复空骨架覆盖已有实现。"
+      ],
+      "evidence": [
+        "webapp/app.js",
+        "scripts/initialization_upgrade.py",
+        "tests/test_upgrade_workspace.cjs",
+        ".check-tmp/init-upgrade-editor.png"
+      ],
+      "verification": "2026-11-17：已恢复六文件编辑区；3项界面逻辑回归、初始化4组及课程精修12组通过。侧边栏切换Linear/Embedding并切回，代码/保存位置正确；未实际输入、保存或提交个人代码，个人文件哈希不变。等待用户验收。"
+    },
+    {
+      "id": "passed-code-auto-save",
+      "batch": "added",
+      "title": "测评通过后自动备份保存，并按本地文件复测",
+      "status": "review",
+      "lessons": [
+        "t_init_upgrade",
+        "t_gpt"
+      ],
+      "criteria": [
+        "非概念题全部用例通过后，保存刚通过的提交快照及所用前置模块；失败不写入。",
+        "升级任务统一保存六模块快照，不把检查入口当计算文件替换；不覆盖测评期间的新网页草稿。",
+        "每个改动文件先备份，真实本地导入复测；保存/复测失败恢复本批原文件，清楚报告失败。",
+        "旧通过记录不自动覆盖文件；刷新网页后新提交启用自动保存，本地成功状态明确。"
+      ],
+      "evidence": [
+        "webapp/pilot_server.py",
+        "webapp/app.js",
+        "tests/test_pass_autosave.py",
+        "tests/test_upgrade_workspace.cjs"
+      ],
+      "verification": "2026-11-18：5项服务端专项、4项编辑/提交回归、12组课程精修检查通过。备份、失败不写、局部失败恢复整批、升级多文件、真实本地验证的成功与失败均在临时目录检查。后台已定向重启，当前HTTP确认前后端自动保存启用；未对历史成绩自动回填个人文件。等待用户验收。"
+    },
+    {
+      "id": "learner-explanation-part08",
+      "batch": "audit-part-08",
+      "part": "part-08",
+      "title": "优化与训练：两题讲解精修",
+      "status": "accepted",
+      "lessons": [
+        "t_optim",
+        "t_train"
+      ],
+      "criteria": [
+        "整体用途、状态来源、连续更新与核心总结完整。",
+        "题末动手清单、LaTeX公式速查、样例解释齐全。",
+        "保留两题与主接口，个人实现、草稿和成绩得到保护。"
+      ],
+      "evidence": [
+        "scripts/part08_lessons.py",
+        "tests/test_part08_lessons.py"
+      ],
+      "verification": "2026-11-18：精修和17组检查已完成，等待用户验收；实验室真实训练入口接线仍为独立todo，不冒充讲解未调整。 2026-11-18：按反馈重写优化器主线，定义原始梯度、全局裁剪、状态及最终扣减量，用同一权重和偏置贯穿两轮。侧边栏验证公式呈现，独立核对例子并通过17项回归。 用户于 2026-11-18 确认第八部分讲解验收。"
+    },
+    {
+      "id": "learner-explanation-part09",
+      "batch": "audit-part-09",
+      "part": "part-09",
+      "title": "生成与保存：四题主线与独立组装选修",
+      "status": "accepted",
+      "lessons": [
+        "t_sample",
+        "t_generate",
+        "t_checkpoint",
+        "t_project",
+        "rebuild_gpt"
+      ],
+      "criteria": [
+        "明确每项新增能力、输入输出与已有个人组件的关系。",
+        "保留可折叠示例、核心总结、动手任务清单和公式速查。",
+        "项目综合验收收束主线，独立重写按需选做。"
+      ],
+      "evidence": [
+        "scripts/part09_lessons.py",
+        "webapp/foundations.json"
+      ],
+      "verification": "2026-11-18：39项公开用例在网页执行器与隔离本地导入均通过，命令行标准与独立来源的训练、重载生成及续训通过，等待用户验收。 用户于 2026-11-19 确认全部现有讲解验收。"
+    },
+    {
+      "id": "learner-explanation-course-acceptance",
+      "batch": "later",
+      "part": "all",
+      "title": "全课程讲解验收",
+      "status": "accepted",
+      "lessons": [
+        "architecture",
+        "axes",
+        "broadcast",
+        "center_backward",
+        "copy",
+        "fix_bias",
+        "fix_clear",
+        "fix_heads",
+        "fix_residual",
+        "fix_shared",
+        "heads",
+        "index",
+        "map",
+        "matmul",
+        "mean_backward",
+        "random",
+        "random_sequence",
+        "rebuild_block",
+        "reduce",
+        "reshape",
+        "restore",
+        "scatter",
+        "shape",
+        "transpose"
+      ],
+      "verification": "用户于 2026-11-19 确认现有讲解全部验收。",
+      "criteria": [
+        "记录用户对当前版本讲解的验收。"
+      ]
+    }
+  ],
+  "logic_audit": {
+    "date": "2026-11-14",
+    "document": "docs/分Part学习逻辑审查.md",
+    "facts": "docs/课程逻辑审查事实.json",
+    "scope": "56 个任务静态审查，未修改课程",
+    "execution": "用户指定 part 后执行该 part 清单；跨 part 去向登记但不擅自连带改课；第三部分继续暂缓。"
+  }
+}

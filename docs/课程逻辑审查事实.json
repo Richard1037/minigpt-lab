@@ -1,0 +1,2462 @@
+{
+  "source": "webapp/foundations.json",
+  "sha256": "3ae4bb33a577962723e1ceed6f7063d50a33c8dd41d4e2d5a2d21605f9eb05df",
+  "parts": [
+    {
+      "id": "part-01",
+      "title": "第一部分 · 整体架构",
+      "paused": false,
+      "tasks": [
+        "map",
+        "architecture"
+      ]
+    },
+    {
+      "id": "part-02",
+      "title": "第二部分 · NumPy 与张量",
+      "paused": false,
+      "tasks": [
+        "shape",
+        "axes",
+        "index",
+        "broadcast",
+        "reduce",
+        "mean_backward",
+        "center_backward",
+        "matmul",
+        "reshape",
+        "restore",
+        "transpose",
+        "heads",
+        "copy",
+        "scatter",
+        "random",
+        "random_sequence"
+      ]
+    },
+    {
+      "id": "part-03",
+      "title": "第三部分 · 标量网络",
+      "paused": true,
+      "tasks": []
+    },
+    {
+      "id": "part-04",
+      "title": "第四部分 · 完整基础层",
+      "paused": false,
+      "tasks": [
+        "infrastructure",
+        "initialization",
+        "layer_scale",
+        "linear",
+        "layer_linear",
+        "layer_embedding",
+        "layer_gelu",
+        "layer_rmsnorm",
+        "layer_mlp",
+        "foundation_capstone"
+      ]
+    },
+    {
+      "id": "part-05",
+      "title": "第五部分 · 概率与损失",
+      "paused": false,
+      "tasks": [
+        "t_softmax",
+        "t_loss"
+      ]
+    },
+    {
+      "id": "part-06",
+      "title": "第六部分 · 注意力与 Transformer",
+      "paused": false,
+      "tasks": [
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ]
+    },
+    {
+      "id": "part-07",
+      "title": "第七部分 · 组装 GPT",
+      "paused": false,
+      "tasks": [
+        "t_data",
+        "t_init_upgrade",
+        "t_gpt"
+      ]
+    },
+    {
+      "id": "part-08",
+      "title": "第八部分 · 优化与训练",
+      "paused": false,
+      "tasks": [
+        "t_optim",
+        "t_train"
+      ]
+    },
+    {
+      "id": "part-09",
+      "title": "第九部分 · 生成与保存",
+      "paused": false,
+      "tasks": [
+        "t_sample",
+        "t_generate",
+        "t_checkpoint",
+        "t_project",
+        "rebuild_gpt"
+      ]
+    },
+    {
+      "id": "optional",
+      "title": "拓展 · 典型错误修复",
+      "paused": false,
+      "tasks": [
+        "fix_bias",
+        "fix_heads",
+        "fix_residual",
+        "fix_shared",
+        "fix_clear"
+      ]
+    },
+    {
+      "id": "optional",
+      "title": "可选 · 历史独立重写练习",
+      "paused": false,
+      "tasks": [
+        "rebuild_linear",
+        "rebuild_block"
+      ]
+    },
+    {
+      "id": "optional",
+      "title": "选修 · 结构与训练对照",
+      "paused": false,
+      "tasks": [
+        "t_dropout",
+        "t_layernorm"
+      ]
+    },
+    {
+      "id": "optional",
+      "title": "选修 · 注意力分步练习",
+      "paused": false,
+      "tasks": [
+        "att_scores",
+        "att_probs",
+        "att_weighted",
+        "att_merge",
+        "att_value_backward",
+        "att_score_backward"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "map",
+      "part": "part-01",
+      "module": "模型与数据流",
+      "title": "从文本到训练和生成",
+      "kind": "concept",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "t_gpt",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": null,
+      "methods": [],
+      "reference_methods": [],
+      "cases": 0,
+      "questions": 2,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "architecture",
+      "part": "part-01",
+      "module": "模型与数据流",
+      "title": "本项目的结构与原始 Transformer",
+      "kind": "concept",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "t_block",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": null,
+      "methods": [],
+      "reference_methods": [],
+      "cases": 0,
+      "questions": 2,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "shape",
+      "part": "part-02",
+      "module": "数组、轴与索引",
+      "title": "数组创建、类型与坐标",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_shape.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "axes",
+      "part": "part-02",
+      "module": "数组、轴与索引",
+      "title": "让数组沿正确的轴计算",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "01_axes.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "index",
+      "part": "part-02",
+      "module": "数组、轴与索引",
+      "title": "切片与按编号取行",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_embedding",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_index.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 5,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "broadcast",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "给每条样本加同一个偏置",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "02_broadcast.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "reduce",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "逐行去均值：mean 与 keepdims",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "center_backward",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_reduce.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "mean_backward",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "均值反向：把上游分回每个特征",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_rmsnorm",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_mean_backward.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "center_backward",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "去均值反向：合并直接与均值路径",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "t_layernorm",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_center_backward.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "matmul",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "把一行与一列相乘，再求和",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "04_matmul.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "reshape",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "合并与恢复维度",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "restore",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_reshape.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "restore",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "形状恢复：让每一行回到原 batch/token",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_restore.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "transpose",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "转置与批量矩阵乘法",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "t_mha",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_transpose.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "heads",
+      "part": "part-02",
+      "module": "广播、归约与矩阵运算",
+      "title": "四维张量：拆头、换轴与还原",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "att_merge",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_heads.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "copy",
+      "part": "part-02",
+      "module": "内存、散射与随机数",
+      "title": "视图、复制与原地修改",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_copy.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "scatter",
+      "part": "part-02",
+      "module": "内存、散射与随机数",
+      "title": "重复索引与梯度散射",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_embedding",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_scatter.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "random",
+      "part": "part-02",
+      "module": "内存、散射与随机数",
+      "title": "随机数与可复现初始化",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "random_sequence",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_random.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "random_sequence",
+      "part": "part-02",
+      "module": "内存、散射与随机数",
+      "title": "随机状态：同一生成器连续采两次",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "t_checkpoint",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "numpy_random_sequence.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "infrastructure",
+      "part": "part-04",
+      "module": "公共接口与初始化",
+      "title": "Parameter 与 Module",
+      "kind": "infrastructure",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "reuse"
+      },
+      "exports": [
+        "Parameter",
+        "Module"
+      ],
+      "file": "layer_infrastructure.py",
+      "methods": [
+        {
+          "name": "Parameter.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Parameter.zero_grad",
+          "state": "todo"
+        },
+        {
+          "name": "Module.__call__",
+          "state": "provided"
+        },
+        {
+          "name": "Module.parameters",
+          "state": "todo"
+        },
+        {
+          "name": "Module.zero_grad",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Parameter.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Parameter.zero_grad",
+          "state": "provided"
+        },
+        {
+          "name": "Module.__call__",
+          "state": "provided"
+        },
+        {
+          "name": "Module.parameters",
+          "state": "provided"
+        },
+        {
+          "name": "Module.zero_grad",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "initialization",
+      "part": "part-04",
+      "module": "公共接口与初始化",
+      "title": "实现 Linear 的权重初始化",
+      "kind": "initialization",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "reuse"
+      },
+      "exports": [
+        "initialize"
+      ],
+      "file": "initialize_weights.py",
+      "methods": [
+        {
+          "name": "initialize",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "initialize",
+          "state": "provided"
+        }
+      ],
+      "cases": 6,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "layer_scale",
+      "part": "part-04",
+      "module": "Scale 与 Linear",
+      "title": "Scale：前向、缓存与反向",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "layer_scale.py",
+      "methods": [
+        {
+          "name": "Scale.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Scale.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Scale.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Scale.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Scale.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Scale.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 8,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "linear",
+      "part": "part-04",
+      "module": "Scale 与 Linear",
+      "title": "从三维输入实现 Linear 前向",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": {
+        "lesson": "layer_linear",
+        "mode": "practice"
+      },
+      "exports": [],
+      "file": "03_linear.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 6,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "layer_linear",
+      "part": "part-04",
+      "module": "Scale 与 Linear",
+      "title": "Linear：前向、缓存与反向",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure",
+        "initialization"
+      ],
+      "next_use": {
+        "lesson": "layer_mlp",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": "layer_linear.py",
+      "methods": [
+        {
+          "name": "Linear.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Linear.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Linear.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Linear.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Linear.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Linear.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 10,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "layer_embedding",
+      "part": "part-04",
+      "module": "Embedding 查表",
+      "title": "Embedding：前向、缓存与反向",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "t_gpt",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": "layer_embedding.py",
+      "methods": [
+        {
+          "name": "Embedding.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Embedding.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Embedding.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Embedding.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Embedding.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Embedding.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 9,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "layer_gelu",
+      "part": "part-04",
+      "module": "激活与归一化",
+      "title": "GELU：前向、缓存与反向",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "layer_mlp",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": "layer_gelu.py",
+      "methods": [
+        {
+          "name": "GELU.forward",
+          "state": "todo"
+        },
+        {
+          "name": "GELU.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "GELU.forward",
+          "state": "provided"
+        },
+        {
+          "name": "GELU.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 9,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "layer_rmsnorm",
+      "part": "part-04",
+      "module": "激活与归一化",
+      "title": "RMSNorm：前向、缓存与反向",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "t_block",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": "layer_rmsnorm.py",
+      "methods": [
+        {
+          "name": "RMSNorm.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "RMSNorm.forward",
+          "state": "todo"
+        },
+        {
+          "name": "RMSNorm.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "RMSNorm.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "RMSNorm.forward",
+          "state": "provided"
+        },
+        {
+          "name": "RMSNorm.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 9,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "layer_mlp",
+      "part": "part-04",
+      "module": "组合为 MLP",
+      "title": "MLP：前向、缓存与反向",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_linear",
+        "layer_gelu"
+      ],
+      "next_use": {
+        "lesson": "t_block",
+        "mode": "reuse"
+      },
+      "exports": [],
+      "file": "layer_mlp.py",
+      "methods": [
+        {
+          "name": "MLP.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "MLP.forward",
+          "state": "todo"
+        },
+        {
+          "name": "MLP.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "MLP.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "MLP.forward",
+          "state": "provided"
+        },
+        {
+          "name": "MLP.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 10,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "foundation_capstone",
+      "part": "part-04",
+      "module": "基础层综合验收",
+      "title": "基础层综合：组装并验收 MLP 分支",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_scale",
+        "layer_linear",
+        "layer_embedding",
+        "layer_gelu",
+        "layer_rmsnorm",
+        "layer_mlp"
+      ],
+      "next_use": {
+        "lesson": "t_block",
+        "mode": "practice"
+      },
+      "exports": [
+        "MLPBranch"
+      ],
+      "file": "foundation_capstone.py",
+      "methods": [
+        {
+          "name": "MLPBranch.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "MLPBranch.forward",
+          "state": "todo"
+        },
+        {
+          "name": "MLPBranch.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "MLPBranch.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "MLPBranch.forward",
+          "state": "provided"
+        },
+        {
+          "name": "MLPBranch.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 12,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_softmax",
+      "part": "part-05",
+      "module": "从分数到平均损失",
+      "title": "Softmax：从分数到概率与反向",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "att_score_backward",
+        "mode": "reuse"
+      },
+      "exports": [
+        "Softmax"
+      ],
+      "file": "t_softmax.py",
+      "methods": [
+        {
+          "name": "Softmax.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Softmax.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Softmax.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Softmax.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 9,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_loss",
+      "part": "part-05",
+      "module": "从分数到平均损失",
+      "title": "LogSumExp 交叉熵与平均梯度",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "t_train",
+        "mode": "reuse"
+      },
+      "exports": [
+        "CrossEntropy"
+      ],
+      "file": "t_loss.py",
+      "methods": [
+        {
+          "name": "CrossEntropy.forward",
+          "state": "todo"
+        },
+        {
+          "name": "CrossEntropy.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "CrossEntropy.forward",
+          "state": "provided"
+        },
+        {
+          "name": "CrossEntropy.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 8,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_attention",
+      "part": "part-06",
+      "module": "从注意力到完整 Block",
+      "title": "注意力核心：完整前向与反向",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "t_softmax"
+      ],
+      "next_use": null,
+      "exports": [
+        "AttentionCore"
+      ],
+      "file": "t_attention.py",
+      "methods": [
+        {
+          "name": "AttentionCore.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "AttentionCore.forward",
+          "state": "todo"
+        },
+        {
+          "name": "AttentionCore.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "AttentionCore.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "AttentionCore.forward",
+          "state": "provided"
+        },
+        {
+          "name": "AttentionCore.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 27,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_mha",
+      "part": "part-06",
+      "module": "从注意力到完整 Block",
+      "title": "多头注意力：投影、拆合头与完整反向",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_linear",
+        "t_softmax",
+        "t_attention"
+      ],
+      "next_use": null,
+      "exports": [
+        "MultiHeadAttention"
+      ],
+      "file": "t_mha.py",
+      "methods": [
+        {
+          "name": "MultiHeadAttention.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "MultiHeadAttention.forward",
+          "state": "todo"
+        },
+        {
+          "name": "MultiHeadAttention.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "MultiHeadAttention.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "MultiHeadAttention.forward",
+          "state": "provided"
+        },
+        {
+          "name": "MultiHeadAttention.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 11,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_block",
+      "part": "part-06",
+      "module": "从注意力到完整 Block",
+      "title": "Pre-Norm Block 与残差梯度合流",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "foundation_capstone",
+        "t_softmax",
+        "t_attention",
+        "t_mha"
+      ],
+      "next_use": null,
+      "exports": [
+        "Block"
+      ],
+      "file": "t_block.py",
+      "methods": [
+        {
+          "name": "Block.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Block.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Block.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Block.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Block.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Block.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 8,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_data",
+      "part": "part-07",
+      "module": "从文本到完整预测器",
+      "title": "文本到训练批次：字符编码与下一字符目标",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": null,
+      "exports": [
+        "tokenize",
+        "make_batch"
+      ],
+      "file": "t_data.py",
+      "methods": [
+        {
+          "name": "tokenize",
+          "state": "todo"
+        },
+        {
+          "name": "make_batch",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "tokenize",
+          "state": "provided"
+        },
+        {
+          "name": "make_batch",
+          "state": "provided"
+        }
+      ],
+      "cases": 6,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_init_upgrade",
+      "part": "part-07",
+      "module": "从文本到完整预测器",
+      "title": "完善初始化接口：让已有模块支持完整 GPT",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "layer_scale",
+        "foundation_capstone",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "t_block"
+      ],
+      "next_use": null,
+      "exports": [
+        "Linear",
+        "Embedding",
+        "MLP",
+        "MLPBranch",
+        "MultiHeadAttention",
+        "Block"
+      ],
+      "file": "t_init_upgrade.py",
+      "methods": [],
+      "reference_methods": [
+        {
+          "name": "Linear.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Linear.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Linear.backward",
+          "state": "provided"
+        },
+        {
+          "name": "Embedding.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Embedding.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Embedding.backward",
+          "state": "provided"
+        },
+        {
+          "name": "MLP.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "MLP.forward",
+          "state": "provided"
+        },
+        {
+          "name": "MLP.backward",
+          "state": "provided"
+        },
+        {
+          "name": "MLPBranch.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "MLPBranch.forward",
+          "state": "provided"
+        },
+        {
+          "name": "MLPBranch.backward",
+          "state": "provided"
+        },
+        {
+          "name": "MultiHeadAttention.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "MultiHeadAttention.forward",
+          "state": "provided"
+        },
+        {
+          "name": "MultiHeadAttention.backward",
+          "state": "provided"
+        },
+        {
+          "name": "Block.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Block.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Block.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 5,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_gpt",
+      "part": "part-07",
+      "module": "从文本到完整预测器",
+      "title": "完整 GPT：从编号到下一 token 分数",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "layer_scale",
+        "foundation_capstone",
+        "t_block",
+        "t_init_upgrade"
+      ],
+      "next_use": null,
+      "exports": [
+        "GPT"
+      ],
+      "file": "t_gpt.py",
+      "methods": [
+        {
+          "name": "GPT.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "GPT.forward",
+          "state": "todo"
+        },
+        {
+          "name": "GPT.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "GPT.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.forward",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 9,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_optim",
+      "part": "part-08",
+      "module": "优化器与完整训练",
+      "title": "全局梯度裁剪与 AdamW",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": {
+        "lesson": "t_train",
+        "mode": "reuse"
+      },
+      "exports": [
+        "clip_grad",
+        "AdamW"
+      ],
+      "file": "t_optim.py",
+      "methods": [
+        {
+          "name": "clip_grad",
+          "state": "todo"
+        },
+        {
+          "name": "AdamW.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "AdamW.step",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "clip_grad",
+          "state": "provided"
+        },
+        {
+          "name": "AdamW.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "AdamW.step",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_train",
+      "part": "part-08",
+      "module": "优化器与完整训练",
+      "title": "训练闭环：从损失到参数更新",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "t_loss",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "layer_scale",
+        "foundation_capstone",
+        "t_block",
+        "t_init_upgrade",
+        "t_gpt",
+        "t_optim",
+        "t_data"
+      ],
+      "next_use": {
+        "lesson": "t_project",
+        "mode": "reuse"
+      },
+      "exports": [
+        "train"
+      ],
+      "file": "t_train.py",
+      "methods": [
+        {
+          "name": "train",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "train",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_sample",
+      "part": "part-09",
+      "module": "采样和自回归",
+      "title": "温度、top-k 与批量采样",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "t_softmax"
+      ],
+      "next_use": {
+        "lesson": "t_generate",
+        "mode": "reuse"
+      },
+      "exports": [
+        "sample"
+      ],
+      "file": "t_sample.py",
+      "methods": [
+        {
+          "name": "sample",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "sample",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_generate",
+      "part": "part-09",
+      "module": "采样和自回归",
+      "title": "自回归生成与上下文窗口",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "layer_scale",
+        "foundation_capstone",
+        "t_block",
+        "t_init_upgrade",
+        "t_gpt",
+        "t_sample"
+      ],
+      "next_use": {
+        "lesson": "t_project",
+        "mode": "reuse"
+      },
+      "exports": [
+        "generate"
+      ],
+      "file": "t_generate.py",
+      "methods": [
+        {
+          "name": "generate",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "generate",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_checkpoint",
+      "part": "part-09",
+      "module": "保存与续训",
+      "title": "检查点与精确续训",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "layer_scale",
+        "foundation_capstone",
+        "t_block",
+        "t_init_upgrade",
+        "t_gpt",
+        "t_loss",
+        "t_optim"
+      ],
+      "next_use": {
+        "lesson": "t_project",
+        "mode": "reuse"
+      },
+      "exports": [
+        "save_checkpoint",
+        "load_checkpoint"
+      ],
+      "file": "t_checkpoint.py",
+      "methods": [
+        {
+          "name": "save_checkpoint",
+          "state": "todo"
+        },
+        {
+          "name": "load_checkpoint",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "save_checkpoint",
+          "state": "provided"
+        },
+        {
+          "name": "load_checkpoint",
+          "state": "provided"
+        }
+      ],
+      "cases": 5,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_project",
+      "part": "part-09",
+      "module": "miniGPT 项目综合验收",
+      "title": "miniGPT 项目综合验收",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "t_loss",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "layer_scale",
+        "foundation_capstone",
+        "t_block",
+        "t_init_upgrade",
+        "t_gpt",
+        "t_optim",
+        "t_data",
+        "t_train",
+        "t_sample",
+        "t_generate",
+        "t_checkpoint"
+      ],
+      "next_use": {
+        "lesson": "rebuild_gpt",
+        "mode": "reuse"
+      },
+      "exports": [
+        "project_step"
+      ],
+      "file": "t_project.py",
+      "methods": [
+        {
+          "name": "project_step",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "project_step",
+          "state": "provided"
+        }
+      ],
+      "cases": 8,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "rebuild_gpt",
+      "part": "part-09",
+      "module": "最终独立实现",
+      "title": "独立实现：从空方法组装 miniGPT",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "t_loss",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "t_optim",
+        "t_data",
+        "t_train",
+        "t_sample",
+        "t_generate",
+        "t_checkpoint",
+        "t_project",
+        "foundation_capstone",
+        "t_block"
+      ],
+      "next_use": null,
+      "exports": [
+        "GPT"
+      ],
+      "file": "rebuild_gpt.py",
+      "methods": [
+        {
+          "name": "GPT.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "GPT.forward",
+          "state": "todo"
+        },
+        {
+          "name": "GPT.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "GPT.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.forward",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 16,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "fix_bias",
+      "part": "optional",
+      "module": "拓展排错练习",
+      "title": "修错：偏置梯度求和轴",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [],
+      "file": "fix_bias.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "fix_heads",
+      "part": "optional",
+      "module": "拓展排错练习",
+      "title": "修错：合并 head 时打乱 token",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [],
+      "file": "fix_heads.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "fix_residual",
+      "part": "optional",
+      "module": "拓展排错练习",
+      "title": "修错：残差漏掉直连梯度",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [],
+      "file": "fix_residual.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "fix_shared",
+      "part": "optional",
+      "module": "拓展排错练习",
+      "title": "修错：共享词表漏掉输出头梯度",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "foundation_capstone",
+        "t_block"
+      ],
+      "next_use": null,
+      "exports": [
+        "GPT"
+      ],
+      "file": "fix_shared.py",
+      "methods": [
+        {
+          "name": "GPT.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.forward",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.backward",
+          "state": "provided"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "GPT.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.forward",
+          "state": "provided"
+        },
+        {
+          "name": "GPT.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 6,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "fix_clear",
+      "part": "optional",
+      "module": "拓展排错练习",
+      "title": "修错：训练时忘记清空梯度",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "t_loss",
+        "layer_embedding",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha",
+        "layer_scale",
+        "foundation_capstone",
+        "t_block",
+        "t_init_upgrade",
+        "t_gpt",
+        "t_optim",
+        "t_data"
+      ],
+      "next_use": null,
+      "exports": [
+        "train"
+      ],
+      "file": "fix_clear.py",
+      "methods": [
+        {
+          "name": "train",
+          "state": "provided"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "train",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "rebuild_linear",
+      "part": "optional",
+      "module": "保留旧代码与成绩",
+      "title": "独立实现：从接口写出 Linear",
+      "kind": "layer",
+      "dependencies": [
+        "infrastructure",
+        "initialization"
+      ],
+      "next_use": {
+        "lesson": "rebuild_block",
+        "mode": "contrast"
+      },
+      "exports": [],
+      "file": "rebuild_linear.py",
+      "methods": [
+        {
+          "name": "Linear.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Linear.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Linear.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Linear.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Linear.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Linear.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 10,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "rebuild_block",
+      "part": "optional",
+      "module": "旧独立 Block（可选历史）",
+      "title": "独立组装：从接口写出 Block",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure",
+        "initialization",
+        "layer_rmsnorm",
+        "layer_linear",
+        "layer_gelu",
+        "layer_mlp",
+        "t_softmax",
+        "t_attention",
+        "t_mha"
+      ],
+      "next_use": {
+        "lesson": "rebuild_gpt",
+        "mode": "reuse"
+      },
+      "exports": [
+        "Block"
+      ],
+      "file": "rebuild_block.py",
+      "methods": [
+        {
+          "name": "Block.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Block.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Block.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Block.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Block.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Block.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 6,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_dropout",
+      "part": "optional",
+      "module": "Dropout 与 LayerNorm",
+      "title": "Dropout：训练、评估与缓存掩码",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": null,
+      "exports": [
+        "Dropout"
+      ],
+      "file": "t_dropout.py",
+      "methods": [
+        {
+          "name": "Dropout.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "Dropout.forward",
+          "state": "todo"
+        },
+        {
+          "name": "Dropout.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "Dropout.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "Dropout.forward",
+          "state": "provided"
+        },
+        {
+          "name": "Dropout.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 8,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "t_layernorm",
+      "part": "optional",
+      "module": "Dropout 与 LayerNorm",
+      "title": "LayerNorm 与原始 Transformer 对照",
+      "kind": "project",
+      "dependencies": [
+        "infrastructure"
+      ],
+      "next_use": null,
+      "exports": [
+        "LayerNorm"
+      ],
+      "file": "t_layernorm.py",
+      "methods": [
+        {
+          "name": "LayerNorm.__init__",
+          "state": "todo"
+        },
+        {
+          "name": "LayerNorm.forward",
+          "state": "todo"
+        },
+        {
+          "name": "LayerNorm.backward",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "LayerNorm.__init__",
+          "state": "provided"
+        },
+        {
+          "name": "LayerNorm.forward",
+          "state": "provided"
+        },
+        {
+          "name": "LayerNorm.backward",
+          "state": "provided"
+        }
+      ],
+      "cases": 8,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "att_scores",
+      "part": "optional",
+      "module": "按需练习单个操作",
+      "title": "先实现 QKᵀ 缩放打分",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [
+        "attention_scores"
+      ],
+      "file": "att_scores.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "att_probs",
+      "part": "optional",
+      "module": "按需练习单个操作",
+      "title": "再实现因果掩码与逐行概率",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [],
+      "file": "att_probs.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "att_weighted",
+      "part": "optional",
+      "module": "按需练习单个操作",
+      "title": "将注意力概率变成输出向量",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [
+        "weighted_values"
+      ],
+      "file": "att_weighted.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "att_merge",
+      "part": "optional",
+      "module": "按需练习单个操作",
+      "title": "将多头输出恢复为 token 向量",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [
+        "merge_heads"
+      ],
+      "file": "att_merge.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 3,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "att_value_backward",
+      "part": "optional",
+      "module": "按需练习单个操作",
+      "title": "注意力反向一：所有 query 汇入 dV",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [
+        "value_gradient"
+      ],
+      "file": "numpy_att_value_backward.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    },
+    {
+      "id": "att_score_backward",
+      "part": "optional",
+      "module": "按需练习单个操作",
+      "title": "注意力反向二：同一行概率的耦合",
+      "kind": "array",
+      "dependencies": [],
+      "next_use": null,
+      "exports": [],
+      "file": "numpy_att_score_backward.py",
+      "methods": [
+        {
+          "name": "solve",
+          "state": "todo"
+        }
+      ],
+      "reference_methods": [
+        {
+          "name": "solve",
+          "state": "provided"
+        }
+      ],
+      "cases": 4,
+      "questions": 0,
+      "note": "provided 表示骨架已给出代码；拓展修错题的 provided 可能故意有错，不能按缺少实现误判。"
+    }
+  ],
+  "explicit_dependency_inversions": [],
+  "scope": "静态事实快照；显式依赖有序不证明教学前置已讲清，provided 不自动等于缺陷。"
+}

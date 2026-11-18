@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 3a · 形状、轴与第一个层</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s03a">
+<article class="chapter" id="ch-s03a">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-5A" href="#sec-3" title="nn.py TODO-5A Scale"><i></i><code>TODO-5A</code></a><a class="mm" data-todo="TODO-5" href="#sec-6" title="nn.py TODO-5/6 Linear"><i></i><code>TODO-5</code></a><a class="mm" data-todo="TODO-6" href="#sec-6" title="nn.py TODO-5/6 Linear"><i></i><code>TODO-6</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s03a">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s03a</div>
+  <h1>阶段 3a · 形状、轴与第一个层</h1>
+  <div class="meta"><span>判据 <code>tests/test_layers_a.py</code></span>
+    <span>预计 1~2 小时（地基 + 一次完整跑绿）</span>
+    <span>要交 minigpt/nn.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>tests/test_layers_a.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/nn.py</code>。预计 1~2 小时（地基 + 一次完整跑绿）。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-5A"><td><code>TODO-5A</code></td><td>nn.py TODO-5A Scale</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-5A">去写</button></td></tr><tr data-todo="TODO-5"><td><code>TODO-5</code></td><td>nn.py TODO-5/6 Linear</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-5">去写</button></td></tr><tr data-todo="TODO-6"><td><code>TODO-6</code></td><td>nn.py TODO-5/6 Linear</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-6">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. numpy 的三件事：形状、轴、<code>@</code> 收缩</a><a href="#sec-3"><span>3</span>3. TODO-5A：<code>Scale</code> —— 先跑绿一次</a><a href="#sec-4"><span>4</span>4. 五条约定，以及承载它们的已给出代码</a><a href="#sec-5"><span>5</span>5. 你的测谎仪：<code>gradcheck</code></a><a href="#sec-6"><span>6</span>6. TODO-5 / TODO-6：<code>Linear</code> —— 本阶段最重要的一层</a><a href="#sec-7"><span>7</span>7. 这一卷的验收判据</a><a href="#sec-8"><span>8</span>8. 常见失败模式对照表</a><a href="#sec-9"><span>9</span>9. 自查题</a><a href="#sec-10"><span>10</span>10. 下一步</a><a href="#sec-11"><span>11</span>11. 进阶推导（现在可以跳过）</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s03a"><p>预计：约 40 行代码，1~2 小时。 验收命令：<code>python tests/test_layers_a.py</code> 要写的地方：<code>src/minigpt/nn.py</code> 的 TODO-5A（Scale）、TODO-5 / TODO-6（Linear）。</p>
+<p>阶段 3 被拆成了三章，你可以一章一章跑绿：</p>
+<table><thead><tr><th></th><th>讲什么</th><th>写几个 TODO</th><th>判据</th></tr></thead><tbody><tr><td><b>3a（这一章）</b></td><td>numpy 的轴运算地基 + 一个玩具层 + <code>Linear</code></td><td>TODO-5A、5、6</td><td><code>tests/test_layers_a.py</code> 8 条</td></tr><tr><td><a href="s03b.html">3b</a></td><td><code>GELU</code> / <code>RMSNorm</code> / <code>Embedding</code> / <code>MLP</code></td><td>TODO-7~10</td><td><code>tests/test_layers_b.py</code> 6 条</td></tr><tr><td><a href="s03c.html">3c</a></td><td><code>CrossEntropy</code>，以及"gradcheck 自己可信吗"</td><td>TODO-11</td><td><code>tests/test_layers_c.py</code> 5 条</td></tr></tbody></table>
+<p>原来的写法是七层一口气 120 行、3~5 小时，中间没有任何一次"我跑绿了"。 拆开之后每一章末尾都有一次独立的验收，卡住了也只卡在一章里。</p></section><section class="sec" id="sec-1" data-stage="s03a"><h2>1. 这一步在干什么</h2><p>把阶段 1–2 的标量引擎换成 numpy 整块数组。数学一模一样，<b>每个"数"变成"一摞数"</b>。 收益是快一万倍（一次 <code>@</code> 顶替几十万次 Python 调用），代价是反向传播你要自己写出 "对整块数组的梯度"。</p>
+<p>这一阶段<b>没有新数学</b>。真正难的是换一种推理方式：</p>
+<li>标量阶段：靠<b>数字</b>推理（这个梯度是 36 还是 24？）</li><li>数组阶段：靠<b>形状</b>推理（要得到 <code>(out,in)</code> 的 <code>gW</code>，只能是 <code>gᵀ @ x</code>，没有第二种可能）</li></ul>
+<p>按这个顺序写：</p>
+<div class="flow"><div class="fs"><i class="n">1</i><span>§2 先把 numpy 的轴讲清楚（工具）</span></div><i class="fa">↓</i><div class="fs"><i class="n">2</i><span>§3 写一个没有形状问题的玩具层 <code>Scale</code>，把整套流程跑绿一次（手感）</span></div><i class="fa">↓</i><div class="fs"><i class="n">3</i><span>§4 再回头看那五条约定 —— 这时它们不是抽象规矩，是你刚在 <code>Scale</code> 上踩过的坑</span></div><i class="fa">↓</i><div class="fs"><i class="n">4</i><span>§5 <code>gradcheck</code>：你唯一的裁判</span></div><i class="fa">↓</i><div class="fs"><i class="n">5</i><span>§6 <code>Linear</code>：形状推理第一次真正上场</span></div></div>
+<p>如果你只想做一件事就停下来：<b>§3 的 Scale 跑绿</b>。那是本章最小的完整闭环。</p></section><section class="sec" id="sec-2" data-stage="s03a"><h2>2. numpy 的三件事：形状、轴、<code>@</code> 收缩</h2><p>后面所有推导都建立在这三件事上。这一节不写任何梯度，只把一个数组翻来覆去看懂： <code>x = np.arange(24).reshape(2, 3, 4)</code> —— 就是 0 到 23 这 24 个数，按顺序填进 "2 块、每块 3 行、每行 4 个"的格子里。建议开着 python 跟着敲，10 分钟就够。</p>
+<h4 id="sec-2-1">2.1 形状 = 取一个数要报的几个坐标</h4>
+<p><code>x.shape == (2, 3, 4)</code> 的意思是：想指出 x 里的某一个数，你要报 3 个坐标 <code>x[i, j, k]</code> —— 第几块、第几行、第几个。三根轴在本手册里有固定名字： <code>axis=0</code> 是"哪条序列"，<code>axis=1</code> 是"第几个 token"，<code>axis=2</code> 是"第几维特征"。</p>
+<div class="excard"><div class="exhead"><span class="extag">手算例子 · 先自己算，再点下一行</span><button class="exnext" type="button">下一行 ▶</button><span class="excount">1/5</span></div><div class="exbody"><div class="exline">x[0, 0, 0] = 0，x[0, 0, 1] = 1：最后一轴走得最快，同一行里挨着的就是"第几维"。</div><div class="exline" hidden>x[0, 1, 0] = 4：换一行跳 4 个，因为一行有 4 个数。</div><div class="exline" hidden>x[1, 0, 0] = 12：换一块跳 3×4 = 12 个，因为一块有 3 行 4 列。</div><div class="exline" hidden>所以 shape 的每个数告诉你"沿这根轴走一步跳多远"：轴 2 跳 1、轴 1 跳 4、轴 0 跳 12。</div><div class="exline" hidden>以后看到 <code>g2.sum(axis=0)</code>，别想公式，想"把'哪条序列'这根轴压没"。</div></div></div>
+<h4 id="sec-2-2">2.2 <code>reshape(-1, C)</code>：把几块板子上下摞成一张大板子</h4>
+<p>矩阵乘只吃二维，所以 <code>(B, T, C)</code> 要先摞成 <code>(B·T, C)</code> （<code>B</code> = 几条序列、<code>T</code> = 每条几个 token、<code>C</code> = 每个位置几维；§4 约定 1 会正式钉死）。 <code>-1</code> 的意思是"这一轴的长度你自己算"，一个式子里只能有一个 <code>-1</code>。</p>
+<p>什么时候合法，一句话：<b>只把相邻的轴合并、不打乱元素顺序，就合法。</b> 想把不相邻的轴并到一起（比如 <code>(C, B·T)</code>）不是 reshape 能做的，得先 <code>transpose</code> 再 reshape。</p>
+<div class="excard"><div class="exhead"><span class="extag">手算例子 · 先自己算，再点下一行</span><button class="exnext" type="button">下一行 ▶</button><span class="excount">1/3</span></div><div class="exbody"><div class="exline">x.reshape(-1, 4) 的第 0 行 = 块 0 的第 0 行 = [0, 1, 2, 3]。</div><div class="exline" hidden>第 3 行 = 块 1 的第 0 行 = [12, 13, 14, 15]：前 3 行来自块 0，后 3 行来自块 1。</div><div class="exline" hidden>所以 reshape(-1, 4) 就是"把两块 3×4 的板子上下摞成 6×4"，每个数都没换位置。</div></div></div>
+<p>还有一个和 <code>gradcheck</code> 直接相关的性质：<code>reshape</code> 在<b>连续内存</b>上返回视图 （和原数组共享同一块内存，改一个另一个跟着变），在 transpose 过的非连续内存上返回副本 （各是各的）。§5 第三条会用到这句话。</p>
+<p>把 <code>(B,T,C)</code> 想成 <b>B 块 <code>T×C</code> 的板子</b>：矩阵乘只吃二维，而 <code>W</code> 对每块板子的每一行都是同一块， 所以"逐块乘完再摞起来"和"拼成一块 <code>B·T×C</code> 乘一次"逐位相同。下面这个动画就是那三步 （点任意一行看算式，第 ⑤ 步是 §2.2 说的"不合法切法"）：</p>
+<div class="fig" data-fig="flatten" role="img" aria-label="可视化：flatten"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<h4 id="sec-2-3">2.3 <code>sum(axis=k)</code>：沿第 k 根轴把那一排数加起来，加完这根轴消失</h4>
+<div class="excard"><div class="exhead"><span class="extag">手算例子 · 先自己算，再点下一行</span><button class="exnext" type="button">下一行 ▶</button><span class="excount">1/4</span></div><div class="exbody"><div class="exline">x.sum(axis=2)[0, 0] = 块 0 行 0 那 4 个数相加 = 0+1+2+3 = 6，结果形状 (2, 3)。</div><div class="exline" hidden>x.sum(axis=1)[0, 0] = 块 0 列 0 那 3 个数相加 = 0+4+8 = 12，结果形状 (2, 4)。</div><div class="exline" hidden>x.sum(axis=0)[0, 0] = 两块在同一位置相加 = 0+12 = 12，结果形状 (3, 4)。</div><div class="exline" hidden>记忆法：<code>axis=k</code> 就是"消失的那根轴"，结果形状 = 原形状删掉第 k 个数。</div></div></div>
+<p>反向传播里大量的活就是"求和该对哪根轴求"，而答案完全由<b>目标形状</b>决定： 手里是 <code>(N, out)</code> 的 <code>g2</code>，想要 <code>(out,)</code> 的 <code>db</code>，只能让 <code>N</code> 消失 —— 所以是 <code>g2.sum(axis=0)</code>。 不用背，看一眼形状就知道。</p>
+<p>顺带两个常配的手势：</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>a.mean(axis=-<span class="num">1</span>, keepdims=<span class="kw">True</span>)   <span class="com"># 求完均值把那根轴留成长度 1，形状 (2,3,1)</span>
+a[:, <span class="kw">None</span>]                        <span class="com"># 在轴 1 插一根长度为 1 的新轴 → (2,1,3,4)</span></code></pre></figure>
+<p><code>keepdims=True</code> 在阶段 3b 的 RMSNorm 里是必需的：广播对齐要求两边轴数对得上， 留一根长度 1 的轴才能和 <code>(B,T,C)</code> 逐元素相乘。</p>
+<h4 id="sec-2-4">2.4 <code>@</code>：两根轴配对求和，然后双双消失</h4>
+<p><code>A @ B</code> 的要求只有一个：<b>A 的最后一轴和 B 的倒数第二轴等长</b>；这两个长度配对求和后消失， 结果形状 = A 剩下的轴 + B 剩下的轴。</p>
+<div class="excard"><div class="exhead"><span class="extag">手算例子 · 先自己算，再点下一行</span><button class="exnext" type="button">下一行 ▶</button><span class="excount">1/4</span></div><div class="exbody"><div class="exline">A 是 (2,3)、B 是 (3,4)：(A @ B)[0,0] = A 第 0 行 · B 第 0 列 = a00*b00 + a01*b10 + a02*b20。</div><div class="exline" hidden>中间那个 3 配对加完就消失，结果形状 = (2,) + (4,) = (2,4)。</div><div class="exline" hidden>X 是 (2,3,4)、W 是 (4,5)：4 和 4 配对消失，结果 = (2,3) + (5,) = (2,3,5)。</div><div class="exline" hidden>后一种情况 numpy 的做法是：对每一块、每一行，都乘同一个 W。</div></div></div>
+<p>看到 <code>(2,3,4) @ (4,5)</code> 里那个 <code>4</code> 对齐了吗 —— 所以 <b>Linear 的 forward 其实可以不摊平</b>， <code>x @ W.T</code> 直接就能算 <code>(B,T,C) → (B,T,out)</code>。那我们为什么还摊平？两个原因： ① 反向算 <code>dW = g @ x</code> 时必须是二维，否则 <code>gᵀ @ x</code> 会变成上面这种逐位置乘法， 形状根本不对；② 摊平后正向反向用同一套二维推理，只学一种手感。</p>
+<p>最后把这个盒子拿在手里转一转：下面是一个真 3D 的 <code>(B,T,C)</code> 格盒，拖它旋转、 用滑杆换 B/T/C，点"压扁"看 <code>sum(axis=k)</code> 怎么把一整片同色格子加成结果里的一格 —— readout 里的每个数都是当场算的，可以拿去和 numpy 对。</p>
+<div class="fig" data-fig="shapebox" role="img" aria-label="可视化：shapebox"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<h4 id="sec-2-5">2.5 速查表：想合成什么形状，就谁转置</h4>
+<p>设摊平后 <code>x</code> 是 <code>(N, in)</code>、<code>W</code> 是 <code>(out, in)</code>、<code>g</code>（对输出的梯度）是 <code>(N, out)</code>：</p>
+<table><thead><tr><th>想要</th><th>目标形状</th><th>唯一拼法</th><th>代码</th></tr></thead><tbody><tr><td>输出 <code>y</code></td><td><code>(N, out)</code></td><td><code>(N,in)(in,out)</code></td><td><code>x @ W.T</code></td></tr><tr><td><code>dW</code></td><td><code>(out, in)</code>，和 <code>W</code> 同形</td><td><code>(out,N)(N,in)</code></td><td><code>g.T @ x</code></td></tr><tr><td><code>db</code></td><td><code>(out,)</code>，和 <code>b</code> 同形</td><td>让 <code>N</code> 消失</td><td><code>g.sum(axis=0)</code></td></tr><tr><td><code>dx</code></td><td><code>(N, in)</code>，和 <code>x</code> 同形</td><td><code>(N,out)(out,in)</code></td><td><code>g @ W</code></td></tr></tbody></table>
+<p>这张表是 §6 的全部内容，也是整个阶段 3 的核心。<b>它不是要背的</b> —— 每一行都是"目标形状只有一种拼法能拼出来"。下次遇到新层（3b 的 RMSNorm、3c 的 CrossEntropy、阶段 4 的注意力），你就用同样的方式问："结果要和谁同形？那谁能消失？" 先用一组真数字把四行全走一遍：</p>
+<div class="excard"><div class="exhead"><span class="extag">手算例子 · 先自己算，再点下一行</span><button class="exnext" type="button">下一行 ▶</button><span class="excount">1/5</span></div><div class="exbody"><div class="exline">取 $x=\begin{bmatrix}1&amp;2&amp;3\\4&amp;5&amp;6\end{bmatrix}$（$(2,3)$），$W=\begin{bmatrix}1&amp;0&amp;0\\0&amp;1&amp;0\end{bmatrix}$（$(2,3)$），$g=\begin{bmatrix}1&amp;1\\1&amp;1\end{bmatrix}$（$(2,2)$）。</div><div class="exline" hidden>$y=xW^{\top}=\begin{bmatrix}1&amp;2\\4&amp;5\end{bmatrix}$，形状 $(2,2)=(N,\mathrm{out})$。</div><div class="exline" hidden>$dW=g^{\top}x=\begin{bmatrix}5&amp;7&amp;9\\5&amp;7&amp;9\end{bmatrix}$：$g^{\top}$ 两行都是 1，所以每行就是 $x$ 各列的和，形状 $(2,3)$ 和 $W$ 同形。</div><div class="exline" hidden>$db=\textstyle\sum_n g_{n,:}=[2,2]$（<code>g.sum(axis=0)</code>）：$N$ 消失，形状 $(2,)$ 和 $b$ 同形。</div><div class="exline" hidden>$dx=gW=\begin{bmatrix}1&amp;1&amp;0\\1&amp;1&amp;0\end{bmatrix}$，形状 $(2,3)$ 和 $x$ 同形。</div></div></div>
+<p>下面这张图把 §2.3 和 §2.4 合成一个能点的物件：换 <code>axis</code> 看哪根轴被压掉、点结果格看是哪几个数 加成它 —— <code>db = g.sum(axis=0)</code> 那条就是同一个动作。</p>
+<div class="fig" data-fig="axes" role="img" aria-label="可视化：axes"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<h4 id="sec-2-6">2.6 标量→数组：反向传播到底怎么推（不需要矩阵微分）</h4>
+<p>阶段 1 你推的是"一个数对一个数"的导数。现在一个"数"变成一摞数，看上去要先学矩阵微分 —— <b>不用</b>。矩阵微分那套（$\partial Y/\partial X$ 是一个四阶张量、还要小心谁是分子布局） 在这门课里一次都不需要。你需要的是下面三条机械规则，它们把"对一摞数求导"全部翻译成 你已经会的那件事：<b>对某个位置求导，别的数当常数</b>。</p>
+<p><b>规则一：只写一个位置的标量式子。</b> 比如 <code>Linear</code> 的第 $n$ 个样本、第 $o$ 个输出：</p>
+<p>$$y_{no}=\sum_{k} x_{nk}\,W_{ok}+b_o$$</p>
+<p>现在问题变回了阶段 1 的问题：<b>这一个输出，对其中一个数敏感吗？</b> 敏感多少？</p>
+<p>$$\frac{\partial y_{no}}{\partial W_{ok}}=x_{nk},\qquad \frac{\partial y_{no}}{\partial b_{o'}}=[\,o'=o\,],\qquad \frac{\partial y_{no}}{\partial x_{nk'}}=W_{ok}[\,k'=k\,]$$</p>
+<p>第三个式子里 $[\,o'=o\,]$ 读作"只有 $o'=o$ 时是 1，否则是 0"。这不是新东西 —— 它就是阶段 1 里 <code>__mul__</code> 那句"局部导数是另一个操作数的值"，只不过数组里还得先回答 "你问的是不是<b>同一个位置</b>"。</p>
+<p><b>规则二：谁被用过多次，多份贡献就加起来。</b> $W_{ok}$ 这一个数被 $N$ 个样本的第 $o$ 路输出同时用着，所以要把 $N$ 份贡献合并， 每份 = 那一路输出的梯度 $\times$ 规则一算出的局部导数：</p>
+<p>$$\frac{\partial L}{\partial W_{ok}}=\sum_{n} g_{no}\,x_{nk},\qquad g_{no}\equiv\frac{\partial L}{\partial y_{no}}$$</p>
+<p>到这里<b>推导已经结束了</b>。它就是阶段 1 那句 <code>self.grad += out.grad * 局部导数</code>， 只是把"所有用到它的地方"显式写成了求和号。剩下的只是把这条逐元素式子"收回"成 numpy 写法。</p>
+<p><b>规则三：结果必须和它对应的量同形，靠 §2.3 / §2.4 收回去。</b> "收回"只有两种动作，而且都是形状问题，不是数学问题：</p>
+<table><thead><tr><th>逐元素式子里的样子</th><th>形状上的动作</th><th>numpy</th></tr></thead><tbody><tr><td>$\sum_{n} g_{no}x_{nk}$：对 $n$ 求和，剩下 $(o,k)$ 两根轴</td><td>让 $n$ 消失 → $(\mathrm{out},N)(N,\mathrm{in})$</td><td><code>g.T @ x</code></td></tr><tr><td>$\sum_{n} g_{no}$：对 $n$ 求和，只剩一根 $o$ 轴</td><td>让 $n$ 消失、不合成新轴</td><td><code>g.sum(axis=0)</code></td></tr><tr><td>$\sum_{o} g_{no}W_{ok}$：对 $o$ 求和，剩下 $(n,k)$</td><td>让 $o$ 消失 → $(N,\mathrm{out})(\mathrm{out},\mathrm{in})$</td><td><code>g @ W</code></td></tr><tr><td>没有任何求和，$g$ 和某个量逐位置相乘</td><td>一一对应，形状不变</td><td><code>g * something</code></td></tr></tbody></table>
+<p>读法：<b>先数"求和号下有哪几个下标"，再数"结果还剩哪几根轴"</b>。剩的轴必须正好等于目标 张量的轴（§2.5 那张表说的就是这件事），不等就转置或 <code>reshape</code> 让它等于。</p>
+<p><b>唯一真正的新东西：广播。</b> 标量时代不存在"一个数被复制去参与很多个输出"，数组里到处都是（<code>b</code>、<code>Scale</code> 的 <code>w</code>、 <code>RMSNorm</code> 的 <code>s</code>、以及任何"求均值"）。它和求和是一对反着走的操作：</p>
+<table><thead><tr><th>正向</th><th>反向</th><th>为什么</th></tr></thead><tbody><tr><td><b>广播</b>（<code>b</code> 被复制成 $N$ 行去相加）</td><td><b>求和</b>（沿被复制的那个轴把贡献合并）</td><td>那个数被用了 $N$ 次，规则二</td></tr><tr><td><b>求和 / 求均值</b>（$N$ 个位置合成一个数）</td><td><b>广播</b>（每个位置都分到同一份，均值再除 $N$）</td><td>每个位置都对那个数有贡献，且贡献相同</td></tr></tbody></table>
+<p>两边各用一组小数字走一遍（先自己算，再点下一行对答案）：</p>
+<div class="excard"><div class="exhead"><span class="extag">手算例子 · 先自己算，再点下一行</span><button class="exnext" type="button">下一行 ▶</button><span class="excount">1/8</span></div><div class="exbody"><div class="exline">先看广播这一半。正向 $y = x + b$：$x$ 是 $(2,3)$，而 $b$ 只有 3 个数，被复制成 2 行去相加。</div><div class="exline" hidden>所以 $b$ 的第 $j$ 个数同时出现在 $y_{0j}$ 和 $y_{1j}$ 里 —— 它被用了两次。</div><div class="exline" hidden>上游给来 $g$：第 0 行 $[1,2,3]$、第 1 行 $[4,5,6]$。问 $b_j$ 该收多少？先自己算。</div><div class="exline" hidden>答案：用了几次就收几份，$\partial L/\partial b_j = g_{0j} + g_{1j}$，于是 $db = [1+4,\ 2+5,\ 3+6] = [5,7,9]$。</div><div class="exline" hidden>形状 $(3,)$ 和 $b$ 同形。写成 numpy 就是 <code>g.sum(axis=0)</code>：正向被复制的那根轴，反向沿它求和。</div><div class="exline" hidden>再看均值这一半。正向 $m = \frac{1}{6}\sum_i y_i$：6 个数合成 1 个，上游只给来一个数 $g_m = \partial L/\partial m$。</div><div class="exline" hidden>每个 $y_i$ 都以同样的方式（乘 $\frac{1}{6}$）参与了 $m$，所以每人分回同一份：$\partial L/\partial y_i = g_m/6$，六格相同、形状和 $y$ 同形。</div><div class="exline" hidden>对号入座：<code>Linear</code> 的 <code>db = g.sum(axis=0)</code> 是第 4 行那条；<code>loss = sum/N</code> 的 <code>/N</code> 是第 7 行那条（均值比求和多除一个 $N$）。</div></div></div>
+<p>这两条规则用眼睛看比用字读快：下面这张图把两半都做成真的在流的动画 —— 左边每个 $g$ 格吐出一颗点、落进同列的 $db$ 格（同列两颗加起来才是答案，所以你能看见"加"这个动作）； 右边那一个 $g_m$ 裂成 6 颗一样大的点、各回各的 $y_i$。点 ▶ 看它流、⏭ 一格一格走； 滑杆换 $g$ 的尺度和 $g_m$ 的大小；点「均值/求和」切换，右边每颗点会从 $g_m/6$ 变成 $g_m$ —— <code>/N</code> 的全部含义就在这一切换里。</p>
+<div class="fig" data-fig="bcastbwd" role="img" aria-label="可视化：bcastbwd"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p><b>为什么永远不用写雅可比。</b> 严格说 $\partial y/\partial x$ 是 $(N\cdot\mathrm{out})\times(N\cdot\mathrm{in})$： 阶段 5 那批（$B{=}4$、$\mathrm{ctx}{=}32$、$d{=}48$）一个 <code>Linear</code> 就是 $6144\times6144$，三千八百万格， 比整个模型都大。但反向算的从来不是它，而是<b>上游那一束梯度乘上它</b>（$g^{\top}J$，形状 $(N,\mathrm{in})$）—— 一次矩阵乘法，那个大矩阵从未被造出来。<code>gradcheck</code> 同理：逐个元素扰动，比的也是这一侧的数（§5）。</p>
+<p><b>阶段 1 的每条法则，在数组世界对应什么</b>：</p>
+<table><thead><tr><th>标量自动微分（阶段 1）</th><th>numpy 层（阶段 3）</th><th>变了吗</th></tr></thead><tbody><tr><td>一个节点一个 <code>.grad</code></td><td>一个张量一个 <code>.grad</code>，<b>和它对应的量同形</b></td><td>只是形状</td></tr><tr><td><code>self.grad += out.grad * 局部导数</code></td><td>逐元素乘，再按参数剩下的轴求和/收缩</td><td>只是形状</td></tr><tr><td>链式法则</td><td>完全一样：每层收到的 <code>g</code> 就是上游算好的 $\partial L/\partial(\text{本层输出})$</td><td>没新数学</td></tr><tr><td>逆拓扑序逐个节点摊梯度</td><td>完全一样，"节点"换成了"层"</td><td>没新数学</td></tr><tr><td>（不存在）</td><td>广播的反向是求和</td><td><b>唯一的新东西</b></td></tr></tbody></table>
+<p><b>推任何新层的三步清单</b>（3b、3c、阶段 4 每一层都这么走）：</p>
+<li>写出<b>一个位置</b>的标量输出式子，带下标，别的当常数；</li><li>对它求导 → 得到"这一个输入/参数位置该收到多少"；</li><li>问两个问题：这个量<b>被几个位置用过</b>（→ 沿哪些轴求和），剩下的轴<b>是不是正好等于目标形状</b></li></ol>
+<p>（不等就转置/<code>reshape</code>）。写完立刻交给 <code>gradcheck</code>（§5）判，别靠感觉。</p>
+<p>顺手练一遍：<code>GELU</code> 是纯逐元素的，没有参数，输入输出同形。用上面三步推它的 <code>backward</code> —— 你会发现第 3 步的两个答案分别是"没有被多个位置用过"和"轴一根不多一根不少"， 所以它的 <code>backward</code> 只有一行 <code>return g * d(x)</code>，<b>完全不碰任何 <code>.grad</code></b>。 这不是特例，是这套方法的必然结果；3b §3 会正式用到它。</p>
+<p>同一套方法第一次真正吃力的地方是 3b 的 <code>RMSNorm</code>：那里分母也依赖 $x$， 所以规则一"别的数当常数"这一句必须分两步走（先固定分母求导，再补上分母被改动的那份）。 那是这套推法里唯一需要"多算一笔"的情形，3b §4 会带你把它算出来 —— 你现在先把 "逐元素写出来 → 数下标 → 收回形状"这个动作练熟。</p>
+<p><b>这条动线是怎么从上一行变到下一行的。</b> 下面这张总表给出每层的形状；整条动线其实只有四种动作：</p>
+<li><b>查表加一根轴</b> —— <code>Embedding</code> 把每个词号换成 $d$ 个浮点数：$(B,T)\to(B,T,d)$；</li><li><b>线性层只换最后一轴</b> —— $\mathrm{in}\to\mathrm{out}$，前面的 $(B,T)$ 原样带着走：qkv（$d\to 3d$）、fc1（$d\to 4d$）、fc2（$4d\to d$）、head（$d\to V$）全是它；</li><li><b>reshape/transpose 不搬数</b> —— 拆头 $d=H\times(d/H)$、合头、$H$ 与 $T$ 换位，只是重新划线、换顺序数；</li><li><b>matmul 收缩内维</b> —— 配对的两根轴逐对相乘再求和、消失，其余轴都活着：$q\,k^{\top}$ 消掉 $d/H$，$\mathrm{attn}\,v$ 消掉键轴 $T$。</li></ol>
+<p>其余的层（<code>RMSNorm</code>、GELU、softmax、掩码、残差）形状一动不动。</p>
+<div class="fig" data-fig="shapes" role="img" aria-label="可视化：shapes"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>下面这张动画把 15 步逐个走给你看，而且每一步画的是<b>张量本身</b>（可拖动转视角的 3D 方块），不是抽象的形状数字：你能看见一格整数被撑成一列浮点数、一块板子沿特征轴切成 $H$ 片、两次 <code>@</code> 把一根轴配对乘掉只剩一张热力矩阵。点 ▶ 连播、⏭ 走一步，或直接点步名跳过去；滑杆改 $B,T,d,H,V,L$，图里每个数字当场跟着变。第一步里<b>一行是一条序列（b=0、b=1），一列是一个 token</b>；格子画不下时只画前几个、余下的用 <code>…</code> 标出，真实长度写在图上。</p>
+<div class="fig" data-fig="shapes3d" role="img" aria-label="可视化：shapes3d"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-3" data-stage="s03a"><h2>3. TODO-5A：<code>Scale</code> —— 先跑绿一次</h2><div class="sec-act"><button data-check="TODO-5A">跑 TODO-5A 的单项检查</button><button data-edit="TODO-5A">跳到编辑器</button><a class="sec-jump" href="/?stage=s03a">在测评台里打开 →</a></div><p><code>src/minigpt/nn.py</code> 里新加了一个最小的层：</p>
+<p>$$y = w \cdot x,\qquad w \text{ 是一个标量参数},\ x \in \mathbb{R}^{B\times T\times C}$$</p>
+<p>它<b>没有形状问题</b>（<code>w</code> 是 0 维数组，和任何形状相乘都不用 reshape）， 但它有整套流程：<code>forward</code> 要存缓存、<code>backward</code> 要累加参数梯度、要返回输入梯度、 <code>gradcheck</code> 要变绿。所以先在这里把流程走通。</p>
+<h4 id="sec-3-1">3.1 契约</h4>
+<table><thead><tr><th>方法</th><th>要交出什么</th><th>形状</th></tr></thead><tbody><tr><td><code>forward(x)</code></td><td><code>y = w * x</code>，并把 <code>x</code> 存进 <code>self._x</code></td><td>和 <code>x</code> 同形</td></tr><tr><td><code>backward(g)</code></td><td>① <code>self.w.grad += Σ(g·x)</code> ② <code>return w * g</code></td><td>①标量 ②和 <code>x</code> 同形</td></tr></tbody></table>
+<p>为什么 <code>dw = Σ(g·x)</code> 是个求和？因为 <code>w</code> 只有一个数，而 <code>g·x</code> 有 <code>B·T·C</code> 个元素 —— <code>w</code> 对每个位置都有贡献，所以每个位置的梯度都要<b>汇到同一个数上</b>。 这正是 §2.3 那条规律的极端情形：所有轴都压掉。</p>
+<p>为什么 <code>dx = w·g</code> 不用求和？因为 <code>x</code> 和 <code>y</code> 同形，一一对应，没有东西需要合并。</p>
+<h4 id="sec-3-2">3.2 写完就跑这三条</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>python tests/test_layers_a.py          # 只写了 Scale 时，第 1~3 条该绿，第 4 条会说卡在 TODO-5
+python webapp/checks.py TODO-5A        # 只测这一条（和网站按钮同一段代码）</code></pre></figure>
+<p>网站里：阶段 3a → 右侧「单项快测」→ <code>TODO-5A</code> 旁边点「测」。 期望看到 <code>PASS</code>，明细里最大相对误差在 <code>1e-9</code> 量级。</p>
+<details class="answer"><summary>参考答案 · TODO-5A <code>Scale</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        self._x = np.asarray(x, dtype=np.float64)
+        <span class="kw">return</span> self._x * self.w.data
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        self.w.grad += np.<span class="bi">sum</span>(g * self._x)      <span class="com"># 累加，不是覆盖</span>
+        <span class="kw">return</span> g * self.w.data                  <span class="com"># dx 只要 w 和 g，不需要 y 本身</span></code></pre></figure>
+<p><code>self._x</code> 前面那个下划线不是风格，是功能：<code>Module._collect()</code> 会跳过下划线开头的属性， 所以缓存不会被当成子模块登记（§4.1）。写成 <code>self.x = ...</code> 的话，参数收集会试图把 一个 numpy 数组当模块去递归，报错信息会非常难懂。</p></div></details></section><section class="sec" id="sec-4" data-stage="s03a"><h2>4. 五条约定，以及承载它们的已给出代码</h2><p>现在回头看这些规矩 —— 你在 §3 已经见过其中两条了（缓存的下划线、梯度的累加）。</p>
+<li><b>激活值形状一律 <code>(B, T, C)</code></b>：B 条序列、每条 T 个 token、每个 C 维。</li></ol>
+<p>所有层的 forward 都是 <code>(B,T,C) → (B,T,C)</code>（Linear 会改最后一维）。</p>
+<li><b>全部 <code>float64</code>、行主序、连续内存</b>。</li></ol>
+<p>用 float64 是为了梯度校验可信：float32 的有限差分噪声约 1e-3 量级，会盖过真误差（存检查点时再降 float32）。</p>
+<li><b><code>Parameter</code> 同时有 <code>.data</code> 和 <code>.grad</code>，形状相同</b>；梯度<b>累加</b>，清零由训练循环负责。</li></ol>
+<p>§3 那条"backward 两次后梯度翻倍"的判据就是在钉这一条。</p>
+<li><b><code>Module</code> 协议只有两个方法</b>：<code>forward(*inputs)</code> 返回输出并把反向要用的中间量存进</li></ol>
+<p><code>self._缓存</code>；<code>backward(grad_out)</code> 返回<b>对输入的梯度</b>（没有可导输入就返回 <code>None</code>）， 同时把参数梯度累加进 <code>p.grad</code>。 只有这两条纪律，任何层都能被 <code>gradcheck</code> 自动验证 —— 这是整个协议存在的理由。</p>
+<li><b>层内不藏随机性</b>：<code>forward</code> 必须是 (参数, 输入) 的纯函数。</li></ol>
+<p>dropout、随机裁剪都不许出现在这一层（本阶段 dropout=0，阶段 8 才会引入， 而且引入时要能被"关掉"以便梯度校验）。</p>
+<h4 id="sec-4-1">4.1 关于"缓存"的规矩</h4>
+<p><code>backward</code> 需要的中间量必须在 <code>forward</code> 里存下来，命名统一用下划线前缀： <code>self._x</code>、<code>self._x_flat</code>、<code>self._r</code>、<code>self._probs</code>、<code>self._ids</code>。 下划线开头是有功能的：<code>Module._collect()</code> 会<b>跳过</b>下划线属性，所以缓存不会被误当成子模块。</p>
+<p>另一个隐含约定：<b>一次 forward 配一次 backward</b>。中间不能插入别的 forward， 否则缓存被覆盖，梯度会算到另一条数据上。这个 bug 在后面写梯度累积（gradient accumulation）时 一定会来找你，记住这个约定。</p>
+<h4 id="sec-4-2">4.2 <code>Parameter</code>：三行实现里的三个决定</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code>__slots__ = (<span class="str">"data"</span>, <span class="str">"grad"</span>, <span class="str">"name"</span>, <span class="str">"wd_exempt"</span>)
+self.data = np.ascontiguousarray(np.asarray(data, dtype=np.float64))</code></pre></figure>
+<table><thead><tr><th>决定</th><th>理由</th><th>不这样会怎样</th></tr></thead><tbody><tr><td><code>__slots__</code></td><td>写错属性名（<code>self.grads</code>）立刻 <code>AttributeError</code></td><td>拼错的名字静静挂在对象上，梯度永远为 0</td></tr><tr><td>强制 <code>float64</code></td><td>有限差分的噪声底约 $\mathrm{ulp}(L)/\epsilon$；float32 下这个噪声是 $10^{-3}$ 量级</td><td>噪声盖过真误差，判据不可信</td></tr><tr><td>强制 contiguous</td><td><code>reshape(-1)</code> 只有在连续内存上才是<b>视图</b></td><td>非连续时返回副本，<code>gradcheck</code> 扰动写不进真内存 → <b>假通过</b></td></tr><tr><td><code>wd_exempt</code></td><td>bias 和 norm 的缩放系数不是"权重矩阵"</td><td>AdamW 会把它们衰减到 0，模型变笨</td></tr></tbody></table>
+<p><code>zero_grad()</code> 用 <code>self.grad[...] = 0.0</code> 而不是 <code>self.grad = np.zeros_like(...)</code>： 前者原地清零，后者换了个对象 —— 如果优化器已经攥着旧引用（阶段 5 的 Adam 动量表按 <code>id(p)</code> 建索引），换对象会让它更新到一块被丢弃的内存上。这种 bug 不会报错，只会让 训练"莫名其妙地慢"。</p>
+<h4 id="sec-4-3">4.3 <code>Module</code>：只有两个方法的协议</h4>
+<p><code>__call__</code> 转调 <code>forward</code>，所以你写 <code>layer(x)</code> 而不是 <code>layer.forward(x)</code>。 差别不是风格：以后加 dropout、加缓存、加梯度检查开关，都塞在 <code>__call__</code> 里， <code>forward</code> 保持纯函数 —— 这正是约定 5（"forward 必须是参数与输入的纯函数"）能守住的原因。</p>
+<p><code>_collect()</code>（参数收集）有三个不显眼但关键的细节：</p>
+<li><b>跳过下划线开头的属性</b>。<code>self._x</code>、<code>self._probs</code>、<code>self._x_flat</code> 是反向用的缓存，</li></ol>
+<p>不是子模块。没有这条规矩，缓存会被当成参数登记进检查点。</p>
+<li><b>按 <code>id()</code> 去重</b>。weight tying 时输出头"借用"词嵌入的同一个 Parameter 对象，</li></ol>
+<p>登记两次会导致三个后果：优化器对它走两步（等效 lr 翻倍）、检查点存两份、 判据"参数不重复登记"挂。</p>
+<li><b>靠 <code>vars(self)</code> 的插入顺序</b>生成名字（<code>tok.weight</code>、<code>blocks.0.attn.q.W</code>）。</li></ol>
+<p>顺序稳定 ⇒ 检查点的 key 稳定 ⇒ 以后 C++ 侧能按同样的名字读走权重。</p>
+<h4 id="sec-4-4">4.4 <code>Linear.__init__</code> 的 <code>std*sqrt(2/fan_in)</code></h4>
+<p>做法：权重按 <code>W = rng.normal(0, std) * np.sqrt(2 / fan_in)</code>（<code>std=0.02</code>）初始化，给你的代码已经这样写了。 你自己写新层时，凡"若干个输入加权求和"出来的矩阵，都套同一个式子。 两个因子各管一件事（一个管与 fan-in 无关、一个管整体尺度小），别把它们合并成一个魔法数 —— 为什么正好是这个数，见 §11 进阶推导 A。</p>
+<h4 id="sec-4-5">4.5 <code>init_resid_scale</code>：$1/\sqrt{2L}$ 的用法</h4>
+<p>做法：构造完模型后，把每层<b>残差出口</b>的两个矩阵 —— <code>attn.proj.W</code> 与 <code>mlp.fc2.W</code> —— 乘上 $1/\sqrt{2L}$。 给你的代码已经做了这件事（<code>GPT.__init__</code> 的最后一步调用 <code>init_resid_scale(self, cfg.n_layer)</code>）。</p>
+<p>三个"不乘"：</p>
+<li>q/k/v/fc1 不乘 —— 它们在支路内部，缩放它们等于改变支路的表达能力；</li><li>bias 不乘；</li><li>norm 的 <code>w</code> 不乘 —— 后两个本来就不该被缩放。</li></ul>
+<p>判据 <code>GIV-3</code> 数的是出口矩阵的范数比值：$L=3$ 时正好 $\sqrt6=2.4495$，并且别的张量一位不动。 为什么恰好是 $1/\sqrt{2L}$，见 §11 进阶推导 B；能切换 pre/post-norm 两种假设的动画在 <a href="s05.html#sec-3">阶段 5 §3.3</a>。</p>
+<h4 id="sec-4-6">4.6 "一次 forward 配一次 backward"</h4>
+<p>缓存存在 <code>self._xxx</code> 上，所以中间插入第二次 forward 会把第一次的缓存覆盖掉， 于是 backward 算的是<b>另一条数据</b>的梯度 —— 形状全对、loss 照降，只有梯度是错的。 阶段 7 做梯度累积（micro-batch 攒一次更新）时必须严格交替：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>for micro in micros:        # 正确：forward → backward → (backward 里累加参数梯度)
+    loss = model.forward(mb); model.backward(...)
+optimizer.step()            # 攒完再走一步</code></pre></figure>
+<p>而不是"先把所有 forward 跑完、再统一 backward"。</p>
+<p>下面这张时间线把三种排法（<code>fwd→bwd</code> / <code>fwd→fwd→bwd</code> / <code>fwd→bwd→bwd</code>）真算一遍，把每种排法解析梯度对数值梯度的最大相对误差摆出来 —— 只有严格交替的那一种是 1e-10 量级，另外两种错得毫不报错。</p>
+<div class="fig" data-fig="cachepair" role="img" aria-label="可视化：cachepair"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-5" data-stage="s03a"><h2>5. 你的测谎仪：<code>gradcheck</code></h2><p><code>src/minigpt/gradcheck.py</code> 已经写好，值得花 10 分钟读一遍，因为它就是你判据的全部。</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>ok, worst, detail = gradcheck(Linear(<span class="num">5</span>, <span class="num">3</span>, rng=rng), [rng.standard_normal((<span class="num">2</span>, <span class="num">4</span>, <span class="num">5</span>))])</code></pre></figure>
+<p>它做的事：</p>
+<li>用给定输入跑一次 <code>module(*inputs)</code>，得到输出。</li><ol><li>输出是数组时，随机生成一个<b>余向量 cot</b>（constant of projection），</li></ol>
+<p>把"输出 → 标量目标"固定成 $\sum \mathrm{out}\odot\mathrm{cot}$（代码里是 <code>sum(out * cot)</code>）。 有了标量才有梯度可谈。</p>
+<ul><li>输出本来就是标量（如 CrossEntropy），直接用。</li></ul><ul><li>跑一次 <code>module.backward(...)</code>，记下每个参数的解析梯度、以及<b>对输入的</b>梯度。</li><li>对每个张量<b>抽查最多 24 个元素</b>（<code>_MAX_ENTRIES_PER_TENSOR</code>），做中心差分</li></ul>
+<p>$$\frac{\partial f}{\partial p}\approx\frac{f(p+\epsilon)-f(p-\epsilon)}{2\epsilon}$$</p>
+<p>并和解析值比。</p>
+<li>判定：相对误差 ≤ <code>tol</code>，或绝对误差 ≤ <code>atol</code>。</li></ol>
+<p>三个必须知道的细节：</p>
+<li><b>整数输入自动跳过</b>：token id 不可导，所以 <code>Embedding</code> 只查参数梯度。</li></ul>
+<p>这不是"检查变少 = 放心"，<code>gradcheck</code> 在<b>一个量都没查</b>时会直接判失败 （"这不是通过，是没测"）。</p>
+<li><b><code>eps</code> 和 <code>atol</code> 是配套的</b>：差分的绝对噪声约为 $\mathrm{ulp}(L)/\epsilon$。</li></ul>
+<p>当某个梯度本身只有 $10^{-8}$（数组层里很常见，多个大数相减的抵消结果）， 相对误差看着像 $10^{-2}$ 其实是噪声底。阶段 4 起判据用 <code>eps=1e-5, atol=1e-9</code> 就是这个原因。 反过来，把 <code>atol</code> 调到 <code>1e-3</code> 就是在自欺 —— 它能盖住真 bug。</p>
+<li><b>输入必须是连续数组</b>：否则 <code>reshape(-1)</code> 返回副本，扰动写不进真内存，</li></ul>
+<p>校验会<b>假通过</b>。<code>gradcheck</code> 里那句 <code>np.ascontiguousarray</code> 就是在防这个。</p>
+<p>"噪声底"这三个字值得亲眼看一次：把 $\epsilon$ 从 $10^{-9}$ 扫到 $10^{-1}$，误差走出一条 U 形曲线 —— 左支是舍入噪声（$\propto 1/\epsilon$）、右支是截断误差（$\propto \epsilon^{2}$），谷底夹在中间。 下面这张图真算这条曲线，并把 <code>eps=1e-5/1e-6</code> 与 <code>atol=1e-9</code> 标在图上：</p>
+<div class="fig" data-fig="epsnoise" role="img" aria-label="可视化：epsnoise"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>它凭什么可信？这一章你先信它，因为 §7 第 1 条判据就是"你在 §3 写的 Scale 通过它"， 而 Scale 的导数你算得出来。更硬的证据在 <a href="s03c.html#sec-4">3c §4</a>： 那里用一个已知对的层和一个故意错的层，反过来考 <code>gradcheck</code>。</p><div class="fig" data-fig="gradcheck" role="img" aria-label="可视化：gradcheck"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-6" data-stage="s03a"><h2>6. TODO-5 / TODO-6：<code>Linear</code> —— 本阶段最重要的一层</h2><div class="sec-act"><button data-check="TODO-5">跑 TODO-5 的单项检查</button><button data-edit="TODO-5">跳到编辑器</button><button data-check="TODO-6">跑 TODO-6 的单项检查</button><button data-edit="TODO-6">跳到编辑器</button><a class="sec-jump" href="/?stage=s03a">在测评台里打开 →</a></div><p>$$y = x\,W^{\top} + b,\qquad W \in \mathbb{R}^{\,\mathrm{out}\times\mathrm{in}},\quad b \in \mathbb{R}^{\,\mathrm{out}},\quad x \in \mathbb{R}^{B\times T\times \mathrm{in}}$$</p>
+<h4 id="sec-6-1">6.1 forward 的四步</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>1) 记住：输入形状 self._in_shape、输出形状 self._out_shape（最后一维换成 out_f）
+2) 摊平：flat = x.reshape(-1, in_f)      # B·T 个位置共用同一个 W，所以必须摊平成二维
+3) 计算：y = flat @ W.T   (+ b)
+4) 还原：return y.reshape(self._out_shape)</code></pre></figure>
+<p>步骤 2 的依据就是 §2.2：<code>C</code> 是最后一轴，摊平不打乱它。 步骤 3 的依据是 §2.4：<code>(N,in) @ (in,out) → (N,out)</code>。</p>
+<p>两个坑：</p>
+<li>忘记 <code>W.T</code>：<code>(N,in) @ (out,in)</code> 形状直接不匹配，这是<b>会报错</b>的那种错，好事；</li></ul>
+<p>真正危险的是 <code>W</code> 存成 <code>(in,out)</code> 的写法，形状全对但梯度永远错 —— 所以我们统一 把 <code>W</code> 存成 <code>(out, in)</code>，让每一<b>行</b>对应一个输出神经元。</p>
+<li>用 <code>x.shape</code> 当输出形状还原：<code>(B,T,C)</code> 变成 <code>(B,T,out_f)</code>，最后一维不同，</li></ul>
+<p>必须自己构造 <code>_out_shape</code>。（我就踩过：<code>cannot reshape array of size 24 into shape (2,4,5)</code>。）</p>
+<h4 id="sec-6-2">6.2 backward 的三件产出（用形状推，别背）</h4>
+<p>已知 $g \equiv \partial L/\partial y$（代码里的 <code>g</code>，形状和 forward 的输出一致）， 三件产出按形状<b>唯一</b>确定 —— 每一行的推理都只有一条路：</p>
+<table><thead><tr><th>要交出</th><th>形状推理</th><th>结果</th></tr></thead><tbody><tr><td>$\partial L/\partial W$</td><td>要和 $W$ 同形 $(\mathrm{out},\mathrm{in})$ → 只能是 $(\mathrm{out},N)(N,\mathrm{in})$</td><td><code>g2.T @ flat_x</code></td></tr><tr><td>$\partial L/\partial b$</td><td>要和 $b$ 同形 $(\mathrm{out},)$ → 让 $N$ 消失（§2.3）</td><td><code>g2.sum(axis=0)</code></td></tr><tr><td>$\partial L/\partial x$（返回值）</td><td>要和 $x$ 同形 $(\ldots,\mathrm{in})$ → $(N,\mathrm{out})(\mathrm{out},\mathrm{in})$ 再还原</td><td><code>(g2 @ W).reshape(_in_shape)</code></td></tr></tbody></table>
+<p>其中 <code>g2 = g.reshape(-1, out_f)</code>。</p>
+<p>如果这张表还是太抽象，下一节用 12 个具体数字把它走一遍。</p>
+<h4 id="sec-6-3">6.3 用具体数字走一遍（判据里就是这一组）</h4>
+<p>这是 <code>tests/test_layers_a.py</code> 第三组的例子，形状故意小到可以手算： <code>B=1, T=2, in=2, out=3</code>。</p>
+<p>$$\begin{aligned} x&amp;=\begin{bmatrix}1&amp;2\\3&amp;4\end{bmatrix}\in\mathbb{R}^{2\times 2}\quad(\text{拍平后 }N{=}2,\ \mathrm{in}{=}2),\\ W&amp;=\begin{bmatrix}1&amp;0.5\\-2&amp;1\\0&amp;3\end{bmatrix}\in\mathbb{R}^{3\times 2}\quad(\text{第 }o\text{ 行，}o=0,1,2),\\ b&amp;=\begin{bmatrix}0.1&amp;-0.2&amp;0.3\end{bmatrix}\in\mathbb{R}^{3},\qquad g=g_2=\begin{bmatrix}1&amp;0&amp;-1\\0.5&amp;2&amp;0\end{bmatrix}\in\mathbb{R}^{2\times 3}\quad(N{=}2,\ \mathrm{out}{=}3). \end{aligned}$$</p>
+<p><b>正向</b>（<code>y = flat @ W.T + b</code>，<code>W.T</code> 的第 <code>o</code> 行就是 <code>W</code> 的第 <code>o</code> 列）：</p>
+<p>$$\begin{aligned} y_0&amp;=[1,2]\,W^{\top}+b =\bigl[1\cdot1+2\cdot0.5,\;1\cdot(-2)+2\cdot1,\;1\cdot0+2\cdot3\bigr]+b =[2.1,\,-0.2,\,6.3],\\ y_1&amp;=[3,4]\,W^{\top}+b =\bigl[3+4\cdot0.5,\;-6+4,\;12\bigr]+b =[5.1,\,-2.2,\,12.3]. \end{aligned}$$</p>
+<p><b><code>dW[o,i] = Σ_n g[n,o] · x[n,i]</code></b> —— 注意这个求和压掉的是 <code>n</code>（样本轴）， 留下 <code>o</code> 和 <code>i</code>，所以结果和 <code>W</code> 同形 <code>(3,2)</code>。这就是 <code>g2.T @ flat</code>：</p>
+<p>$$\begin{aligned} dW_{0,:}&amp;=1\cdot[1,2]+0.5\cdot[3,4]=[2.5,\,4.0]\quad(\text{g 的第 }0\text{ 列}=[1,0.5]),\\ dW_{1,:}&amp;=0\cdot[1,2]+2\cdot[3,4]=[6.0,\,8.0],\\ dW_{2,:}&amp;=(-1)\cdot[1,2]+0\cdot[3,4]=[-1.0,\,-2.0]. \end{aligned}$$</p>
+<p><b><code>db[o] = Σ_n g[n,o]</code></b> —— 同样压掉 <code>n</code>，但 <code>b</code> 只有一维，所以是 <code>g2.sum(axis=0)</code>：</p>
+<p>$$db=\begin{bmatrix}1+0.5&amp;0+2&amp;-1+0\end{bmatrix}=\begin{bmatrix}1.5&amp;2.0&amp;-1.0\end{bmatrix}$$</p>
+<p><b><code>dx[n,i] = Σ_o g[n,o] · W[o,i]</code></b> —— 这次压掉的是 <code>o</code>（输出轴），留下 <code>n</code> 和 <code>i</code>， 所以结果和 <code>x</code> 同形。这就是 <code>g2 @ W</code>：</p>
+<p>$$\begin{aligned} dx_{0,:}&amp;=1\cdot[1,0.5]+0\cdot[-2,1]+(-1)\cdot[0,3]=[1.0,\,-2.5],\\ dx_{1,:}&amp;=0.5\cdot[1,0.5]+2\cdot[-2,1]+0\cdot[0,3]=[-3.5,\,2.25]. \end{aligned}$$</p>
+<p>三个观察，每一个都是判据会盯着的：</p>
+<li><code>dW</code> 和 <code>db</code> 都压掉了 <code>n</code>，因为 <code>W</code>、<code>b</code> 被所有样本共用 —— <b>"谁被重复使用，梯度就往谁身上汇"</b>。</li><li><code>dx</code> 压掉的是 <code>o</code>，因为 <code>x</code> 和 <code>y</code> 是一一对应的（§3.2 里 <code>Scale</code> 的 <code>dx</code> 甚至不求和，同一个道理）。</li><li><code>db</code> 是 <code>dW</code> 的一个特例：如果把 <code>b</code> 看成"输入恒为 1 的那一列权重"，</li></ol>
+<p><code>g2.sum(axis=0)</code> 正是 <code>g2.T @ ones</code> —— 这不是巧合，是为什么 bias 不吃 weight decay 的伏笔。</p>
+<p>判据会把你写的矩阵结果和上面这组按定义算出来的数逐元素比，误差要 ≤ 1e-12。 所以"形状对得上但算错了"在这关过不去。</p>
+<h4 id="sec-6-4">6.4 顺序建议</h4>
+<p><b>只写 Linear 就先去跑判据</b>（<code>test_layers_a</code> 会在第 3 条之后因为 Linear 没写完而停， 前面 Scale 的三条照样打印出来）。别急着往下写层，先做这三步自查：</p>
+<li><b>网站单项快测</b>：<code>python webapp/server.py</code> → 阶段 3a → 点 <code>TODO-5/6</code> 旁边的「测」。</li></ol>
+<p>Scale 之外的层没写完也没关系，它只测 Linear。</p>
+<li><b>命令行同一条检查</b>（和网站按钮完全同一段代码）：</li></ol>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-5 TODO-6</code></pre></figure>
+<p>它会先打印输入形状和输出形状，再给最大相对误差。期望 <code>PASS … 误差 1e-9 量级</code>。</p>
+<li><b>跑这一卷的整卷</b>：<code>python tests/test_layers_a.py</code> —— 8 条，包含 §6.3 那组手算对账。</li></ol>
+<p><b>每写完一层就查一层，别攒。</b></p>
+<p>这两个式子是整个项目里最容易「看着对」的地方：转置转错一个，形状可能照样合法，数字全错。 下面给了一组具体的小矩阵（<code>x (4,3)</code>、<code>W (2,3)</code>），六块矩阵全部当场算出来 —— <b>点 dW / db / dx 里的任意一格</b>，参与运算的那一行、那一列会染橙，算式框把「哪几个数乘起来 再相加」逐项写给你看。三个错法开关分别是忘转置、转置错方向、不摊平：前两种直接把 numpy 会抛 的 <code>ValueError</code> 写在脸上，第三种画出逐位置乘出来的那两个块，以及 gradcheck 会看到的 0.500 相对误差。底部那 6 个全精度数字可以抄去和 numpy 对拍。</p>
+<div class="fig" data-fig="matmulbwd" role="img" aria-label="可视化：matmulbwd"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<details class="answer"><summary>参考答案 · TODO-5 / TODO-6 <code>Linear</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        in_f = self.W.data.shape[<span class="num">1</span>]
+        self._in_shape = x.shape
+        self._out_shape = x.shape[:-<span class="num">1</span>] + (self.W.data.shape[<span class="num">0</span>],)
+        flat = x.reshape(-<span class="num">1</span>, in_f)              <span class="com"># (B,T,C) → (B·T, C)</span>
+        self._x_flat = flat
+        y = flat @ self.W.data.T                <span class="com"># W 是 (out,in)，所以右边转置</span>
+        <span class="kw">if</span> self.b <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+            y = y + self.b.data
+        <span class="kw">return</span> y.reshape(self._out_shape)       <span class="com"># 只把最后一维换成 out_f</span>
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        g2 = g.reshape(-<span class="num">1</span>, self.W.data.shape[<span class="num">0</span>])
+        self.W.grad += g2.T @ self._x_flat      <span class="com"># (out,N)@(N,in) → (out,in)，和 W 同形</span>
+        <span class="kw">if</span> self.b <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+            self.b.grad += g2.<span class="bi">sum</span>(axis=<span class="num">0</span>)       <span class="com"># bias 被 N 个位置共用，梯度要求和</span>
+        <span class="kw">return</span> (g2 @ self.W.data).reshape(self._in_shape)</code></pre></figure>
+<p><code>+=</code> 不是 <code>=</code>：同一个 <code>Linear</code> 被调用多次时（阶段 4 里不会，但阶段 5 的检查点/多次 forward 会），梯度要累加。<code>_in_shape</code> 必须在 forward 里存好，否则 <code>(B,T,C)</code> 进去、 <code>(B·T,C)</code> 出来，反向还原不了原形状。</p>
+<p><b>三个高频错，全都"能跑、loss 也降"</b>：</p>
+<li><code>self.W.grad = ...</code>（覆盖）而不是 <code>+=</code>（累加）。累加是<b>约定 3</b>，</li></ol>
+<p>也是梯度累积、weight tying 的前提。</p>
+<li><code>use_bias=False</code> 时忘了判空 → <code>AttributeError</code>（这个会报错，算好的）。</li><li>返回值形状没还原 → 上一层收到的梯度形状不对。</li></ol></div></details></section><section class="sec" id="sec-7" data-stage="s03a"><h2>7. 这一卷的验收判据</h2><div class="checkstable"><div class="cfhead"><span class="cftag">判据逐条 · 本表现取：跑一遍 solutions/ 那份答案，把 tests/test_layers_a.py 的 Report 每行原样搬来</span></div><table><thead><tr><th>组</th><th>判据</th><th>这条在判什么、写错了会是什么症状</th></tr></thead><tbody><tr><td class="cgrp">热身 · Scale：只有乘法的层，先跑绿一次</td><td>Scale(参数梯度)</td><td>最大相对误差 6.39e-09（y = w·x：dx = w·g，dw = Σ g·x，就这两件） · 这条过了说明整套 forward/backward 协议你会用了；没过先别看后面，八成是缓存没存或梯度没累加</td></tr><tr><td class="cgrp"></td><td>第一次 backward 就有非零梯度</td><td>实测 20.31 ≥ 下限 1e-06 · 这条不成立的话，下面那条'翻倍'会因为两边都是 0 而假通过</td></tr><tr><td class="cgrp"></td><td>backward 两次后梯度翻倍（累加不是覆盖）</td><td>期望 0 实测 0 误差 0 ≤ 1e-12 · 写成 = 而不是 += 的话，这一条和后面的 weight tying 会一起塌</td></tr><tr><td class="cgrp">Linear · 有限差分（有 bias / 无 bias）</td><td>Linear (B,T,C)</td><td>最大相对误差 1.91e-09 · 三件产出全查：参数 W、b 和输入 x 各要给出自己的梯度</td></tr><tr><td class="cgrp"></td><td>Linear 无 bias</td><td>最大相对误差 1.64e-09 · use_bias=False 时 self.b is None，判空那条分支在上一组里走不到，所以单独测一组</td></tr><tr><td class="cgrp">Linear · 与逐元素手算对账（B=1, T=2, C_in=2, C_out=3）</td><td>dW 等于逐元素定义</td><td>期望 0 实测 0 误差 0 ≤ 1e-12 · 手算 dW[0,0]=Σ_n g_n0·x_n0 = 1·1 + 0.5·3 = 2.5；你的矩阵写法要给出同一个数</td></tr><tr><td class="cgrp"></td><td>db 等于逐元素定义</td><td>期望 0 实测 0 误差 0 ≤ 1e-12 · 对样本维求和：db[o] = Σ_n g[n,o]，形状必须和 b 一样是一维</td></tr><tr><td class="cgrp"></td><td>dx 等于逐元素定义</td><td>期望 0 实测 0 误差 0 ≤ 1e-12 · dx 要和 x 同形 (1,2,2)：先 (N,out)@(out,in) 再 reshape 回去</td></tr></tbody></table><p class="cfnote">跑法：<code>python tests/test_layers_a.py</code>。<b>表里的数字是答案跑出来的</b>，不是你的 —— 你的那一行在中栏「跑整卷」的结果里，长得很像但数值不会一样。</p></div>
+<p>有限差分和手算对账是<b>两种独立的裁判</b>：前者查"数值对不对"，后者查 "你是不是真的按定义在算"。两个都过，才不是碰巧形状对得上。</p></section><section class="sec" id="sec-8" data-stage="s03a"><h2>8. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>大概率原因</th><th>去哪一节</th></tr></thead><tbody><tr><td><code>Scale</code> 那条 <code>最大相对误差 1e-1</code> 量级</td><td><code>backward</code> 返回了 <code>g</code> 而不是 <code>w*g</code></td><td>§3.1</td></tr><tr><td><code>梯度翻倍</code> 那条红，其它绿</td><td><code>self.w.grad = ...</code> 覆盖写法</td><td>约定 3 / §6.4</td></tr><tr><td><code>cannot reshape array of size 24 into shape (2,4,5)</code></td><td>用 <code>x.shape</code> 当输出形状还原</td><td>§6.1 第二个坑</td></tr><tr><td><code>matmul: Input operand 1 has a mismatch</code></td><td>忘了 <code>W.T</code>，或 <code>W</code> 存成了 <code>(in,out)</code></td><td>§6.1 第一个坑</td></tr><tr><td><code>dW 等于逐元素定义</code> 红，但有限差分也红得莫名其妙</td><td><code>g.reshape(-1, out_f)</code> 用了 <code>in_f</code></td><td>§6.2</td></tr><tr><td><code>'NoneType' object has no attribute 'grad'</code></td><td><code>use_bias=False</code> 时没判空</td><td>§6.4 高频错 2</td></tr><tr><td>判据说"一个都没查却报通过"</td><td>输入不是连续数组</td><td>§5 第三条</td></tr><tr><td>相对误差 <code>1e-2</code> 上下，看着像 bug</td><td>那个梯度本身只有 <code>1e-8</code>，是噪声底</td><td>§5 第二条</td></tr></tbody></table></section><section class="sec" id="sec-9" data-stage="s03a"><h2>9. 自查题</h2><p>不用查资料。每题先把自己的答案写进输入框再点"判一下"；想不出来按提示 1→2→3， 三级提示从最抽象到最具体；还不行就点"回讲义读这一节"。</p>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>a.shape == (2,3,4)</code>，<code>a.sum(axis=1).shape</code> 是多少？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-2-3">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>sum 会压掉一根轴 —— 先想清楚被压的是哪根。</div><div class="qzh" hidden><code>axis=k</code> 就是"消失的那根轴"。</div><div class="qzh" hidden>原形状 (2,3,4) 删掉第 2 个数（从 1 数）。</div><div class="qzres" hidden></div><div class="qza" hidden><code>(2, 4)</code> —— <code>axis=1</code> 就是被消失的那根轴（§2.3）。</div></div><div class="qzaccept" hidden>(2,4)</div><div class="qzkeys" hidden></div><div class="qzlinkv" hidden>sec-2-3</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">为什么 <code>Linear</code> 的 <code>W</code> 存成 <code>(out, in)</code> 而不是 <code>(in, out)</code>？给出一个具体的坏处。</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-6">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>把 <code>dW = g.T @ x</code> 写出来，看它出来是什么形状。</div><div class="qzh" hidden>dW 的形状必须和 W 一样，不然优化器没法把梯度加到参数上。</div><div class="qzh" hidden>存成 (in,out) 时 dW 出来是 (out,in)，就得在某个地方偷偷转置一次。</div><div class="qzres" hidden></div><div class="qza" hidden>存 <code>(in, out)</code> 时 <code>dW = g.T @ x</code> 会得到 <code>(out, in)</code>，和 <code>W</code> 不同形，就得在某个地方偷偷转置；转置一次就有一个"形状对但值错"的机会（§6）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>转置; 同形/不同形/形状对不上</div><div class="qzlinkv" hidden>sec-6</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>dW</code> 为什么要对样本轴求和，而 <code>dx</code> 不用？用 §2.5 那组手算的数说明。</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-2-6">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>数一数 W 被几个位置用过，再数 x 的每一行被几个输出用过。</div><div class="qzh" hidden>规则二：谁被用过多次，多份贡献就加起来。</div><div class="qzh" hidden>例子卡里 dW 的每行是"x 各列的和"—— 两个样本的贡献合并了；dx 的每行只来自自己那行的 g。</div><div class="qzres" hidden></div><div class="qza" hidden><code>W</code>、<code>b</code> 被 N 个位置共用，所以 N 个位置的梯度汇到同一份参数上；<code>x</code> 和 <code>y</code> 一一对应，没有需要合并的轴（§2.6 规则二）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>共用/共享/汇/合并; 一一对应/不用合并/各自</div><div class="qzlinkv" hidden>sec-2-6</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>Scale</code> 的 <code>backward</code> 里，<code>dw = Σ(g·x)</code> 压掉了哪些轴？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-3">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>先看 <code>w</code> 自己是什么形状。</div><div class="qzh" hidden>梯度的形状必须和它对应的参数一模一样。</div><div class="qzh" hidden>w 是个标量（0 维），所以 B、T、C 三根轴全得消失。</div><div class="qzres" hidden></div><div class="qza" hidden>全部轴（<code>B</code>、<code>T</code>、<code>C</code>）—— 因为 <code>w</code> 是一个标量（§3）。</div></div><div class="qzaccept" hidden>全部/全部轴/所有轴/所有/B,T,C/b,t,c</div><div class="qzkeys" hidden></div><div class="qzlinkv" hidden>sec-3</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">"一次 forward 配一次 backward"这条约定，在 <code>gradcheck</code> 里是靠什么被强制的？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-5">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>想 gradcheck 在扰动循环里每一步都干了什么。</div><div class="qzh" hidden>它不是只 forward 一次就反复用缓存。</div><div class="qzh" hidden>每扰动一个元素都重新 <code>module(*inputs)</code> 再 <code>backward</code>；缓存写错地方的层在这儿立刻露馅。</div><div class="qzres" hidden></div><div class="qza" hidden><code>gradcheck</code> 每次都重新 <code>module(*inputs)</code> 再 <code>module.backward(...)</code>，中间不插第二次 forward；你的层若把缓存写在别处就会露馅（§4、§5）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>重新/每次/再/每扰动</div><div class="qzlinkv" hidden>sec-5</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">把 <code>atol</code> 从 <code>1e-9</code> 调到 <code>1e-3</code> 会发生什么？为什么说这是自欺？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-5">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>先想 atol 在判定里扮演什么角色。</div><div class="qzh" hidden>一个"形状对但值错"的 bug，相对误差通常有多大？</div><div class="qzh" hidden>相对误差 1e-2 的错误梯度也会被判"通过" —— 测谎仪被你自己关掉了。</div><div class="qzres" hidden></div><div class="qza" hidden>真 bug 会被盖住 —— 相对误差 <code>1e-2</code> 的错算也能"通过"。噪声底的问题要用 <code>eps</code> 和已知量级去判，不是靠放宽阈值（§5）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>盖住/掩盖/通过/变绿/放过/测不出</div><div class="qzlinkv" hidden>sec-5</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">§2.6 说"广播和求和在反向里互为逆操作"。用 $y_{ij}=x_{ij}+b_j$ 和 $m=\frac1N\sum_i y_i$ 各说一遍：谁是正向、谁是反向，为什么？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-2-6">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>第一个式子里，b 的每个数被用了几次？</div><div class="qzh" hidden>第二个式子里，m 是几个数合成的？</div><div class="qzh" hidden>复制出去的要合并回来（反向=沿复制轴求和）；合并出去的要摊回去（反向=广播，每份 1/N）。</div><div class="qzres" hidden></div><div class="qza" hidden>第一个：正向是 <code>b</code> 被广播成 N 行相加，反向是沿行轴求和（<code>db = [5,7,9]</code> 那组数）。第二个：正向是 N 个位置求和/均值成一个数，反向是把这个数广播回每个位置、各分 1/N。一句话：复制出去的东西要合并回来，合并出去的东西要摊回去。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>广播; 求和/合并/摊回/分回</div><div class="qzlinkv" hidden>sec-2-6</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">为什么你从来不需要写出 $\partial y/\partial x$ 那个 $(N\cdot\mathrm{out})\times(N\cdot\mathrm{in})$ 的雅可比？反向传播真正算的是哪个乘积、它的形状是什么？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-2-6">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>反向传进来的东西是什么？</div><div class="qzh" hidden>它要的不是整张敏感度表，而是"一束梯度乘上那张表"。</div><div class="qzh" hidden>$g^{\top}J$，一次矩阵乘就够；形状 (N, in) 和输入同形 —— 那个大矩阵一次也没被造出来。</div><div class="qzres" hidden></div><div class="qza" hidden>因为反向传播要的是上游梯度那一束乘上雅可比（$g^{\top}J$，形状 $(N,\mathrm{in})$，和输入同形）。对 <code>Linear</code> 这种逐位置线性的算子，这个乘积恰好等于两次矩阵乘加一次求和，大矩阵本身从来没被造出来（§2.6）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>上游/g; 乘/乘积/矩阵乘; (N,in)/和输入同形/和x同形</div><div class="qzlinkv" hidden>sec-2-6</div></div></section><section class="sec" id="sec-10" data-stage="s03a"><h2>10. 下一步</h2><p><code>python tests/test_layers_a.py</code> 8 条全绿 → 去 <a href="s03b.html">阶段 3b · 四个层</a>：<code>GELU</code>、<code>RMSNorm</code>、<code>Embedding</code>、<code>MLP</code>。 那里的每一层都还是交"三件产出"，只是算法换了 —— 而你已经有了 §2 那套推理工具 （形状、轴、<code>@</code> 收缩，加上 §2.6 的"逐元素写出来 → 数下标 → 收回形状"三步）。</p></section><section class="sec" id="sec-11" data-stage="s03a"><h2>11. 进阶推导（现在可以跳过）</h2><p>正文只讲"怎么做"。这一节收着两处初始化常数"为什么是这个数"的方差推导 —— 它们不影响你写代码、 跑判据，等你想深究再回来。两处用的是同一套算术（阶段 2 §3.1）：若干个互相独立的数加权求和， 结果的方差 = 各项方差之和。</p>
+<h4>A. <code>Linear</code> 初始化里 <code>std*sqrt(2/fan_in)</code> 的来历</h4>
+<p>$y=\sum_{i=1}^{\mathrm{fan\_in}} w_i x_i$，$w_i\sim N(0,\sigma^2)$、$x$ 单位方差，于是</p>
+<p>$$\operatorname{Var}(y)=\mathrm{fan\_in}\cdot\sigma^{2}\cdot\frac{2}{\mathrm{fan\_in}}=2\,\mathrm{std}^{2}$$</p>
+<li>$\sqrt{2/\mathrm{fan\_in}}$ 管<b>与 fan-in 无关</b>：不管输入是 64 维还是 1024 维，输出方差都是 $2\,\mathrm{std}^2$，不随宽度漂；</li><li><code>std=0.02</code> 管<b>整体尺度小</b>（GPT-2 的做法）：初始输出接近 0，loss 起点正好落在 $\ln V$ 附近，一眼看出模型"还没开始学"。</li></ul>
+<p>两个因子各管一件事，所以代码写成两个数相乘，而不是合并成一个魔法常数。</p>
+<h4>B. <code>init_resid_scale</code> 里 $1/\sqrt{2L}$ 的来历：pre-norm 下方差线性涨</h4>
+<p>残差把子层输出直接加回主干。本项目是 <b>pre-norm</b>：子层看到的是 <code>RMSNorm(x)</code>， 它的方差被归一化钉在常数 $c$ 上、与主干方差 $v$ 无关 —— 所以每加一层，主干加进来的是一个 <b>常数</b> $2c$（两路：注意力、FFN），$L$ 层之后</p>
+<p>$$v_L\;\approx\;v_0+2cL\qquad(\text{线性，不是指数})$$</p>
+<p>把出口投影乘 $1/\sqrt{2L}$，每层的贡献变成 $2c\cdot\frac{1}{2L}=\frac{c}{L}$， 于是 $v_L\approx v_0+c$ —— <b>与层数无关</b>。这就是那个常数的来历，不是抄来的规矩。</p>
+<p>对照：如果是 post-norm（子层输出正比于主干），递推是 $v_L\approx v_0(1+2c)^L$， 指数起飞，$1/\sqrt{2L}$ 只能减慢而不能消除。<a href="s05.html#sec-3">阶段 5 §3.3</a> 的动画能切换这两种假设当场对比， 判据 <code>GIV-3</code> 数的就是这个比值（$L=3$ 时正好 $\sqrt6=2.4495$）。</p></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>

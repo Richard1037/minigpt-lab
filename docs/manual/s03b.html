@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 3b · 四个层的三件产出</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s03b">
+<article class="chapter" id="ch-s03b">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-9" href="#sec-3" title="TODO-9 GELU"><i></i><code>TODO-9</code></a><a class="mm" data-todo="TODO-8" href="#sec-4" title="TODO-8 RMSNorm"><i></i><code>TODO-8</code></a><a class="mm" data-todo="TODO-7" href="#sec-5" title="TODO-7 Embedding"><i></i><code>TODO-7</code></a><a class="mm" data-todo="TODO-10" href="#sec-6" title="TODO-10 MLP"><i></i><code>TODO-10</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s03b">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s03b</div>
+  <h1>阶段 3b · 四个层的三件产出</h1>
+  <div class="meta"><span>判据 <code>tests/test_layers_b.py</code></span>
+    <span>预计 1~2 小时（每层都只是换算法，协议你已经熟了）</span>
+    <span>要交 minigpt/nn.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>tests/test_layers_b.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/nn.py</code>。预计 1~2 小时（每层都只是换算法，协议你已经熟了）。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-9"><td><code>TODO-9</code></td><td>TODO-9 GELU</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-9">去写</button></td></tr><tr data-todo="TODO-8"><td><code>TODO-8</code></td><td>TODO-8 RMSNorm</td><td><code class="path">minigpt/nn.py</code> : <b class="ln">256</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-8">去写</button></td></tr><tr data-todo="TODO-7"><td><code>TODO-7</code></td><td>TODO-7 Embedding</td><td><code class="path">minigpt/nn.py</code> : <b class="ln">227</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-7">去写</button></td></tr><tr data-todo="TODO-10"><td><code>TODO-10</code></td><td>TODO-10 MLP</td><td><code class="path">minigpt/nn.py</code> : <b class="ln">311</b></td><td><span class="pill todo">待写</span></td><td><button class="mini-go" data-goto="TODO-10">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. 四个层的共同骨架</a><a href="#sec-3"><span>3</span>3. TODO-9：<code>GELU</code></a><a href="#sec-4"><span>4</span>4. TODO-8：<code>RMSNorm</code></a><a href="#sec-5"><span>5</span>5. TODO-7：<code>Embedding</code></a><a href="#sec-6"><span>6</span>6. TODO-10：<code>MLP</code></a><a href="#sec-7"><span>7</span>7. 这一卷的验收判据</a><a href="#sec-8"><span>8</span>8. 常见失败模式对照表</a><a href="#sec-9"><span>9</span>9. 自查题</a><a href="#sec-10"><span>10</span>10. 下一步</a><a href="#sec-11"><span>11</span>11. 进阶推导（现在可以跳过）</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s03b"><p>预计：4 个层、约 60 行，1~2 小时。 验收命令：<code>python tests/test_layers_b.py</code> 要写的地方：<code>src/minigpt/nn.py</code> 的 TODO-9（GELU）、TODO-8（RMSNorm）、TODO-7（Embedding）、TODO-10（MLP）。</p>
+<p>前提：<a href="s03a.html">3a</a> 那 8 条已经绿了。这一卷<b>不重测 <code>Linear</code></b>，但每一节都要用到它留下的三样东西： 「<code>axis=k</code> 就是被消失的那根轴」（3a §2.3）、"想合成什么形状，就谁转置"那张速查表（3a §2.5）、 以及"缓存用下划线、一次 forward 配一次 backward、梯度只累加"（3a §4）。</p>
+<p>阶段 3 的动线（和 3a 顶上那张表是同一张，你现在在中间一行）：</p>
+<table><thead><tr><th></th><th>讲什么</th><th>写几个 TODO</th><th>判据</th></tr></thead><tbody><tr><td><a href="s03a.html">3a</a></td><td>numpy 轴运算地基 + 玩具层 <code>Scale</code> + <code>Linear</code></td><td>TODO-5A、5、6</td><td><code>tests/test_layers_a.py</code> 8 条</td></tr><tr><td><b>3b（这一章）</b></td><td><code>GELU</code>、<code>RMSNorm</code>、<code>Embedding</code>、<code>MLP</code></td><td>TODO-7~10</td><td><code>tests/test_layers_b.py</code> 6 条</td></tr><tr><td><a href="s03c.html">3c</a></td><td><code>CrossEntropy</code>，以及"gradcheck 自己可信吗"</td><td>TODO-11</td><td><code>tests/test_layers_c.py</code> 5 条</td></tr></tbody></table></section><section class="sec" id="sec-1" data-stage="s03b"><h2>1. 这一步在干什么</h2><p>四个新层，<b>协议一个都没变</b>：<code>forward</code> 返回输出并把反向要用的中间量存进 <code>self._缓存</code>， <code>backward</code> 交出那三件产出。变的只是每层"算法"那一栏 —— 所以这一卷的难点不是新规矩， 而是三件具体的事：</p>
+<li><b><code>RMSNorm</code> 要你动笔推导</b>（本章唯一一处）。归一化把一行的 $C$ 个分量绑在一起了，</li></ol>
+<p>少写修正项，梯度校验当场挂。</p>
+<li><b><code>Embedding</code> 考的是 numpy 的一个陷阱</b>，不是数学：重复索引时 fancy 赋值是<b>覆盖</b>。</li><li><b><code>MLP</code> 第一次考"顺序与缓存"</b>：三个层串起来，反向要反着走，一步都不能乱。</li></ol>
+<p>按这个顺序写，每一步都能停下来跑判据：</p>
+<div class="flow"><div class="fs"><i class="n">1</i><span><b>§3 GELU</b> —— 没有参数，三件产出只剩返回值那一件。10 分钟，确认协议你会了</span></div><div class="fs"><i class="mk">↓</i><span>（做完能停下来：判据第 1 条绿）</span></div><div class="fs"><i class="n">2</i><span><b>§4 RMSNorm</b> —— 本章唯一的推导。有 §3 的"只交一件产出"垫底，这里只管一件新事：耦合项</span></div><div class="fs"><i class="mk">↓</i><span>（做完能停下来：判据第 2 条绿）</span></div><div class="fs"><i class="n">3</i><span><b>§5 Embedding</b> —— 数学最浅（查表），坑最深（<code>np.add.at</code>）。和前两节的推理方式不同，单独放</span></div><div class="fs"><i class="mk">↓</i><span>（做完能停下来：判据第 4~6 条绿）</span></div><div class="fs"><i class="n">4</i><span><b>§6 MLP</b> —— 组装层：<code>Linear</code>(3a) + GELU(§3) + 缓存纪律(3a §4.1) 三样一起交卷</span></div><div class="fs"><i class="mk">↓</i><span>（做完能停下来：整卷 6 条全绿）</span></div></div></section><section class="sec" id="sec-2" data-stage="s03b"><h2>2. 四个层的共同骨架</h2><p>3a §6.2 那张 <code>Linear</code> 的表在这里逐字复用 —— 三件产出就是三个<b>槽位</b>，每层往里面填自己的东西：</p>
+<li><b>槽位 A｜参数梯度</b>：累加进 <code>p.grad</code>（3a 里是 <code>dW</code>）。</li><li><b>槽位 B｜"被所有位置共用的那一维参数"的梯度</b>：形状是 <code>(C,)</code> 或 <code>(out,)</code>，</li></ul>
+<p>所以永远是"把样本轴压掉"（3a 里是 <code>db = g2.sum(axis=0)</code>）。</p>
+<li><b>槽位 C｜输入梯度</b>：<code>backward</code> 的返回值，形状和 forward 的输入一致；没有可导输入就返回 <code>None</code>。</li></ul>
+<p>判据盯的是三件具体的事：缓存了什么、散射还是覆盖、反向的顺序。 少了什么会立刻发生什么，先放这里当路标，每一行在对应小节里展开证明：</p>
+<table><thead><tr><th>少了什么</th><th>立刻发生什么</th><th>在哪一节</th></tr></thead><tbody><tr><td><code>GELU.forward</code> 里不缓存 $x$</td><td><code>backward</code> 无法算 $\partial y/\partial x$（它需要 $x$ 和 $t$ 两样），只能瞎猜 → 相对误差 $10^{0}$</td><td>§3.4</td></tr><tr><td><code>GELU</code> 反向里漏掉链式那一项</td><td>只剩 $\tfrac12(1+t)$：形状全对、能跑、loss 也降，判据第 1 条红</td><td>§3.3</td></tr><tr><td><code>RMSNorm</code> 漏 $-r\hat x\,s$</td><td>误差从 $10^{-9}$ 跳到 $10^{-1}$ 以上（差的是整整一项，不是小系数）</td><td>§4.2</td></tr><tr><td><code>RMSNorm</code> 漏 $\epsilon$</td><td>遇到全 0 行时 $r=1/0$，<code>inf</code> 顺残差流污染整张量</td><td>§4.4</td></tr><tr><td><code>Embedding</code> 不缓存 <code>ids</code></td><td>反向不知道往哪几行散射 —— 只能把梯度平均分给全词表，那是错的</td><td>§5.2</td></tr><tr><td><code>Embedding</code> 用 <code>gW[ids] = vals</code></td><td>重复 id 只保留最后一次：判据"重复 id 梯度累加"期望 12、实测 4</td><td>§5.3</td></tr><tr><td><code>MLP.backward</code> 顺序写反</td><td>好的一种是当场 <code>ValueError</code>，坏的一种是形状全对但值错（§6.3）</td><td>§6.3</td></tr></tbody></table></section><section class="sec" id="sec-3" data-stage="s03b"><h2>3. TODO-9：<code>GELU</code></h2><div class="sec-act"><button data-check="TODO-9">跑 TODO-9 的单项检查</button><button data-edit="TODO-9">跳到编辑器</button><a class="sec-jump" href="/?stage=s03b">在测评台里打开 →</a></div><h4 id="sec-3-1">3.1 这是个激活函数：公式 + 要写的三件事</h4>
+<p>$$y=\tfrac12 x\Bigl(1+\tanh\bigl(K(x+Ax^{3})\bigr)\Bigr),\qquad K=\sqrt{2/\pi}\approx 0.7978846,\qquad A=0.044715$$</p>
+<p>$$\frac{\partial y}{\partial x}=\frac12(1+t)\;+\;\frac12 x\,(1-t^{2})\,K(1+3Ax^{2}), \qquad t=\tanh\bigl(K(x+Ax^{3})\bigr)$$</p>
+<table><thead><tr><th>要写的</th><th>内容</th></tr></thead><tbody><tr><td><code>forward</code></td><td>算 <code>inner = K*(x + A*x**3)</code>、<code>t = np.tanh(inner)</code>，返回 $y$；缓存 <code>self._cache = (x, t, inner)</code></td></tr><tr><td><code>backward</code></td><td>把上面那条 $\partial y/\partial x$ 逐元素乘上游 $g$ 返回</td></tr><tr><td><code>K</code>、<code>A</code></td><td>写成类属性 <code>self.K</code> / <code>self.A</code>，正反向共用，别写两处字面量</td></tr></tbody></table>
+<p>纯逐元素：$(B,T,C)$ 进、$(B,T,C)$ 出，<code>backward</code> 里没有 <code>sum</code>、没有 <code>reshape</code>。 为什么敢用这个近似式、它和精确式差多少，见 §11。</p>
+<h4 id="sec-3-2">3.2 三个具体数（先在纸上把值算出来，再对代码）</h4>
+<table><thead><tr><th>$x$</th><th>$\text{inner}$</th><th>$t=\tanh(\text{inner})$</th><th>$y$</th><th>$\partial y/\partial x$</th></tr></thead><tbody><tr><td>$0$</td><td>$0$</td><td>$0$</td><td>$0$</td><td>$0.5$</td></tr><tr><td>$+2$</td><td>$1.881188$</td><td>$0.954598$</td><td>$1.954598$</td><td>$1.086099$</td></tr><tr><td>$-2$</td><td>$-1.881188$</td><td>$-0.954598$</td><td>$-0.045402$</td><td>$-0.086099$</td></tr></tbody></table>
+<p>$x=-2$ 那行 $y$ 和斜率<b>都是负的</b>：GELU 本来就放一点负值过去，别看到负梯度就以为写错了。</p>
+<h4 id="sec-3-3">3.3 反向那两项怎么来的</h4>
+<p>$y=\tfrac12 x\,(1+t)$ 是 $x$ 与 $(1+t(x))$ 的<b>乘积</b>，所以 $\partial y/\partial x$ 必然有两项 （阶段 1–2 的乘积法则在这里一个字都没变）：</p>
+<li>前一项 $\tfrac12(1+t)$：把 $(1+t)$ 当常数，对前面那个 $\tfrac12 x$ 求导。</li><li>后一项：把 $\tfrac12 x$ 当系数，对 $(1+t(x))$ 走链式 —— $\partial\tanh u/\partial u=1-t^{2}$</li></ul>
+<p>（forward 里已经缓存了 $t$，不必再算一次 <code>tanh</code>），再乘 $\partial\,\text{inner}/\partial x=K(1+3Ax^{2})$。</p>
+<h4 id="sec-3-4">3.4 缓存：三样，反向只用两样</h4>
+<table><thead><tr><th>缓存</th><th>在反向里是哪一项</th><th>不存会怎样</th></tr></thead><tbody><tr><td>$x$</td><td>$\tfrac12 x(1-t^2)K(1+3Ax^2)$ 里的 $x$ 和 $x^2$</td><td>只能重算正向（多一次 <code>tanh</code>），或者干脆猜</td></tr><tr><td>$t$</td><td>$\tfrac12(1+t)$ 和 $1-t^{2}$</td><td>同上 —— 存它就是"用值表示导数"的那笔交易</td></tr><tr><td><code>inner</code></td><td>不出现</td><td>无影响（留着便于手算核对）</td></tr></tbody></table>
+<h4 id="sec-3-5">3.5 写完就跑</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-9      # 只测这一层（和网站按钮同一段代码）
+python tests/test_layers_b.py       # 整卷；现在只有第 1 条该绿，第 2 条会停在 RMSNorm</code></pre></figure>
+<p>网站里：阶段 3b → 右侧「单项快测」→ <code>TODO-9</code> 旁边点「测」。答案版跑出的量级是 $6.84\mathrm{e}{-}08$，阈值是相对误差 $10^{-4}$；量级不对就回头看 §3.3 那两项。</p>
+<div class="fig" data-fig="geludx" role="img" aria-label="可视化：geludx"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>拖 <code>x</code> 看四个读数，拖 <code>lg ε</code> 让中心差分当场验一次导数。</p>
+<details class="answer"><summary>参考答案 · TODO-9 <code>GELU</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        inner = self.K * (x + self.A * x ** <span class="num">3</span>)
+        t = np.tanh(inner)
+        self._cache = (x, t, inner)
+        <span class="kw">return</span> <span class="num">0.5</span> * x * (<span class="num">1.0</span> + t)
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        x, t, inner = self._cache
+        du_dx = self.K * (<span class="num">1.0</span> + <span class="num">3.0</span> * self.A * x * x)
+        dy_dx = <span class="num">0.5</span> * (<span class="num">1.0</span> + t) + <span class="num">0.5</span> * x * (<span class="num">1.0</span> - t * t) * du_dx
+        <span class="kw">return</span> g * dy_dx</code></pre></figure>
+<p>三件产出只有最后一件：<code>return g * dy_dx</code>，里面<b>没有任何</b> <code>self.xxx.grad +=</code> —— 它没有参数。 <code>du_dx</code> 单独起一行是为了和 §3.3 的公式逐项对上眼：$K(1+3Ax^{2})$ 就是它。</p></div></details>
+<p><b>这一节做完你能停下来。</b> 判据第 1 条绿了，说明"层可以只交一件产出"你已经会了。</p></section><section class="sec" id="sec-4" data-stage="s03b"><h2>4. TODO-8：<code>RMSNorm</code></h2><div class="sec-act"><button data-check="TODO-8">跑 TODO-8 的单项检查</button><button data-edit="TODO-8">跳到编辑器</button><a class="sec-jump" href="/?stage=s03b">在测评台里打开 →</a></div><h4 id="sec-4-1">4.1 公式与要写的四件事</h4>
+<p>正向（最后一维是 $C$，全部<b>逐行</b>统计）：</p>
+<p>$$r=\frac{1}{\sqrt{\frac1C\sum_{i}x_i^{2}+\epsilon}},\qquad \hat x = r x,\qquad y=w\odot\hat x$$</p>
+<p>反向（记 $u = g\odot w$、$s=\frac1C\sum_i u_i\hat x_i$，$s$ 形状 $(B,T,1)$）：</p>
+<p>$$\frac{\partial L}{\partial x} = r\,u - r\,\hat x\,s,\qquad \frac{\partial L}{\partial w} = \sum_{b,t} g\odot\hat x$$</p>
+<table><thead><tr><th>要写的</th><th>内容</th></tr></thead><tbody><tr><td><code>forward</code></td><td><code>ms = np.mean(x*x, axis=-1, keepdims=True)</code> → <code>self._r = 1/np.sqrt(ms+self.eps)</code> → <code>self._xh = x*self._r</code> → <code>return self._xh * self.w.data</code></td></tr><tr><td><code>backward</code> 返回</td><td><code>u = g*self.w.data</code> → <code>s = np.mean(u*self._xh, axis=-1, keepdims=True)</code> → <code>return self._r*u - self._r*self._xh*s</code></td></tr><tr><td><code>backward</code> 参数</td><td><code>self.w.grad += (g*self._xh).reshape(-1, C).sum(axis=0)</code></td></tr><tr><td>缓存</td><td><code>self._r</code> $(B,T,1)$、<code>self._xh</code> $(B,T,C)$；不要缓存 $y$</td></tr></tbody></table>
+<p>这一层<b>不是逐元素</b>的：$x$ 的一个分量变了，整行输出都跟着变，所以反向必须有第二项 $-r\hat x\,s$。它怎么来的、几何上是什么、和 LayerNorm/softmax 什么关系，都在 §11。</p>
+<h4 id="sec-4-2">4.2 手算对账：$2\times2$ 那一组数</h4>
+<p>$x=[3,4]$、$w=[1,1]$、$g=[1,0]$、$C=2$，手算时 <code>eps</code> 传 <code>1e-12</code>。先把这五个量算出来：</p>
+<table><thead><tr><th>量</th><th>值</th></tr></thead><tbody><tr><td>$\operatorname{mean}(x^{2})$</td><td>$12.5$</td></tr><tr><td>$r$</td><td>$1/\sqrt{12.5}=0.282843$</td></tr><tr><td>$\hat x = r x$</td><td>$[0.848528,\ 1.131371]$</td></tr><tr><td>$u=g\odot w$</td><td>$[1,\ 0]$</td></tr><tr><td>$s=\operatorname{mean}(u\odot\hat x)$</td><td>$(0.848528+0)/2=0.424264$</td></tr></tbody></table>
+<p>再算 $\partial L/\partial x$，三条路要对上（$r\hat x=r^{2}x=x/12.5=[0.24,\ 0.32]$）：</p>
+<table><thead><tr><th>算法</th><th>$\partial L/\partial x$</th></tr></thead><tbody><tr><td>完整式 $r\,u-r\,\hat x\,s$</td><td>$[0.282843,\ 0]-[0.24,\ 0.32]\cdot0.424264=[0.181019,\ -0.135764]$</td></tr><tr><td>有限差分</td><td>$[0.18102,\ -0.13576]$</td></tr><tr><td>只写 $r\,u$（漏耦合项）</td><td>$[0.282843,\ 0]$ → 判据第 2 条红</td></tr></tbody></table>
+<p>一格一格怎么推出来的（$\partial r/\partial x_i$、$2\times2$ 雅可比、少乘/多乘一个 $r$ 的两种错法、 几何解释）在 §11。</p>
+<div class="fig" data-fig="rmscouple" role="img" aria-label="可视化：rmscouple"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>拖 $x$ 的四个分量：最下一行是浏览器<b>当场做的中心差分</b>（真值），上面两行分别是 "只写 $r\,u$"和完整公式。</p>
+<h4 id="sec-4-3">4.3 参数梯度那一步：就是 3a §2.5 的 <code>db</code> 那一行</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>self.w.grad += (g * self._xh).reshape(-1, g.shape[-1]).sum(axis=0)</code></pre></figure>
+<p>想要 $(C,)$，而 $g\odot\hat x$ 是 $(B,T,C)$：先摊平成 $(N,C)$ 再 <code>sum(axis=0)</code>，让 $N=B\cdot T$ 消失。 写成 <code>sum(axis=0)</code>（没摊平）得到的是 $(T,C)$，为什么别去"迁就"它见 §11。</p>
+<h4 id="sec-4-4">4.4 这一层里的每一项，删了会怎样</h4>
+<table><thead><tr><th>式子/代码里的是哪一项</th><th>它管什么</th><th>删了/写错的后果</th></tr></thead><tbody><tr><td>$r$（缓存 <code>_r</code>）</td><td>把行的 RMS 归到 1</td><td>没有它这层就退化成一个逐元素乘法 $w\odot x$：激活尺度随输入漂，深网络必炸</td></tr><tr><td>$\hat x$（缓存 <code>_xh</code>）</td><td>反向两处的"归一化后的 $x$"：$s$ 与 $w$ 的梯度</td><td>不缓存就得重算，且重算时容易忘记带 $r$ → 差一个 $r$ 因子，判据红</td></tr><tr><td>$u=g\odot w$</td><td>先把"输出的梯度"换算成"归一化那一步的梯度"</td><td>直接用 $g$（漏掉 $w$）：等价于假定 $w\equiv1$。<b>判据抓不到它</b> —— <code>RMSNorm(8)</code> 的 $w$ 初值就是 1，两种写法给出同一个数。怎么自己把它逼出来见 §4.5</td></tr><tr><td>$s$ 与整项 $-r\hat x\,s$</td><td>归一化的耦合修正（§4.2）</td><td>相对误差从 $10^{-9}$ 跳到 $10^{-1}$ 以上。这是本章最贵的一项</td></tr><tr><td><code>keepdims=True</code>（$s$、$ms$ 都要）</td><td>保住 $(B,T,1)$ 这根轴</td><td>变成 $(B,T)$ 之后广播"从右往左"对齐，会拿 $T$ 去撞 $C$，当场 <code>operands could not be broadcast together</code></td></tr><tr><td>$\epsilon$（默认 $10^{-5}$）</td><td>分母的地板</td><td>某行 $x$ 全 0（padding 或早期塌缩）时 $r=1/0=\text{inf}$，<code>nan</code> 顺残差流污染整张量</td></tr><tr><td>$w$ 的 <code>wd_exempt=True</code></td><td>通道尺度不是"权重矩阵"</td><td>AdamW 会把 $w$ 一路衰减向 0（每个通道都被慢慢关掉），模型变笨。阶段 5 起这条才看得见</td></tr></tbody></table>
+<p><code>forward</code> 三行按 §4.1 的顺序写，不要把 $w$ 乘进缓存（存 <code>_y</code> 而不是 <code>_xh</code>）—— 那样反向里 $s$ 和 $w$ 的梯度都要多除一次 $w$。</p>
+<h4 id="sec-4-5">4.5 写完就跑</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-8      # 只测这一层
+python tests/test_layers_b.py       # 整卷；第 2 条该绿</code></pre></figure>
+<p>答案版量级 $2.94\mathrm{e}{-}09$。判据用的是默认初值 $w=1$，所以"漏乘 $w$"它测不出； 自己逼它出来：<code>rm.w.data[:] = 0.5</code> 之后再跑一次 <code>gradcheck</code>，误差应当正好是 $0.50$。 手算 §4.2 时 <code>eps</code> 传 <code>1e-12</code>，否则第 6 位小数上和数值梯度对不齐。</p>
+<details class="answer"><summary>参考答案 · TODO-8 <code>RMSNorm</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        ms = np.mean(x * x, axis=-<span class="num">1</span>, keepdims=<span class="kw">True</span>)
+        self._r = <span class="num">1.0</span> / np.sqrt(ms + self.eps)
+        self._xh = x * self._r
+        <span class="kw">return</span> self._xh * self.w.data
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        u = g * self.w.data
+        s = np.mean(u * self._xh, axis=-<span class="num">1</span>, keepdims=<span class="kw">True</span>)
+        gx = self._r * u - self._r * self._xh * s
+        self.w.grad += (g * self._xh).reshape(-<span class="num">1</span>, g.shape[-<span class="num">1</span>]).<span class="bi">sum</span>(axis=<span class="num">0</span>)
+        <span class="kw">return</span> gx</code></pre></figure>
+<p>对着 §4.1 的符号读这五行：<code>u</code>、<code>s</code>、<code>gx = r*u - r*xh*s</code>，最后 <code>w.grad</code> 那一行就是 $\sum_{b,t} g\odot\hat x$。$-r\hat x\,s$ 是全章唯一"少写了没人报错、只有判据知道"的一项。</p></div></details>
+<p><b>这一节做完你能停下来。</b> 判据第 2 条绿了，剩下的两层不再需要推导。</p></section><section class="sec" id="sec-5" data-stage="s03b"><h2>5. TODO-7：<code>Embedding</code></h2><div class="sec-act"><button data-check="TODO-7">跑 TODO-7 的单项检查</button><button data-edit="TODO-7">跳到编辑器</button><a class="sec-jump" href="/?stage=s03b">在测评台里打开 →</a></div><h4 id="sec-5-1">5.1 forward 是一行 fancy indexing</h4>
+<p>$$E(v)=W[v],\qquad W\in\mathbb{R}^{V\times C},\quad \text{ids}\in\mathbb{Z}^{B\times T} \;\Longrightarrow\; \text{out}\in\mathbb{R}^{B\times T\times C}$$</p>
+<p><code>return self.weight.data[ids]</code> —— 输出形状<b>跟着 <code>ids</code> 走</b>，最后一维补上 $C$： <code>ids</code> 里出现一次，就把 $W$ 的对应那一行<b>复制</b>一份过去。这就是查表的全部数学。</p>
+<table><thead><tr><th>要写的</th><th>内容</th></tr></thead><tbody><tr><td><code>forward</code></td><td><code>self._ids = np.asarray(ids)</code> → <code>return self.weight.data[self._ids]</code></td></tr><tr><td>缓存</td><td><code>self._ids</code> $(B,T)$，<b>保持整数</b>（加 <code>dtype=np.float64</code> 会直接 <code>IndexError</code>，也会让 3a §5 的"整数输入自动跳过"失效）</td></tr><tr><td>权重形状</td><td>$W$ 存成 $(V,C)$，第 $v$ 行就是词 $v$ 的向量。为什么不是 $(C,V)$，见 §11</td></tr></tbody></table>
+<h4 id="sec-5-2">5.2 backward：三行的散射</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>gW = np.zeros_like(weight.data)                     # (V, C)
+np.add.at(gW, ids.reshape(-1), g.reshape(-1, C))    # 同一个 id 出现多次 → 累加
+weight.grad += gW
+return None                                         # 输入是整数，不可导</code></pre></figure>
+<p>形状检查还是 3a §2.5 那套：<code>g</code> 是 $(B,T,C)$，摊成 $(N,C)$；索引是 $N$ 个整数； 目标是 $(V,C)$。<b>"谁被重复使用，梯度就往谁身上汇"</b> —— $N$ 个位置的梯度汇到 $V$ 行上。</p>
+<h4 id="sec-5-3">5.3 必须是 <code>np.add.at</code>，不能是 <code>gW[ids] = vals</code></h4>
+<p>fancy-index <b>赋值</b>对重复索引是<b>覆盖</b>（numpy 把写入按索引排好，同一行只留最后一次）， <code>np.add.at(gW, idx, vals)</code> 是<b>逐条累加</b>、顺序无关。判据用 <code>ids = [3,3,3,0,7]</code>、 $g$ 全 $1$（$C=4$）钉住这条：</p>
+<table><thead><tr><th>写法</th><th><code>weight.grad[3].sum()</code></th><th>判据"重复 id 梯度累加"</th></tr></thead><tbody><tr><td><code>np.add.at</code></td><td>$3\times 4=12$</td><td>期望 12、实测 12 → 绿</td></tr><tr><td><code>gW[ids] = g</code></td><td>$4$（只剩最后一次）</td><td>期望 12、实测 4 → 红，误差 8</td></tr></tbody></table>
+<p><code>+= gW</code> 而不是 <code>= gW</code>（3a 约定 3）：<code>gW</code> 加完的是这一批，<b>多次 backward</b> 之间还要累加。 gradcheck 为什么可能抓不到覆盖写法、判据为什么必须自己造一条重复 id 的用例，见 §11。</p>
+<div class="fig" data-fig="scatter" role="img" aria-label="可视化：scatter"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>点上面任意一个 <code>id</code> 就写入一次，切换"覆盖 ⇄ 累加"看第 3 行从 4 变 12。</p>
+<h4 id="sec-5-4">5.4 没用到的行梯度恰好是 0 —— 这是正确的</h4>
+<p><code>ids</code> 里没有 <code>1</code>，所以 <code>weight.grad[1]</code> 必须<b>全 0</b>：判据钉的是"没有越界污染" （索引弄错了行、或者忘了 <code>zeros_like</code> 而从上一批数据带了脏值进来）。</p>
+<p><code>return None</code>（3a 约定 4）：token 序号不可导，梯度到这一层就该停住。 一个 batch 里绝大多数行是 0 为什么<b>不是</b> bug，见 §11。</p>
+<h4 id="sec-5-5">5.5 写完就跑</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-7      # 只测这一层
+python tests/test_layers_b.py       # 整卷；后三条该绿</code></pre></figure>
+<p>答案版量级 $5.33\mathrm{e}{-}11$（只查 <code>weight</code> 一个参数：输入是整数，有限差分动不了它）。</p>
+<details class="answer"><summary>参考答案 · TODO-7 <code>Embedding</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, ids):
+        self._ids = np.asarray(ids)
+        <span class="kw">return</span> self.weight.data[self._ids]
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        gW = np.zeros_like(self.weight.data)
+        np.add.at(gW, self._ids.reshape(-<span class="num">1</span>), np.asarray(g).reshape(-<span class="num">1</span>, g.shape[-<span class="num">1</span>]))
+        self.weight.grad += gW
+        <span class="kw">return</span> <span class="kw">None</span>                     <span class="com"># 输入是整数序号，不可导</span></code></pre></figure>
+<p><code>np.add.at</code> 是这一层的全部：<b>fancy 赋值对重复索引是覆盖，不是累加</b>。 返回 <code>None</code> 也是有意的 —— token 序号不可导，判据在这层只查参数梯度（$5.33\mathrm{e}{-}11$）。</p></div></details>
+<p><b>这一节做完你能停下来。</b> 判据后三条（<code>Embedding(参数梯度)</code> / <code>重复 id 梯度累加</code> / <code>未出现的行梯度为 0</code>）绿了，就剩最后一层组装。</p></section><section class="sec" id="sec-6" data-stage="s03b"><h2>6. TODO-10：<code>MLP</code></h2><div class="sec-act"><button data-check="TODO-10">跑 TODO-10 的单项检查</button><button data-edit="TODO-10">跳到编辑器</button><a class="sec-jump" href="/?stage=s03b">在测评台里打开 →</a></div><h4 id="sec-6-1">6.1 它就是三个层串起来，没有新数学</h4>
+<p>$$\mathrm{MLP}(x)=W_2\,\mathrm{GELU}(W_1 x+b_1)+b_2,\qquad W_1\in\mathbb{R}^{H\times C},\ W_2\in\mathbb{R}^{C\times H}$$</p>
+<p>骨架里 <code>MLP(6, 16)</code>：$C=6$、$H=16$，输入 $(2,3,6)$、输出 $(2,3,6)$。<code>__init__</code> 已给你写好： <code>self.fc1 = Linear(C, hidden)</code>、<code>self.act = GELU()</code>、<code>self.fc2 = Linear(hidden, C)</code>。</p>
+<table><thead><tr><th>要求</th><th>内容</th></tr></thead><tbody><tr><td>进出口同形</td><td>$H$ 只在<b>内部</b>出现；阶段 4 的 <code>Block</code> 要把 <code>MLP(x)</code> 加回 <code>x</code>，形状不同就加不了</td></tr><tr><td>梯度形状</td><td>$(B,T,C)\to(B,T,H)\to(B,T,C)$，中间变一次（<code>fc1</code> 的 <code>in_f=C</code>、<code>fc2</code> 的 <code>in_f=hidden</code>）</td></tr><tr><td>逐位置</td><td>每个 token 独立过同一个 MLP，token 之间不交换信息（那是注意力的活）</td></tr><tr><td>不含残差/norm</td><td>那是阶段 4 <code>Block</code> 的事：<code>norm → attn → 残差 → norm → mlp → 残差</code></td></tr></tbody></table>
+<h4 id="sec-6-2">6.2 forward 三行、backward 三行，后者是前者的镜像</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>forward:  h = self.act(self.fc1(x));  return self.fc2(h)
+backward: g → fc2.backward → act.backward → fc1.backward → return</code></pre></figure>
+<p>三个要点：</p>
+<li>用 <code>self.act(self.fc1(x))</code> 也就是 <code>__call__</code>，不是 <code>self.fc1.forward(x)</code>。</li></ol>
+<p>差别在 3a §4.3 说过：以后所有横切的东西（dropout、缓存开关）都挂在 <code>__call__</code> 上。</p>
+<li><code>backward</code> 调的是<b>子模块的 <code>backward</code></b> —— 它们会各自把参数梯度累加进自己的 <code>p.grad</code>。</li></ol>
+<p>所以 <code>MLP.backward</code> 自己<b>一行 <code>.grad</code> 都不写</b>。</p>
+<li>每步的<b>返回值</b>是下一步的<b>入参</b>；顺序严格反。这就是"反向 = 正向的镜像"，</li></ol>
+<p>整份手册到处成立（阶段 5 的 <code>Block</code>、阶段 6 的整个模型都是这一条放大版）。</p>
+<h4 id="sec-6-3">6.3 顺序错了会怎样</h4>
+<table><thead><tr><th>写法</th><th>表现</th></tr></thead><tbody><tr><td>把 $g$（$(2,3,6)$）直接喂 <code>fc1.backward</code></td><td><code>ValueError: cannot reshape array of size 36 into shape (16)</code></td></tr><tr><td>正向写成 <code>self.fc2(self.fc1(self.act(x)))</code></td><td>反向撞上 <code>operands could not be broadcast together with shapes (2,3,16) (2,3,6)</code></td></tr><tr><td><code>backward</code> 少走一次 <code>self.act.backward</code></td><td>三处形状全合法、代码跑通、loss 也降；判据第 3 条最大相对误差 $0.82$（答案版 $1.72\mathrm{e}{-}07$）</td></tr></tbody></table>
+<p><code>gradcheck</code> 的明细会<b>点名报错在哪个张量上</b>（形如 <code>fc1.W 第 k 个元素</code>）： <b>红报在哪个参数，错就在那一段</b>。</p>
+<h4 id="sec-6-4">6.4 缓存：<code>MLP</code> 自己不缓存任何东西</h4>
+<p>中间激活由 <code>fc1</code>/<code>act</code>/<code>fc2</code> 各自的缓存记住 —— <b>缓存归每个子模块自己</b>。 答案实现里那行 <code>self._out = h</code> 反向没用到，删掉判据第 3 条照样绿（留着只为打印形状排查）。</p>
+<p>两条不能省的纪律：</p>
+<li>不要在 <code>backward</code> 里重算正向：既覆盖子模块缓存（违反 3a §4.1），又慢一倍。</li><li>不要用两次 forward 夹一次 backward（比如为了打印 loss 又 forward 一次）：</li></ul>
+<p>形状全对、loss 照降，只有梯度算到了另一条数据上。</p>
+<h4 id="sec-6-5">6.5 写完就跑</h4>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-10     # 只测这一层
+python tests/test_layers_b.py       # 整卷 6 条该全绿</code></pre></figure>
+<div class="fig" data-fig="mlpbwd" role="img" aria-label="可视化：mlpbwd"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p>▶ 播放 / ⏭ 单步 / ⏸ 暂停 / ↺ 重置：正向 3 步，反向按 <code>fc2 → act → fc1</code> 的真实顺序 7 步， 每步标出输入形状、输出形状、公式和当场算出的小矩阵；最后一步拿逐步累积的结果和一次性直算对拍。</p>
+<details class="answer"><summary>参考答案 · TODO-10 <code>MLP</code>（判据没过之前别点开）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        h = self.act(self.fc1(x))
+        self._out = h
+        <span class="kw">return</span> self.fc2(h)
+
+    <span class="kw">def</span> <span class="fn">backward</span>(self, g):
+        g_h = self.fc2.backward(g)
+        g_h = self.act.backward(g_h)
+        <span class="kw">return</span> self.fc1.backward(g_h)</code></pre></figure>
+<p><code>g_h</code> 被赋值两次，正是"每步返回值是下一步入参"的直译：第一次是 $(B,T,H)$，第二次是 $(B,T,C)$。 <code>MLP.backward</code> 里没有 <code>+=</code>，因为参数梯度是子模块的事 —— 这是<b>组合层</b>和<b>原子层</b>的分工。</p></div></details>
+<p>四节写完，回来把这张表逐格对一遍：每一格是你在哪一节填的。</p>
+<table><thead><tr><th>层</th><th>形状</th><th>有哪些参数</th><th>A｜参数梯度</th><th>B｜共用一维参数</th><th>C｜输入梯度（返回值）</th><th><code>forward</code> 缓存</th></tr></thead><tbody><tr><td><code>GELU</code></td><td>$(B,T,C)\to(B,T,C)$</td><td>无</td><td><b>不存在</b></td><td>不存在</td><td>$g\odot\dfrac{\partial y}{\partial x}$，和 $x$ 同形</td><td>$(x,\ t,\ \text{inner})$</td></tr><tr><td><code>RMSNorm</code></td><td>$(B,T,C)\to(B,T,C)$</td><td>$w$，形状 $(C,)$</td><td>和槽位 B 合并（§4.3）</td><td>$w$：$\sum_{b,t} g\odot\hat x$，$(C,)$</td><td>$r\,u-r\,\hat x\,s$</td><td><code>_r</code> $(B,T,1)$、<code>_xh</code> $(B,T,C)$</td></tr><tr><td><code>Embedding</code></td><td>$(B,T)\to(B,T,C)$</td><td><code>weight</code>，形状 $(V,C)$</td><td>按 id <b>散射累加</b>进 <code>gW</code>，$(V,C)$</td><td>不存在</td><td><code>None</code>（输入是整数序号）</td><td><code>_ids</code> $(B,T)$</td></tr><tr><td><code>MLP</code></td><td>$(B,T,C)\to(B,T,C)$</td><td><code>fc1</code>/<code>fc2</code> 的 $W$、$b$ 共 4 个</td><td>由子模块<b>自己</b>累加</td><td>同左（<code>fc1.b</code>、<code>fc2.b</code>）</td><td>一路 return 到 <code>fc1.backward</code></td><td>自己不缓存（§6.4）</td></tr></tbody></table>
+<p>三个"空格"是判据盯着的三件事（<code>GELU</code> 没有参数 / <code>RMSNorm</code> 的 A 与 B 是同一件事 / <code>Embedding</code> 的 C 是 <code>None</code>），逐条解释见 §11。</p></section><section class="sec" id="sec-7" data-stage="s03b"><h2>7. 这一卷的验收判据</h2><div class="checkstable"><div class="cfhead"><span class="cftag">判据逐条 · 本表现取：跑一遍 solutions/ 那份答案，把 tests/test_layers_b.py 的 Report 每行原样搬来</span></div><table><thead><tr><th>组</th><th>判据</th><th>这条在判什么、写错了会是什么症状</th></tr></thead><tbody><tr><td class="cgrp">四个层的有限差分 · GELU / RMSNorm / MLP</td><td>GELU</td><td>最大相对误差 6.84e-08 · 没有参数，只查输入梯度：dy/dx 那两项少一项就是 1e0 量级</td></tr><tr><td class="cgrp"></td><td>RMSNorm</td><td>最大相对误差 2.94e-09 · 同时查 dx 和 dw；漏掉耦合项 -r*xh*s，误差从 1e-9 跳到 1e-1</td></tr><tr><td class="cgrp"></td><td>MLP</td><td>最大相对误差 1.72e-07 · 组合层：fc1/fc2 的 W、b 加输入 x 全查；漏掉 act.backward 形状照样合法</td></tr><tr><td class="cgrp">Embedding · 查表、重复 id 累加、未用行必须为 0</td><td>Embedding(参数梯度)</td><td>最大相对误差 5.33e-11 · 输入是整数，有限差分动不了它，所以只查参数梯度</td></tr><tr><td class="cgrp"></td><td>重复 id 梯度累加</td><td>期望 12 实测 12 误差 0 ≤ 1e-09 · id=3 出现三次，每次贡献 4 个 1；覆盖写法只会得到 4</td></tr><tr><td class="cgrp"></td><td>未出现的行梯度为 0</td><td>id=1 不在序列里</td></tr></tbody></table><p class="cfnote">跑法：<code>python tests/test_layers_b.py</code>。<b>表里的数字是答案跑出来的</b>，不是你的 —— 你的那一行在中栏「跑整卷」的结果里，长得很像但数值不会一样。</p></div>
+<p>红了的去向：<code>GELU</code> → §3.3 数那两项；<code>RMSNorm</code> → §4.2 那三条路对不对得上； <code>MLP</code> → §6.3 那张表；<code>Embedding</code> 后两条 → §5.3、§5.4。</p></section><section class="sec" id="sec-8" data-stage="s03b"><h2>8. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>大概率原因</th><th>去哪一节</th></tr></thead><tbody><tr><td><code>GELU</code> 那条误差 $10^{0}$ 量级</td><td>反向漏了链式那一项，只剩 $\tfrac12(1+t)$</td><td>§3.3</td></tr><tr><td><code>AttributeError: 'GELU' object has no attribute '_cache'</code></td><td><code>forward</code> 忘了 <code>self._cache = ...</code></td><td>§3.4</td></tr><tr><td>在 <code>GELU.backward</code> 里写了 <code>self.xxx.grad +=</code></td><td>这层没有参数，槽位 A、B 是空的</td><td>§2 那张表</td></tr><tr><td><code>RMSNorm</code> 误差 $10^{-1}$ 以上（常接近 1）</td><td>少了 $-r\hat x\,s$ 那一项</td><td>§4.2</td></tr><tr><td><code>RMSNorm</code> 误差刚好差一个 $r$ 因子</td><td>$s$ 里用了 $x$ 而不是 $\hat x$，或者少乘/多乘一个 $r$</td><td>§4.2 最后一段</td></tr><tr><td><code>operands could not be broadcast together</code></td><td>$s$ 或 <code>ms</code> 忘了 <code>keepdims=True</code></td><td>§4.4</td></tr><tr><td><code>RMSNorm</code> 的 <code>w.grad</code> 形状是 $(T,C)$</td><td>没摊平就 <code>sum(axis=0)</code></td><td>§4.3</td></tr><tr><td><code>Embedding</code> 那条判据报"期望 12 实测 4"</td><td>用了 fancy 赋值（覆盖）而不是 <code>np.add.at</code></td><td>§5.3</td></tr><tr><td><code>Embedding</code> gradcheck 绿但你还是错了</td><td>这批 <code>ids</code> 恰好没重复 —— 所以判据另有第 5、6 条</td><td>§5.3</td></tr><tr><td><code>IndexError: arrays used as indices must be integer</code></td><td><code>np.asarray(ids, dtype=np.float64)</code> 把索引转成了浮点</td><td>§5.1</td></tr><tr><td><code>cannot reshape array of size 36 into shape (16)</code></td><td><code>MLP.backward</code> 顺序写反，最外层的 $g$ 喂给了 <code>fc1</code></td><td>§6.3</td></tr><tr><td><code>MLP</code> 形状全对、loss 照降，误差却 $0.8$ 左右</td><td><code>backward</code> 三行漏了中间那行（没走 <code>self.act.backward</code>）</td><td>§6.3</td></tr><tr><td><code>MLP</code> 误差 $10^{-1}$ 以上但不知错在哪</td><td>明细点名的张量就是出错那一段（<code>fc1.W</code> 和 <code>fc2.W</code> 指向不同的毛病）</td><td>§6.3</td></tr><tr><td>全过但阶段 4 的 <code>Block</code> 报错</td><td>缓存被复用（forward 调了两次才 backward）</td><td>§6.4</td></tr></tbody></table></section><section class="sec" id="sec-9" data-stage="s03b"><h2>9. 自查题</h2><p>不用查资料。每题先把自己的答案写进输入框再点"判一下"；想不出来按提示 1→2→3， 三级提示从最抽象到最具体；还不行就点"回讲义读这一节"。</p>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">这四个层（GELU / RMSNorm / Embedding / MLP）各自的"三件产出"里，哪一件是空的？空的原因分别是什么？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-2">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>三件产出 = 返回的 dx、累进的 dW、累进的 db。逐层问：它有参数吗？它的输入都可导吗？</div><div class="qzh" hidden>GELU 和 MLP 没有自己的参数；Embedding 的输入是整数序号。</div><div class="qzh" hidden>GELU 缺 dW/db（无参数）；RMSNorm 的 dW/db 是同一个 w；Embedding 缺 dx（整数不可导）；MLP 的三件全由 fc1/fc2 自己认领。</div><div class="qzres" hidden></div><div class="qza" hidden><code>GELU</code> 缺 dW、db（无参数）；<code>RMSNorm</code> 的 dW 和 db 是同一个（唯一的 $w$，形状 $(C,)$、被所有位置共用）；<code>Embedding</code> 缺 dx（整数不可导）；<code>MLP</code> 三件全空 —— 由子模块自己认领（§2）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>GELU无参数/没有参数/缺A、B; 共用/同一个; 整数不可导/不可导; 子模块/自己认领</div><div class="qzlinkv" hidden>sec-2</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>GELU</code> 的 $\partial y/\partial x$ 为什么必然有两项？$1-t^{2}$ 是从哪来的？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-3">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>把 y 写成两个因子的乘积，看看几个因子含 x。</div><div class="qzh" hidden>乘积求导：前导后不导 + 后导前不导。</div><div class="qzh" hidden>$y=\tfrac12 x(1+t)$，两个因子都含 x 所以两项；$1-t^2$ 是 tanh 的导数用<b>它自己的值</b> t 表示（阶段 2 的规则）。</div><div class="qzres" hidden></div><div class="qza" hidden>$y=\tfrac12 x(1+t(x))$ 是两个含 $x$ 的因子之积：前因子求导给 $\tfrac12(1+t)$，后因子走链式。$1-t^{2}$ 是 $\tanh$ 的导数用<b>自己的值</b>表示（§3）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>乘积/两个因子; tanh的导数/自己的值/链式</div><div class="qzlinkv" hidden>sec-3</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">RMSNorm 反向里减掉的那一项（$s$ 项）在物理上代表什么？为什么"只写 $r\,u$"是错的？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-4">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>归一化之后，每行的长度还是自由变量吗？</div><div class="qzh" hidden>沿 $\hat x$ 方向扰动 x，输出会变吗？</div><div class="qzh" hidden>归一化把每行长度钉在 $\sqrt C$，沿 $\hat x$ 的扰动被禁止；减掉的就是那份"被禁止方向"的贡献。只写 $ru$ 等于假装 r 是常数。</div><div class="qzres" hidden></div><div class="qza" hidden>归一化把每行长度钉在 $\sqrt{C}$，沿 $\hat x$ 方向的扰动不会改变输出；减掉的就是那份"被禁止的方向"。只写 $r u$ 等于假装 $r$ 是常数（§4 的几何解释）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>长度/钉住/锁住/方向; 常数/ r 也依赖x / r不是常数</div><div class="qzlinkv" hidden>sec-4</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq">手算 §4 那组数：$x=[3,4]$、$g=[1,0]$ 时 $\partial L/\partial x$ 是多少？只写 $r u$ 会得到什么？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-4">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>先算 r：$\sqrt{(9+16)/2}=5/\sqrt2$。</div><div class="qzh" hidden>完整式子是 $g/r$ 减去 $s$ 项；只写 $ru$ 时你其实算的是 $g\cdot$ 什么？</div><div class="qzh" hidden>正确答案 $[0.181019, -0.135764]$；只写 $ru$（即 $g/r$ 漏减项的对照）给 $[0.282843, 0]$ —— 第二维本该收到"被禁止方向"退回的量。</div><div class="qzres" hidden></div><div class="qza" hidden>$[0.181019,\ -0.135764]$；只写 $r u$ 得到 $[0.282843,\ 0]$（§4）。</div></div><div class="qzaccept" hidden>[0.181019,-0.135764]/[0.181,-0.136]/0.181019,-0.135764</div><div class="qzkeys" hidden></div><div class="qzlinkv" hidden>sec-4</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>np.add.at</code> 和 <code>gW[ids] = vals</code> 的区别是什么？为什么 gradcheck 单独抓不住后者？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-5">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>同一个索引出现两次时，两种写法各留下什么？</div><div class="qzh" hidden>gradcheck 的 ids 是随机抽的。</div><div class="qzh" hidden><code>=</code> 对重复索引<b>覆盖</b>（只留最后一条），<code>add.at</code> <b>逐条累加</b>。gradcheck 抓不抓得住取决于抽到的 ids 有没有重复 —— 无重复时全绿，所以判据自己构造重复 id。</div><div class="qzres" hidden></div><div class="qza" hidden>后者对重复索引<b>覆盖</b>，前者<b>逐条累加</b>。gradcheck 能不能抓到取决于抽到的 <code>ids</code> 有没有重复 —— 实测无重复时全绿，所以判据要自己构造重复 id（§5）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>累加/覆盖; 重复/有没有重复/抽到</div><div class="qzlinkv" hidden>sec-5</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>Embedding.backward</code> 为什么返回 <code>None</code>？如果返回零数组会掩盖什么？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-5">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>约定 4 对"没有可导输入"的层是怎么规定的？</div><div class="qzh" hidden>返回零数组不会报错 —— 那问题出在谁身上？</div><div class="qzh" hidden>整数序号不可导，约定 4 要求返回 <code>None</code>。返回零数组会让以后多输入层的反向调度误以为"还有一路可导输入"，把断链接错。</div><div class="qzres" hidden></div><div class="qza" hidden>token 序号不可导，约定 4 要求"没有可导输入就返回 <code>None</code>"。返回零数组不会报错，但会让多输入层的反向调度误以为"还有一路可导输入"，把断链接错（§5）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>不可导/整数; 误以为/断链/接错/还有一路</div><div class="qzlinkv" hidden>sec-5</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>MLP</code> 进出口的 $C$ 为什么必须相同，而 $H$ 可以随便改？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-6">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>阶段 4 的 Block 拿 MLP 的输出干什么？</div><div class="qzh" hidden>两个张量相加的形状要求是什么？</div><div class="qzh" hidden>Block 把 <code>MLP(x)</code> 加回 <code>x</code>，进出同形才加得动；H 只活在支路内部，改它只影响容量和速度。</div><div class="qzres" hidden></div><div class="qza" hidden>阶段 4 的 <code>Block</code> 把 <code>MLP(x)</code> 加回 <code>x</code>，进出同形才加得动；$H$ 只活在支路内部，改它只影响容量和速度（§6）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>残差/加回/同形; 支路/内部/容量</div><div class="qzlinkv" hidden>sec-6</div></div>
+<div class="quiz"><div class="qzhead"><span class="qztag">自查题</span><span class="qzq"><code>MLP.backward</code> 里为什么一行 <code>.grad</code> 都不写？</span></div><div class="qzctrl"><input class="qzin" type="text" placeholder="把你的答案写在这儿" autocomplete="off"><button class="qzcheck" type="button">判一下</button><button class="qzhint" type="button" data-k="1">提示 1</button><button class="qzhint" type="button" data-k="2">提示 2</button><button class="qzhint" type="button" data-k="3">提示 3</button><button class="qzans" type="button">看答案要点</button><a class="qzlink" href="#sec-6">回讲义读这一节</a></div><div class="qzbody"><div class="qzh" hidden>MLP 的参数挂在谁名下？</div><div class="qzh" hidden>调 fc1.backward 的时候，谁在写 fc1.W.grad？</div><div class="qzh" hidden>参数梯度是 fc1/fc2 自己的事 —— 组合层只把梯度按镜像传下去；自己再写一遍会让同一份 W.grad 被加两次。</div><div class="qzres" hidden></div><div class="qza" hidden>参数梯度是 <code>fc1</code>/<code>fc2</code> 自己的事 —— 组合层只负责把梯度按镜像传下去。自己再写一遍会重复累加（同一份 <code>W.grad</code> 被加两次）（§6）。</div></div><div class="qzaccept" hidden></div><div class="qzkeys" hidden>子模块/自己/fc1/fc2; 重复累加/加两次</div><div class="qzlinkv" hidden>sec-6</div></div></section><section class="sec" id="sec-10" data-stage="s03b"><h2>10. 下一步</h2><p><code>python tests/test_layers_b.py</code> 6 条全绿 → 去 <a href="s03c.html">阶段 3c · CrossEntropy 与测谎仪自检</a>：本阶段最后一个层，也是唯一 <b>输出标量</b>的那个层；那一卷还会用两个已知答案的层反过来考 <code>gradcheck</code>， 把你以后拿到"最大相对误差 3e-2"时该怀疑谁这件事钉死。</p>
+<p>先做一件事再走：把这一卷里你<b>红过</b>的那条判据的名字，和当时错误量级，写在纸上。 阶段 4 你会再遇到同一类错，那张纸比讲义快。</p></section><section class="sec" id="sec-11" data-stage="s03b"><h2>11. 进阶推导（现在可以跳过）</h2><p>正文只给了公式和要写的代码。这一节是那些公式<b>怎么来的</b>、以及每个约定背后的理由。</p>
+<h4 id="sec-11-1">11.1 GELU：为什么敢用 tanh 近似式</h4>
+<p>精确式是 $y=\tfrac12 x\bigl(1+\operatorname{erf}(x/\sqrt2)\bigr)$。近似式和它在整条实轴上的最大偏差：</p>
+<table><thead><tr><th>量</th><th>最大绝对偏差</th><th>出现在</th></tr></thead><tbody><tr><td>$y$</td><td>$4.7\mathrm{e}{-}04$</td><td>$x\approx-2.70$</td></tr><tr><td>$\partial y/\partial x$</td><td>$8.7\mathrm{e}{-}04$</td><td>$x\approx-2.02$</td></tr></tbody></table>
+<p>$x=-2$ 那一点的对照：</p>
+<table><thead><tr><th>版本</th><th>$y$</th><th>$\partial y/\partial x$</th></tr></thead><tbody><tr><td>tanh 近似（你要写的）</td><td>$-0.045402$</td><td>$-0.086099$</td></tr><tr><td>精确 erf</td><td>$-0.045500$</td><td>$-0.085232$</td></tr></tbody></table>
+<p>判据阈值是相对误差 $10^{-4}$，而中心差分自己就带 $10^{-8}$ 量级的噪声；这点偏差远小于 训练里任何一步的舍入。用近似式的收益是 <code>np.tanh</code> 一次调用，不必依赖 <code>scipy.special.erf</code>。</p>
+<p>三个能记住的观察：</p>
+<li>$x=0$ 处斜率正好 $0.5$ —— 它是"软化的 ReLU"，在 0 附近一半通过、一半不通过。</li><li>$x\gtrsim 2$ 之后 $y\approx x$（$t\to1$）；负区 $y\to0$ 但不是 0。</li><li>负区那点泄漏是真的，精确 erf 版也一样（$-0.0455$），不是你写错了。</li></ul>
+<p>负区导数有个极小值：$x\approx-1.4185$ 处 $\partial y/\partial x\approx-0.1290$ —— GELU 在这一段是<b>递减</b>的，<code>geludx</code> 那张图拖到那里能看到读数为负。</p>
+<p>漏掉链式那一项（只写 $\tfrac12(1+t)$）的症状：形状全对、能跑、loss 照降， 判据第 1 条给 $10^{0}$ 量级的相对误差 —— 差的是整整一项，不是小系数。</p>
+<p>$K$、$A$ 写成类属性而不是两处字面量的理由：正向算 <code>inner</code>、反向算 $K(1+3Ax^{2})$ 都要用它们。 写两处时最常见的错是反向那份把 $3Ax^{2}$ 打成 $3Ax$：gradcheck 一定红， 但红报只说"误差大"，不会说"你两个字面量不一样"。</p>
+<h4 id="sec-11-2">11.2 RMSNorm：耦合项 $-r\hat x\,s$ 是怎么来的</h4>
+<p>前面所有层都是逐元素的（$y_c$ 只依赖 $x_c$），这一层不是：$x$ 的某个分量变了， $\operatorname{mean}(x^{2})$ 也变了，于是<b>整行</b>输出都受影响。所以 $\partial L/\partial x$ 不能只写 $r\,u$ —— 那等于"把 $r$ 当常数"，而 $r$ 恰恰是这一层唯一由输入自己决定的量。</p>
+<p>还是 §4.2 那组数（$x=[3,4]$、$w=[1,1]$、$g=[1,0]$、$C=2$、$\epsilon=0$）。 先看 $r$ 对分量的导数 —— 耦合就藏在这一步：</p>
+<p>$$\frac{\partial r}{\partial x_0}=-\frac12\bigl(\operatorname{mean}(x^{2})\bigr)^{-3/2}\cdot\frac{2x_0}{C} =-\frac12(12.5)^{-3/2}\cdot 3=-0.033942$$ $$\frac{\partial r}{\partial x_1}=-\frac12(12.5)^{-3/2}\cdot 4=-0.045255$$</p>
+<p>$y_0=r x_0$ 里 $r$ 和 $x_0$ <b>都</b>依赖 $x_0$，乘积法则给出两项；$y_1=r x_1$ 也一起动了 （这正是"整行联动"）：</p>
+<p>$$\frac{\partial y_0}{\partial x_0}=r+x_0\frac{\partial r}{\partial x_0} =0.282843+3\cdot(-0.033942)=0.181019$$ $$\frac{\partial y_1}{\partial x_0}=x_1\frac{\partial r}{\partial x_0} =4\cdot(-0.033942)=-0.135768$$</p>
+<p>$2\times2$ 雅可比剩下两格把下标 $0/1$ 互换。按 $L=\sum_c y_c g_c$ 合并， $g=[1,0]$ 意味着只取 $y_0$ 那一行：</p>
+<p>$$\frac{\partial L}{\partial x_0}=1\cdot0.181019+0\cdot(\cdots)=\mathbf{0.181019},\qquad \frac{\partial L}{\partial x_1}=3\cdot(-0.045255)=\mathbf{-0.135764}$$</p>
+<p>和 §4.2 表里最终式给的数一模一样 —— 这就是那次手算的全部目的。最容易错在 $r\hat x$ 这一处： $\hat x$ 里已经含了一个 $r$，所以 $r\hat x\,s$ 整体是 $r^{2}$ 阶的（本例就是 $x/12.5$）。</p>
+<p>少乘一个 $r$ 会减掉 $[0.360,\ 0.480]$，得 $[-0.077,\ -0.480]$；多乘一个 $r$ 只减掉 $[0.0288,\ 0.0384]$，得 $[0.2541,\ -0.0384]$ —— 两种都错，两种都会被这条判据按在地上。</p>
+<p>几何解释（比公式好记）：归一化把每行的长度钉住了（$\epsilon=0$ 时 $\lVert\hat x\rVert=\sqrt{C}$， 与 $x$ 的尺度无关），所以<b>沿着 $\hat x$ 方向的扰动是被禁止的</b>，它不会改变输出。 $r\hat x\,s$ 减掉的正是 $u$ 在 $\hat x$ 方向上的那一份，$s$ 就是那份的（归一化）大小。 <code>rmscouple</code> 那张图里"漏项那一行"只在 $s\approx0$ 时追上真值 —— 不是公式简化了， 是那一行恰好没耦合。</p>
+<p>同族的兄弟在阶段 4：softmax 反向 $g=p\odot(gp-\sum(gp\odot p))$ 里那个减号， 钉的是"<b>每行和为 1</b>"而不是长度。</p>
+<p>为什么它比 LayerNorm 流行：少一次减均值（少一个全局统计量）、少一个 bias 参数， 实测效果相当，实现和反向都更短。你刚推的这项耦合修正在 LayerNorm 里<b>也存在而且更复杂</b> （多一个均值方向的约束）—— 这就是少减一次均值的真实收益。</p>
+<p>§4.3 为什么必须先 <code>reshape(-1, C)</code> 再 <code>sum(axis=0)</code>：<code>(g*self._xh).sum(axis=(0,1))</code> 也能给出 $(C,)$，但顺手写成 <code>sum(axis=0)</code>（没摊平）得到的是 $(T,C)$。形状不对时报错还算客气， 更糟的是有人会把 $w$ 定义成 $(T,C)$ 去"迁就"它 —— 那等于让每个位置有一份自己的通道尺度， 参数多 $T$ 倍，而且换序列长度就废。</p>
+<h4 id="sec-11-3">11.3 Embedding：gradcheck 的盲区，和 $(V,C)$ 的理由</h4>
+<p>判据为什么要自己造一条重复 id 的用例：<code>test_layers_b.py</code> 那组随机 <code>ids</code> 恰好有重复 （按判据的抽取顺序是 <code>[6,6,8,1,7,1,1,8,0,7]</code>），所以覆盖写法在<b>这次</b> gradcheck 里也会红 （最大相对误差 $1.21$）。但换一段没有重复的 <code>ids</code>（<code>[9,7,5,2]</code>）：覆盖写法给出 $1.1\mathrm{e}{-}11$、<b>全绿</b>。这个 bug 抓不抓得到，取决于抽到的数据里有没有重复 id。 这是"测谎仪也有盲区"的第一个实例，<a href="s03c.html#sec-4">3c §4</a> 会正面谈这件事。</p>
+<p><code>self.weight.grad = gW</code>（覆盖而不是累加）和 <code>test_layers_a.py</code> 里"backward 两次后梯度翻倍" 那条抓的是同一个毛病，只是那里用 <code>Scale</code> 演示。真实触发场景是梯度累积， 以及阶段 5 的 weight tying（同一个张量走两条路，两次 backward）。</p>
+<p>$W$ 存成 $(V,C)$ 而不是 $(C,V)$ 有两个理由：第 $v$ 行就是词 $v$ 的向量，取一行是一次连续内存读取； 而且阶段 5 的 weight tying（输出头和词嵌入共用同一个张量）之所以"免费"， 是因为 <code>Linear(C→V)</code> 的 $W$ 按 3a §6.1 的约定<b>也</b>存成 $(V,C)$ —— 两边要的形状刚好是同一个。</p>
+<p>"绝大多数行梯度是 0"为什么不是 bug：一个 batch 里没出现的词占绝大多数 （$V=8192$、$N\approx512$ 时几乎全是 0），稀疏是正常的，这正是查表比 one-hot × 矩阵乘便宜的原因。 阶段 5 的"无死参数"检查要求的是<b>每个张量</b>有非零梯度，不要求每个<b>元素</b>都有 —— 它管的是接线，不是使用情况。</p>
+<p><code>return None</code> 而不是 <code>np.zeros_like(ids, dtype=float)</code>：约定 4 要求没有可导输入就返回 <code>None</code>， 梯度到这里就该停住（往 token 序号方向没有可微的东西）。返回一个全 0 浮点数组既不报错也没意义， 还会让以后新增的"多输入层"调试逻辑误判。</p>
+<h4 id="sec-11-4">11.4 MLP：三个"空格"，和两次 forward 的陷阱</h4>
+<li><code>GELU</code> 的 A、B 是空的 —— 它<b>没有参数</b>，所以 <code>backward</code> 里出现 <code>self.xxx.grad</code> 就是错的。</li></ul>
+<p>判据照样测得到它，因为槽位 C 有东西（$x$ 是浮点数组，有限差分能扰动它）。</p>
+<li><code>RMSNorm</code> 的 A 和 B 是同一件事：唯一的参数 $w$ 形状 $(C,)$，被 $B\cdot T$ 个位置共用，</li></ul>
+<p>走的是 3a §2.3 那条规律（"想得到 $(C,)$，就让 $N=B\cdot T$ 消失"）。</p>
+<li><code>Embedding</code> 的 C 是 <code>None</code>：token 序号不可导，这不是偷懒，是 3a 约定 4 的字面要求。</li></ul>
+<p>"两次 forward 夹一次 backward"为什么难查：子模块的缓存是<b>实例属性</b>，第二次 forward 会把 <code>_cache</code>/<code>_r</code>/<code>_xh</code>/<code>_ids</code> 全部覆盖成新数据；<code>backward</code> 用的是新缓存，传进来的 $g$ 却是 旧那条数据的。形状完全一致、loss 照降，只有梯度是错的。阶段 5 写训练循环时 （打印 loss、评估、采样）一定会遇到 —— 记住<b>forward 与 backward 严格一对一</b>。</p></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>

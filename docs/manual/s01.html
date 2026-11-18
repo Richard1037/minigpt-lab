@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>阶段 1 · 标量自动微分：搞懂"梯度下降"这四个字</title>
+<link rel="stylesheet" href="assets/manual.css">
+<script src="assets/mj-config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+        onerror="window.NO_MATHJAX=1"></script>
+</head>
+<body class="chapter-page" data-stage="s01">
+<article class="chapter" id="ch-s01">
+<nav class="minimap" aria-label="TODO 小地图"><a class="mm" data-todo="TODO-1" href="#sec-4" title="scalar.py TODO-1 __mul__"><i></i><code>TODO-1</code></a><a class="mm" data-todo="TODO-2" href="#sec-5" title="scalar.py TODO-2 __pow__"><i></i><code>TODO-2</code></a><a class="mm" data-todo="TODO-3" href="#sec-6" title="scalar.py TODO-3 backward()"><i></i><code>TODO-3</code></a><a class="mm" data-todo="TODO-1A" href="#sec-7" title="exercises.py TODO-1A fit_by_autograd"><i></i><code>TODO-1A</code></a><span class="mm-key"><b class="k-pend"></b>待写<b class="k-done"></b>已写<b class="k-pass"></b>单项过<b class="k-fail"></b>单项挂</span></nav>
+<header class="hero">
+  <div class="crumb"><a href="/?stage=s01">← 测评台</a> ·
+    <a href="index.html">讲义总览</a> · 阶段 s01</div>
+  <h1>阶段 1 · 标量自动微分：搞懂"梯度下降"这四个字</h1>
+  <div class="meta"><span>判据 <code>stages/s01_fit_line.py</code></span>
+    <span>预计 20~60 分钟</span>
+    <span>要交 minigpt/scalar.py、minigpt/exercises.py</span></div>
+  <section class="panel" id="panel-task">
+<h2>你要写的代码，具体在这儿</h2>
+<p class="lead">判据 = <code>stages/s01_fit_line.py</code>（命令行和测评台跑的是同一个脚本）。
+要交的文件：<code>minigpt/scalar.py</code>、<code>minigpt/exercises.py</code>。预计 20~60 分钟。</p>
+<table class="todo-table"><thead><tr><th>编号</th><th>写什么</th><th>位置</th><th>状态</th><th></th></tr></thead>
+<tbody><tr data-todo="TODO-1"><td><code>TODO-1</code></td><td>scalar.py TODO-1 __mul__</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-1">去写</button></td></tr><tr data-todo="TODO-2"><td><code>TODO-2</code></td><td>scalar.py TODO-2 __pow__</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-2">去写</button></td></tr><tr data-todo="TODO-3"><td><code>TODO-3</code></td><td>scalar.py TODO-3 backward()</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-3">去写</button></td></tr><tr data-todo="TODO-1A"><td><code>TODO-1A</code></td><td>exercises.py TODO-1A fit_by_autograd</td><td><span class="dim">骨架里已没有占位</span></td><td><span class="pill done">已写</span></td><td><button class="mini-go" data-goto="TODO-1A">去写</button></td></tr></tbody></table>
+<p class="note">位置是<b>生成时</b>的行号（重跑 <code>python scripts/md_to_html.py</code> 就刷新）。
+你在改代码，行号一定会漂 —— 真正可靠的定位方式是<b>在文件里搜编号本身</b>：
+<code>grep -n "TODO-3" src/minigpt/*.py</code>。
+状态只看骨架里那句占位 <code>raise NotImplementedError</code> 还在不在，<b>它不判对错</b> ——
+对错只有判据说。</p></section>
+</header>
+<nav class="toc" aria-label="目录"><div class="toc-h">目录</div><a href="#sec-1"><span>1</span>1. 这一步在干什么</a><a href="#sec-2"><span>2</span>2. 必要理论：loss、梯度、链式法则</a><a href="#sec-3"><span>3</span>3. 已给你的代码：<code>Value</code> 与那条加法</a><a href="#sec-4"><span>4</span>4. TODO-1：<code>__mul__</code></a><a href="#sec-5"><span>5</span>5. TODO-2：<code>__pow__</code></a><a href="#sec-6"><span>6</span>6. TODO-3：<code>backward()</code> —— 本阶段最需要想清楚的地方</a><a href="#sec-7"><span>7</span>7. TODO-1A：<code>fit_by_autograd</code></a><a href="#sec-8"><span>8</span>8. 验收判据逐条解读</a><a href="#sec-9"><span>9</span>9. 常见失败模式对照表</a><a href="#sec-10"><span>10</span>10. 自查题（不看书答不上来就重读）</a><a href="#sec-11"><span>11</span>11. 下一步</a></nav>
+<main><section class="sec" id="sec-0" data-stage="s01"><p>预计：40 行代码，1~2 小时（含读讲义）。 验收命令：<code>python stages/s01_fit_line.py</code> 要写的地方：<code>src/minigpt/scalar.py</code> 的 TODO-1/2/3，<code>src/minigpt/exercises.py</code> 的 TODO-1A。</p></section><section class="sec" id="sec-1" data-stage="s01"><h2>1. 这一步在干什么</h2><p>有 100 个点，严格满足 <code>y = 3x + 1</code>。程序不知道这个式子，只知道一堆 <code>(x, y)</code>。 让它自己调 <code>a</code> 和 <code>b</code>，使 <code>a·x + b</code> 尽量贴近 <code>y</code>。</p>
+<p>脚本会跑两遍<b>同一个问题</b>：</p>
+<li>第 A 部分：偏导数我手推（已经写好了，你只需读懂）；</li><li>第 B 部分：偏导数由你自己写的 <code>Value</code> 引擎自动算出来（TODO-1A）。</li></ul>
+<p>判据要求两者的 <code>a</code>、<code>b</code> 差值小于 <code>1e-6</code>。这条判据的真正作用不是"拟合直线"， 而是<b>证明自动微分没有魔法</b>：它只是替你求了偏导数，仅此而已。 以后你面对 3000 行的 transformer，敢不敢改它，取决于你现在相不相信这句话。</p></section><section class="sec" id="sec-2" data-stage="s01"><h2>2. 必要理论：loss、梯度、链式法则</h2><h4 id="sec-2-1">2.1 loss 就是"错得多离谱"的一个数字</h4>
+<p>$$L(a,b)=\frac{1}{N}\sum_{i=1}^{N}\bigl(a x_i + b - y_i\bigr)^{2}$$</p>
+<p>一个标量。训练 = 让这一个数字变小。所有复杂度都来自"怎么知道该往哪边调"。</p>
+<h4 id="sec-2-2">2.2 梯度 = 变化率</h4>
+<p>$\partial L/\partial a$ 读作"a 动一点点，L 动多少倍"。所以把 a 往梯度的<b>反方向</b>挪，loss 就降：</p>
+<p>$$a \leftarrow a - \eta\,\frac{\partial L}{\partial a}$$</p>
+<p>$\eta$ 是学习率（代码里叫 <code>lr</code>），决定一次挪多远。就这么一行，它就是"训练"的全部内容。</p>
+<h4 id="sec-2-3">2.3 链式法则：把复合函数拆成局部导数相乘</h4>
+<p>对 $L=\frac1N\sum_i e_i^{2}$，其中 $e_i = a x_i + b - y_i$，链式法则给出</p>
+<p>$$\frac{\partial L}{\partial a}=\frac1N\sum_i 2e_i\,x_i,\qquad \frac{\partial L}{\partial b}=\frac1N\sum_i 2e_i$$</p>
+<p>外层的导数乘内层的导数 —— 这就是"链"。反向传播干的就是这件事，只不过它把这条链 <b>沿计算图自动走完</b>，并且是"从 loss 往参数方向"走（所以叫 back-ward）。</p>
+<h4 id="sec-2-4">2.4 一个你待会儿会手算的例子</h4>
+<p>设 $a=2$，$b=3$，$L=(ab)^{2}$。图上有四个节点：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>a ─┐
+   ├─ mul ── p(=6) ── pow2 ── loss(=36)
+b ─┘</code></pre></figure>
+<p>$$\frac{\partial L}{\partial p}=2p=12,\qquad \frac{\partial p}{\partial a}=b=3,\qquad \frac{\partial p}{\partial b}=a=2$$</p>
+<p>再乘一次链：<b>∂L/∂a</b> = 12 · 3 = <b>36</b>，<b>∂L/∂b</b> = 12 · 2 = <b>24</b>。</p>
+<p>现在换成"自动微分怎么走"：<code>loss.grad</code> 起手是 1，<code>pow2</code> 节点把 1 · 2*p* = 12 交给 <code>p</code> （注意：是 <code>p.grad += 12</code>，而不是"p 的梯度等于 12"这个事实本身 —— 它是<b>累加</b>到 p 上的）， <code>mul</code> 节点再把 <code>p.grad</code> 分发：<code>a.grad += b <i> p.grad</code> = 3 · 12 = 36，<code>b.grad += a </i> p.grad</code> = 24。</p>
+<p><b>关键结论</b>：每个节点的规则只需要知道"我上游传下来多少"（<code>out.grad</code>）和"我的局部导数"， 不需要知道整张图长什么样。这就是为什么反向传播可以一层一层写。</p><div class="fig" data-fig="losscurve" role="img" aria-label="可视化：losscurve"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-3" data-stage="s01"><h2>3. 已给你的代码：<code>Value</code> 与那条加法</h2><figure class="code"><figcaption>python</figcaption><pre><code><span class="kw">class</span> <span class="cls">Value</span>:
+    __slots__ = (<span class="str">"data"</span>, <span class="str">"grad"</span>, <span class="str">"_backward"</span>, <span class="str">"_prev"</span>, <span class="str">"_op"</span>, <span class="str">"label"</span>)</code></pre></figure>
+<table><thead><tr><th>字段</th><th>作用</th></tr></thead><tbody><tr><td><code>data</code></td><td>这个数现在的值</td></tr><tr><td><code>grad</code></td><td>$\partial L/\partial\text{self}$，<code>backward()</code> 之后才有意义</td></tr><tr><td><code>_prev</code></td><td>由哪些 Value 算出来的（父节点集合）</td></tr><tr><td><code>_op</code></td><td>用什么算的，只为打印调试</td></tr><tr><td><code>_backward</code></td><td><b>这个节点自己的</b>局部反向规则（一个闭包）</td></tr></tbody></table>
+<p><code>__add__</code> 是完整样例，它的三行结构就是所有算子的模板：</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>out = Value(self.data + other.data, (self, other), <span class="str">"+"</span>)   <span class="com"># ① 正向算出结果</span>
+
+<span class="kw">def</span> <span class="fn">_backward</span>():
+    self.grad += out.grad                                  <span class="com"># ② 把 out.grad 摊回操作数</span>
+    other.grad += out.grad
+
+out._backward = _backward                                  <span class="com"># ③ 规则挂在结果身上</span></code></pre></figure>
+<p>三个容易忽略的点，你写乘法时也会踩：</p>
+<li>规则里读的是 <b><code>out.grad</code></b>，不是 <code>self.grad</code>。写成 <code>self.grad += other.data * self.grad</code></li></ol>
+<p>的话所有梯度恒为 0，loss 纹丝不动，而且<b>不会报错</b>。这是本阶段第一大坑。</p>
+<li>是 <code>+=</code> 而不是 <code>=</code>。一个 Value 可以同时被多处用到（比如同一个 <code>a</code> 出现 100 次），</li></ol>
+<p>梯度必须把每条路径的贡献<b>加起来</b>。用 <code>=</code> 就等于只算最后一条路径。</p>
+<li>规则是闭包，它记住了 <code>self</code>/<code>other</code>/<code>out</code> 三个对象。所以图是"节点各自带一条局部规则"，</li></ol>
+<p>而不是"一个全局的反向函数"。</p>
+<p><code>__neg__ / __sub__ / __rsub__ / __truediv__</code> 也是给你的，注意它们是用 <code>*</code> 和 <code><b></code> </b>拼出来的** （$a/b = a\,b^{-1}$）。所以你写完 <code>__mul__</code> 和 <code>__pow__</code>，减法除法自动就通了 —— 这叫 组合性，也是真实框架的做法。</p>
+<h4 id="sec-3-5">3.5 文件里那四个激活函数：阶段 1 一个都用不到</h4>
+<p><code>scalar.py</code> 里还摆着 <code>exp / relu / sigmoid / tanh</code>，拟合直线不需要它们 —— 非线性只有在你要拟合<b>弯的东西</b>时才有意义，那是阶段 2。现在只要认出一件事： 它们的写法和 §3 那条 <code>__add__</code> 是同一个模板（算出 out、写一条读 <code>out.grad</code> 的规则、挂上去）。 定义、导数、饱和、为什么 FFN 最后选 GELU，全部在 <a href="s02.html">docs/stage-02 §2.3 起</a>。 <code>TODO-4</code>（tanh）也归属阶段 2，所以阶段 1 的页面上不会有它的「测」按钮 —— 不是漏了。</p></section><section class="sec" id="sec-4" data-stage="s01"><h2>4. TODO-1：<code>__mul__</code></h2><div class="sec-act"><button data-check="TODO-1">跑 TODO-1 的单项检查</button><button data-edit="TODO-1">跳到编辑器</button><a class="sec-jump" href="/?stage=s01">在测评台里打开 →</a></div><p><b>契约</b>：<code>self <i> other</code>，返回新的 <code>Value</code>，<code>_op="</i>"</code>，<code>_prev</code> 包含两个操作数。</p>
+<p>要写的两件事：</p>
+<li>正向：<code>out.data = ?</code></li><li>规则：$\partial(ab)/\partial a=b$、$\partial(ab)/\partial b=a$，各自再乘 <code>out.grad</code></li></ul>
+<p><b>别忘的两件小事</b>： <code>other</code> 可能是普通 float（<code>a * 2</code>），要先 <code>Value(other)</code> 包一层； <code>Value(other)</code> 没有父节点，所以它是叶子 —— 但训练时你不会更新它，这没关系。</p>
+<p><b>自检（30 秒，比跑整个脚本快）</b>——在项目根目录跑这一行，PowerShell / cmd / Git Bash 都能直接粘贴：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-1</code></pre></figure>
+<p>它跑的就是网站上那个「测」按钮里的同一段代码，会打印输入和输出：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>── TODO-1 · __mul__ 的乘法法则
+  输入 a=2.0, b=3.0 → p=a*b=6；上游 p.grad 手工喂 1.0
+PASS 输出 a.grad=3.0, b.grad=2.0  期望 (3.0, 2.0)</code></pre></figure>
+<p>想手验 <code>(a*b)**2</code> 那条（§2.4 算过 36 / 24）就跑：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-2 TODO-3</code></pre></figure>
+<p>（<code>TODO-3</code> 需要你先写完 <code>backward()</code>；没写完它会说"被前置依赖挡住"，而不是甩你一脸 traceback。）</p>
+<details class="answer"><summary>参考答案 · TODO-1 <code>__mul__</code>（判据没过之前别点开；看完关掉自己重写）</summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">__mul__</span>(self, other):
+        other = other <span class="kw">if</span> <span class="bi">isinstance</span>(other, Value) <span class="kw">else</span> Value(other)
+        out = Value(self.data * other.data, (self, other), <span class="str">"*"</span>)
+
+        <span class="kw">def</span> <span class="fn">_backward</span>():
+            self.grad += other.data * out.grad
+            other.grad += self.data * out.grad
+
+        out._backward = _backward
+        <span class="kw">return</span> out</code></pre></figure>
+<p>和 <code>__add__</code> 只差两处：正向是乘积；规则里各自乘的是<b>对方</b>的 <code>.data</code>。 <code>__rmul__ = __mul__</code> 那行骨架已经给了，所以 <code>2 * a</code> 也自动能跑。</p></div></details></section><section class="sec" id="sec-5" data-stage="s01"><h2>5. TODO-2：<code>__pow__</code></h2><div class="sec-act"><button data-check="TODO-2">跑 TODO-2 的单项检查</button><button data-edit="TODO-2">跳到编辑器</button><a class="sec-jump" href="/?stage=s01">在测评台里打开 →</a></div><p><b>契约</b>：<code>self <b> k</code>，<code>k</code> 是 int/float（不是 Value，所以只有一个操作数），<code>_op = f"</b>{k}"</code>。</p>
+<li>正向：<code>self.data ** k</code></li><li>规则：$\partial x^{k}/\partial x = k\,x^{k-1}$，乘 <code>out.grad</code></li></ul>
+<p><b>为什么它是除法的底座</b>：<code>__truediv__</code> 里写的是 <code>self * denom <b> -1</code>， 所以 $k=-1$ 时公式要给出 $-x^{-2}$ —— 顺便确认 <code>x </b> -1</code> 在 Python 里是浮点幂， <code>x=0</code> 时会抛 ZeroDivisionError，本项目不会遇到，但知道边界在哪儿是好事。</p>
+<details class="answer"><summary>参考答案 · TODO-2 <code>__pow__</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">__pow__</span>(self, k):
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">isinstance</span>(k, (<span class="bi">int</span>, <span class="bi">float</span>)):
+            <span class="kw">raise</span> TypeError(<span class="str">"指数只支持 int/float"</span>)
+        out = Value(self.data ** k, (self,), <span class="str">f"**{k}"</span>)
+
+        <span class="kw">def</span> <span class="fn">_backward</span>():
+            self.grad += k * (self.data ** (k - <span class="num">1</span>)) * out.grad
+
+        out._backward = _backward
+        <span class="kw">return</span> out</code></pre></figure>
+<p>三个容易漏的点：<code>_prev</code> 只有 <code>(self,)</code> 一个元素（指数不是 Value）； <code>_op</code> 要用 <b>f 串</b> <code>f"<b>{k}"</code>，写成 <code>"</b>{k}"</code> 打印出来就是花括号原文（不影响正确性， 但 §3 那张图就白画了）；<code>k=-1</code> 时公式自动给出 $-x^{-2}$，所以除法白送。</p></div></details></section><section class="sec" id="sec-6" data-stage="s01"><h2>6. TODO-3：<code>backward()</code> —— 本阶段最需要想清楚的地方</h2><div class="sec-act"><button data-check="TODO-3">跑 TODO-3 的单项检查</button><button data-edit="TODO-3">跳到编辑器</button><a class="sec-jump" href="/?stage=s01">在测评台里打开 →</a></div><p><b>契约</b>：<code>some_value.backward()</code> 执行后，从它往下的<b>每个</b>叶子的 <code>.grad</code> 都等于 $\partial(\text{它})/\partial(\text{叶子})$。无返回值。</p>
+<p>三件事，顺序不能换：</p>
+<li><b>拓扑排序</b>：从 <code>self</code> 出发递归走 <code>_prev</code>，把节点按"孩子在前、父亲在后"排进列表 <code>topo</code>。</li><ol><li>为什么要<b>去重</b>：一个 Value 可以被多个下游用到（比如 <code>b1</code> 被整个图用到），</li></ol>
+<p>不去重就会执行多次它的规则，梯度翻倍。用 <code>id(v)</code> 做集合判断，别用 <code>v in seen</code> （<code>Value</code> 没定义 <code>__eq__</code>/<code>__hash__</code>，默认按 id，但显式写 <code>id()</code> 更清楚也更保险）。</p>
+<ul><li>为什么"后序"就够用：后序遍历保证每个节点出现在它所有父节点<b>之前</b>，</li></ul>
+<p>于是倒过来走就是"从 loss 往参数"的正确顺序。（严格说后序在这里是充分必要的， 因为图是 DAG，且规则只在被调用时读取 <code>out.grad</code>。）</p>
+<li><b>起点</b>：<code>self.grad = 1.0</code>。因为 $\partial L/\partial L = 1$，这是整条链的源头。</li></ol>
+<p>这一行漏了，全部梯度是 0，<b>而且不会报错</b>。</p>
+<li><b>逆序执行规则</b>：<code>for v in reversed(topo): v._backward()</code>。</li></ol>
+<p>顺序写成正序的话，节点在还没收到上游梯度时就被摊派，梯度偏小 —— 而且 loss 依然会降， 只是降得慢，只有梯度校验能抓。</p>
+<p>下面这张图把"逆拓扑序"播给你看：按 <code>reversed(topo)</code> 逐个节点把梯度摊到操作数上，每步显示各节点当前的 <code>.grad</code>；切到"错误顺序"（正序 / 少 seed 一遍），梯度当场漏掉、和解析值对不上。</p>
+<div class="fig" data-fig="topobwd" role="img" aria-label="可视化：topobwd"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div>
+<p><b>手推一遍再写</b>（推荐，10 分钟）：用 §2.4 那个 <code>(a·b)²</code> 的图，在纸上把 <code>topo</code> 列表写出来 （应该是 <code>a, b, p, loss</code> 这个顺序），然后倒着走，检查每个节点的 grad。写代码时用它对拍。</p>
+<details class="answer"><summary>参考答案 · TODO-3 <code>backward()</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">def</span> <span class="fn">backward</span>(self) -&gt; <span class="kw">None</span>:
+        topo, seen = [], <span class="bi">set</span>()
+
+        <span class="kw">def</span> <span class="fn">build</span>(v):
+            <span class="kw">if</span> id(v) <span class="kw">in</span> seen:
+                <span class="kw">return</span>
+            seen.add(id(v))
+            <span class="kw">for</span> c <span class="kw">in</span> v._prev:
+                build(c)
+            topo.append(v)          <span class="com"># 后序：父节点排在所有孩子后面</span>
+
+        build(self)
+        self.grad = <span class="num">1.0</span>             <span class="com"># ∂L/∂L = 1，整条链的起点</span>
+        <span class="kw">for</span> v <span class="kw">in</span> <span class="bi">reversed</span>(topo):    <span class="com"># 逆拓扑序 = 从 loss 往参数方向走</span>
+            v._backward()</code></pre></figure>
+<p>循环体就一行 <code>v._backward()</code>。写成 <code>if v._backward() is not None: v.backward()</code> <b>也能过判据</b>（规则在条件表达式里已经被执行了，返回值恰好是 None，所以第二句永不跑）—— 但那是靠巧合，不是靠逻辑；哪天规则有了返回值就会重复执行。判据抓得住 bug，抓不住丑。</p>
+<p><code>seen</code> 用 <code>id(v)</code> 而不是 <code>v</code>：<code>Value</code> 没定义 <code>__eq__</code>/<code>__hash__</code>，默认虽然也按 id， 但显式写出来更清楚，也不会因为以后你给 <code>Value</code> 加了 <code>__eq__</code> 而悄悄坏掉。</p></div></details><div class="fig" data-fig="graph" role="img" aria-label="可视化：graph"><noscript>这一节的图需要浏览器脚本；正文和判据不受影响。</noscript></div></section><section class="sec" id="sec-7" data-stage="s01"><h2>7. TODO-1A：<code>fit_by_autograd</code></h2><div class="sec-act"><button data-check="TODO-1A">跑 TODO-1A 的单项检查</button><button data-edit="TODO-1A">跳到编辑器</button><a class="sec-jump" href="/?stage=s01">在测评台里打开 →</a></div><p>前面三个 TODO 是"造引擎"，这一个开始"用引擎做题"。它也是阶段 1 里唯一一个 <b>要你从零搭一个循环</b>的地方，所以把契约写在讲义里，不让你去代码注释里找。</p>
+<h4 id="sec-7-1">7.1 谁调用你，传进来什么</h4>
+<p><a class="repo" href="../../stages/s01_fit_line.py" data-repo="stages/s01_fit_line.py" data-line="94">stages/s01_fit_line.py:94</a> 就一行：</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>a_g, b_g, curve_g = fit_by_autograd(x, y)</code></pre></figure>
+<p>只传 <code>x</code>、<code>y</code>，其余三个参数用默认值。<code>x</code>、<code>y</code> 是 <code>make_data()</code> 造出来的两个 numpy 一维数组，各 100 个数：<code>x</code> 在 $[-1, 1]$ 均匀采样，<code>y</code> 严格等于 $3x + 1$。 <b>你不知道</b>这个式子，程序只能靠"猜 a、b → 看错多少 → 调"来逼近。</p>
+<table><thead><tr><th>参数</th><th>类型</th><th>默认</th><th>你该拿它干什么</th></tr></thead><tbody><tr><td><code>x</code></td><td><code>np.ndarray</code>，100 个</td><td>—</td><td>自变量。第 ② 步和 <code>y</code> 一起遍历</td></tr><tr><td><code>y</code></td><td><code>np.ndarray</code>，100 个</td><td>—</td><td>因变量，就是"标准答案"</td></tr><tr><td><code>iters</code></td><td>int</td><td>3000</td><td>循环走多少步</td></tr><tr><td><code>lr</code></td><td>float</td><td>0.2</td><td>每步走多大。第 A 部分用的同一个值，两边才能对账</td></tr><tr><td><code>log_every</code></td><td>int</td><td>500</td><td>每多少步打印一次进度条；传 <code>0</code> 表示不打印</td></tr></tbody></table>
+<p>打印那行不用你设计，照第 A 部分抄：</p>
+<figure class="code"><figcaption>python</figcaption><pre><code><span class="kw">if</span> log_every:
+    print_progress(step + <span class="num">1</span>, iters, every=log_every, prefix=<span class="str">"自动微分"</span>)</code></pre></figure>
+<h4 id="sec-7-2">7.2 你必须返回什么（这条最容易搞反）</h4>
+<figure class="code"><figcaption>python</figcaption><pre><code><span class="kw">return</span> a.data, b.data, curve        <span class="com"># (float, float, list[float])</span></code></pre></figure>
+<li><code>a</code>、<code>b</code> 要的是 <b><code>.data</code>，也就是普通 float</b>，不是 <code>Value</code> 对象。</li></ul>
+<p>判据那两行是 <code>abs(a_h - a_g)</code>，<code>a_h</code> 是第 A 部分的 float；你返回 <code>Value</code>， <code>Value</code> 没写 <code>__abs__</code>，当场 <code>TypeError</code>。</p>
+<li><code>curve</code> 是每一轮的 loss，<b>长度必须正好 <code>iters</code></b>（后面 <code>sparkline</code> 要拿它画图），</li></ul>
+<p>元素是 <code>loss.data</code> 这种 float。</p>
+<h4 id="sec-7-3">7.3 循环里五步，顺序不能乱</h4>
+<div class="flow"><div class="fs"><i class="n circ">①</i><span><b>清零</b> —— <code>a.grad = b.grad = 0.0</code></span></div><div class="fs"><i class="n circ">②</i><span><b>搭图</b> —— <code>loss = Value(0.0)</code> 起头 → 100 项 <code>e_i·e_i</code> 累加 → <code>loss = loss / len(x)</code></span></div><div class="fs"><i class="n circ">③</i><span><b>反传</b> —— <code>loss.backward()</code>，就是你写的 TODO-3</span></div><div class="fs"><i class="n circ">④</i><span><b>记账</b> —— <code>curve.append(loss.data)</code></span></div><div class="fs"><i class="n circ">⑤</i><span><b>走一步</b> —— <code>a.data -= lr * a.grad</code>（<code>b</code> 同理）</span></div></div>
+<p>带空格的骨架（<code>___</code> 就是你要填的，结构已经给你了 —— 因为结构不是练习，<b>填什么才是</b>）：</p>
+<figure class="code"><figcaption>python</figcaption><pre><code>    <span class="kw">for</span> step <span class="kw">in</span> <span class="bi">range</span>(iters):
+        <span class="kw">for</span> v <span class="kw">in</span> (a, b):
+            v.___ = <span class="num">0.0</span>                      <span class="com"># ① 哪个属性要清？</span>
+        loss = Value(<span class="num">0.0</span>)                     <span class="com"># ② 起点必须是 Value，不能是 0.0</span>
+        <span class="kw">for</span> xi, yi <span class="kw">in</span> <span class="bi">zip</span>(x, y):
+            e = ___                           <span class="com">#    这一点的误差：a·xi + b − yi</span>
+            loss = ___                        <span class="com">#    把 e 的贡献累加到 loss 上</span>
+        loss = ___                            <span class="com">#    100 项要取平均（不平均 = lr 放大 100 倍）</span>
+        loss.backward()                       <span class="com"># ③ 梯度落到 a.grad / b.grad</span>
+        curve.append(loss.___)                <span class="com"># ④ 要 float，画图用</span>
+        a.___ -= lr * a.___                   <span class="com"># ⑤ 改数，不重建对象</span>
+        b.___ -= lr * b.___
+        <span class="kw">if</span> log_every:
+            print_progress(step + <span class="num">1</span>, iters, every=log_every, prefix=<span class="str">"自动微分"</span>)
+
+    <span class="kw">return</span> a.___, b.___, curve                <span class="com"># ← float，不是 Value</span></code></pre></figure>
+<p>五个填空的答案不在这里，但你可以用两条已知的事反推： ②那三空对照 §2.4 手算用的同一个式子；⑤那两空和第 A 部分 <code>a -= lr * ga</code> 是同一件事， 只是 <code>ga</code> 现在叫 <code>a.grad</code>。填完先跑 §7.6 的 30 秒自测，别急着跑整卷。</p>
+<p>三条"为什么"，理解了就不会写错顺序：</p>
+<li><b>①为什么必须清</b>：你的算子写的是 <code>self.grad += ...</code>（对的），不清零就等于</li></ul>
+<p>这一轮的梯度叠在上一轮上。真实框架里 <code>optimizer.zero_grad()</code> 干的就是这件事。</p>
+<li><b>②为什么每轮重建图</b>：<code>a</code>、<code>b</code> 这两个 <code>Value</code> 对象必须跨轮存在（①⑤都在摸它们），</li></ul>
+<p>但 <code>loss</code> 这张图每轮新建、用完就扔。标量引擎慢就慢在这儿 —— 阶段 3 换成 numpy 数组，为的就是把这 100 次 Python 循环摊平成一次矩阵乘。</p>
+<li><b>⑤为什么改 <code>.data</code></b>：<code>a = a - lr * a.grad</code> 会造出一个<b>新</b>的 <code>Value</code>，</li></ul>
+<p>下一轮的梯度就落到别处去了。改 <code>.data</code> 是"同一个对象换个数"。</p>
+<h4 id="sec-7-4">7.4 先在 4 个点上想明白，再上 100 个点</h4>
+<p>拿 $x=1,\ y=4$（真实 $a=3,b=1$）这一条数据，$a=0,b=0$ 起步：</p>
+<p>$$e = a\cdot 1 + b - 4 = -4,\qquad L = e^2 = 16$$</p>
+<p>$$\frac{\partial L}{\partial a} = 2e\cdot x = -8,\qquad \frac{\partial L}{\partial b} = 2e = -8$$</p>
+<p>所以 $a \leftarrow 0 - 0.2\cdot(-8) = 1.6$。你的实现跑第 1 轮之后 <code>a.grad</code> 就该是这个数 （100 个点时是各点的平均，量级会变小，但符号和"往正方向走"这件事不变）。 <b>先让 4 个点对，再让 100 个点对</b> —— 一上来就跑 3000 轮，你分不清是引擎错还是循环错。</p>
+<h4 id="sec-7-5">7.5 两个必踩的坑</h4>
+<li><code>Value(0, 0)</code> 是错的：<code>Value</code> 的第二个位置参数是 <code>_children</code>（要一个可迭代对象），</li></ul>
+<p>症状是 <code>TypeError: 'int' object is not iterable</code>。参数就写 <code>Value(0.0)</code>， 想起名字写 <code>Value(0.0, label="a")</code>。</p>
+<li><code>e = a * xi + b - yi</code> 里 <code>xi</code> 是 numpy 的 <code>float64</code>，不用你手动包成 <code>Value</code></li></ul>
+<p>（<code>__mul__</code> 第一行做了 <code>isinstance</code> 转换）。但 <b><code>loss</code> 起点必须是 <code>Value(0.0)</code></b>， 不能写 <code>loss = 0.0</code>：那样 <code>loss / len(x)</code> 出来的就不是图，<code>loss.backward()</code> 直接没这个方法。</p>
+<h4 id="sec-7-6">7.6 写完先这么验（30 秒，不用等整卷）</h4>
+<p>在项目根目录跑这一行（PowerShell / cmd / Git Bash 通用，没有续行符）：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py TODO-1A</code></pre></figure>
+<p>看到 <code>PASS 输出 a=3.0000 b=1.0000</code> 就对了；前置的 TODO-1/2/3 没写完时它会说 "被前置依赖挡住"，并告诉你先写哪个。想自己手搓一遍同样的数：</p>
+<figure class="code"><figcaption>text</figcaption><pre><code>python webapp/checks.py</code></pre></figure>
+<p>列全部 id，<code>python webapp/checks.py TODO-1 TODO-3 ACT-1</code> 一次跑几条。 或者直接在网站上点 <b>TODO-1A</b> 那个「测」—— 跑的是同一段代码。</p>
+<details class="answer"><summary>参考答案 · TODO-1A <code>fit_by_autograd</code></summary><div class="answer-body"><figure class="code"><figcaption>python</figcaption><pre><code>    a = Value(<span class="num">0.0</span>, label=<span class="str">"a"</span>)
+    b = Value(<span class="num">0.0</span>, label=<span class="str">"b"</span>)
+    xs = [<span class="bi">float</span>(v) <span class="kw">for</span> v <span class="kw">in</span> x]
+    ys = [<span class="bi">float</span>(v) <span class="kw">for</span> v <span class="kw">in</span> y]
+    curve = []
+    <span class="kw">for</span> step <span class="kw">in</span> <span class="bi">range</span>(iters):
+        <span class="kw">for</span> v <span class="kw">in</span> (a, b):                    <span class="com"># ① 清零</span>
+            v.grad = <span class="num">0.0</span>
+        loss = Value(<span class="num">0.0</span>, label=<span class="str">"loss"</span>)     <span class="com"># ② 搭图（每轮新建）</span>
+        <span class="kw">for</span> xi, yi <span class="kw">in</span> <span class="bi">zip</span>(xs, ys):
+            e = a * xi + b - yi
+            loss = loss + e * e
+        loss = loss / <span class="bi">len</span>(xs)
+        loss.backward()                     <span class="com"># ③ 反传</span>
+        curve.append(loss.data)             <span class="com"># ④ 记账</span>
+        a.data -= lr * a.grad               <span class="com"># ⑤ 走一步：改 .data，不重建对象</span>
+        b.data -= lr * b.grad
+        <span class="kw">if</span> log_every:
+            print_progress(step + <span class="num">1</span>, iters, every=log_every, prefix=<span class="str">"自动微分"</span>)
+    <span class="kw">return</span> a.data, b.data, curve            <span class="com"># ← float，不是 Value</span></code></pre></figure>
+<p>对照 §7.3 那五个动作，一一对得上。两处值得注意： <code>xs/ys</code> 先转成 Python float 列表不是多此一举 —— 让 <code>e = a * xi + b - yi</code> 里出现的 每个数都走你自己写的算子，别让 numpy 的标量偷偷参与建图； <code>return a.data, b.data</code> 取的是 <code>.data</code>，返回 <code>Value</code> 会在判据 <code>abs(a_h - a_g)</code> 上 <code>TypeError</code>。</p></div></details></section><section class="sec" id="sec-8" data-stage="s01"><h2>8. 验收判据逐条解读</h2><p><code>python stages/s01_fit_line.py</code> 输出应有 7 条 <code>[OK]</code>：</p>
+<table><thead><tr><th>判据</th><th>它在证明什么</th><th>没过最可能是</th></tr></thead><tbody><tr><td>学到斜率 a / 截距 b</td><td>第 A 部分跑对了（基线）</td><td>环境问题，不太可能挂</td></tr><tr><td>最终 MSE(手写) ≤ 1e-4</td><td>梯度下降本身在工作</td><td>—</td></tr><tr><td>loss 下降倍数 ≥ 1e3</td><td>不是"随机游走碰上的"</td><td>lr 被你自己改小了</td></tr><tr><td><b>两种方法 a/b 之差 ≤ 1e-6</b></td><td>你的自动微分 = 手推偏导</td><td><code>__mul__</code> 里操作数弄反、或忘了 <code>out.grad</code></td></tr><tr><td><b>梯度校验(有限差分)</b></td><td>反向传播数值正确</td><td>梯度全 0、或顺序错、或用了 <code>=</code> 不是 <code>+=</code></td></tr><tr><td>lr 演示 4 行 info</td><td>观察项，不计入验收</td><td>—</td></tr></tbody></table>
+<p>最后两条是本阶段的全部意义。前面四条只是"程序在跑"，这两条才是"程序是对的"。</p>
+<p>顺带看一眼那 4 行 lr 观察：<code>lr=1.5</code> 时 loss 变成 <code>3.9e+186</code>（发散）， <code>lr=0.001</code> 时还在 2.48（没走完）。稳定区间大约 <code>0.05~0.7</code>，上限由数据的 <code>mean(2x²)</code> 量级决定 —— 以后调 lr 时你脑子里应该有这根"尺度"，而不是一个魔法数字。</p></section><section class="sec" id="sec-9" data-stage="s01"><h2>9. 常见失败模式对照表</h2><table><thead><tr><th>症状</th><th>病因</th><th>修法</th></tr></thead><tbody><tr><td><code>loss 完全不动</code>，<code>grad</code> 全是 0</td><td>规则里写了 <code>self.grad</code> 而不是 <code>out.grad</code>；或忘了 <code>self.grad = 1.0</code></td><td>检查 §3 第 1 点、§6 第 2 点</td></tr><tr><td><code>NameError: name 'k' is not defined</code>（在 _backward 里）</td><td>闭包引用了循环外才存在的变量名</td><td>用 <code>f"**{k}"</code> 时的 <code>k</code> 是参数名，确认没写错</td></tr><tr><td>梯度是正确值的 <b>2 倍</b></td><td>拓扑列表没去重，同一节点规则跑了两遍</td><td><code>seen</code> 用 <code>id(v)</code></td></tr><tr><td>梯度<b>偏小</b>且 loss 也在降</td><td><code>topo</code> 顺序用正序遍历了</td><td>改成 <code>reversed(topo)</code></td></tr><tr><td><code>a*b</code> 里 a 的梯度用了 a 自己</td><td>局部导数写反（$\partial(ab)/\partial a=b$，别写成 $a$）</td><td>用 §4 的自检一行验证</td></tr><tr><td><code>TypeError: unsupported operand</code></td><td>忘了把 float 包成 <code>Value</code></td><td>算子第一行统一 <code>other = other if isinstance(...) else Value(other)</code></td></tr><tr><td><code>RecursionError</code></td><td><code>_prev</code> 里塞进了自己</td><td>检查构造时传的 children</td></tr><tr><td>有限差分对不上，误差 1e-3 级</td><td>你把 loss 写成 sum 而不是 mean（或反过来）</td><td>判据的期望值是按 mean 算的</td></tr></tbody></table>
+<p>调试建议：别打印整张图。写三行小实验（§4 的自检），或者 <code>print(loss, a.grad, b.grad)</code> 对 §2.4 的手算数字。<b>先让 4 个节点对，再让 400 个节点对。</b></p></section><section class="sec" id="sec-10" data-stage="s01"><h2>10. 自查题（不看书答不上来就重读）</h2><li>为什么 <code>self.grad += other.data * out.grad</code> 里是 <code>+=</code>？举一个"必须累加"的具体场景。</li><li><code>Value</code> 的 <code>_backward</code> 规则挂在<b>结果</b>节点上，而不是操作数上。为什么这样设计才对？</li><li>后序遍历得到的 <code>topo</code>，为什么倒过来走就是正确的梯度传播顺序？</li><li>如果我只把 <code>__mul__</code> 写完、<code>__pow__</code> 留着不写，<code>s01</code> 会在哪一步报错？为什么？</li><li><code>loss.backward()</code> 调第二次会发生什么？（提示：<code>grad</code> 是累加的）训练循环靠哪一行避免这个？</li><li>有限差分能发现"顺序写反"的 bug 吗？能发现"忘了清零"吗？各回答能/不能并说明理由。</li></ol>
+<p>答案都在上面的讲义正文里；第 5、6 题的答案在后面阶段会反复用到 （第 6 题：<b>能</b>发现顺序问题；<b>不能</b>发现清零遗漏，因为梯度校验每次都从头重建图 —— 所以清零的正确性要靠第 8 节"两种方法之差"那条判据来兜）。</p></section><section class="sec" id="sec-11" data-stage="s01"><h2>11. 下一步</h2><p>进 <a href="s02.html">docs/stage-02-非线性与容量.md</a>。 阶段 2 只新增一个算子（tanh）和一个 25 参数的小网络，但会给你两个比技术更重要的概念： <b>模型容量</b>（loss 降不下去有时不是你的错）和<b>学习率衰减</b>（为什么固定 lr 到不了最低点）。</p></section></main>
+</article>
+<script src="assets/manual.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/figs2.js"></script>
+<script src="assets/figs_a.js"></script>
+<script src="assets/figs_b.js"></script>
+<script src="assets/figs_c.js"></script>
+<script src="assets/figs_d.js"></script>
+<script src="assets/figs_e.js"></script>
+<script src="assets/figs_f.js"></script>
+<script src="assets/figs_g.js"></script>
+</body></html>
